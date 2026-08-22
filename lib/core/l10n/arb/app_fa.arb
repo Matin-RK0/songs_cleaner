@@ -1,0 +1,75 @@
+{
+  "@@locale": "fa",
+  "appName": "پاک‌کن آهنگ",
+  "libraryTitle": "کتابخانه موزیک",
+  "songsTab": "آهنگ‌ها",
+  "artistsTab": "هنرمندان",
+  "albumsTab": "آلبوم‌ها",
+  "searchHint": "جستجوی آهنگ یا خواننده…",
+  "shuffleAll": "شافل همه",
+  "sortLabel": "مرتب‌سازی",
+  "sortByTitle": "بر اساس نام",
+  "sortByArtist": "بر اساس خواننده",
+  "sortByDateAdded": "بر اساس تاریخ افزودن",
+  "sortByDuration": "بر اساس مدت",
+  "nowPlaying": "در حال پخش",
+  "unknownArtist": "هنرمند ناشناس",
+  "unknownAlbum": "آلبوم ناشناس",
+  "untitledSong": "بدون عنوان",
+  "queueTitle": "صف پخش",
+  "queueUpNext": "بعدی‌ها",
+  "queueEmpty": "چیزی در صف پخش نیست",
+  "emptyLibraryTitle": "موزیکی پیدا نشد",
+  "emptyLibraryMessage": "هنوز فایل صوتی‌ای روی دستگاه نیست یا دسترسی داده نشده است.",
+  "noResultsTitle": "نتیجه‌ای پیدا نشد",
+  "noResultsMessage": "عبارت دیگری را جستجو کنید.",
+  "loadingLibrary": "در حال خواندن کتابخانه…",
+  "errorLoadFailedTitle": "خطا در خواندن کتابخانه",
+  "errorLoadFailedMessage": "مشکلی پیش آمد؛ دوباره تلاش کنید.",
+  "retry": "تلاش دوباره",
+  "permissionTitle": "دسترسی لازم است",
+  "permissionAudioMessage": "برای نمایش موزیک‌های دستگاه، اجازه دسترسی به فایل‌های صوتی را بدهید.",
+  "permissionFilesMessage": "برای پاک کردن آهنگ‌ها، اجازه مدیریت فایل‌ها را در تنظیمات فعال کنید.",
+  "grantPermission": "اعطای دسترسی",
+  "openSettings": "رفتن به تنظیمات",
+  "deleteAction": "حذف از دستگاه",
+  "deleteCurrentTooltip": "حذف آهنگ فعلی",
+  "deleteConfirmTitle": "این آهنگ حذف شود؟",
+  "deleteConfirmMessage": "«{title}» برای همیشه از حافظه دستگاه حذف می‌شود و آهنگ بعدی پخش می‌شود.",
+  "@deleteConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "delete": "حذف",
+  "cancel": "انصراف",
+  "songDeletedToast": "«{title}» حذف شد",
+  "@songDeletedToast": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "songDeleteFailedToast": "حذف «{title}» ناموفق بود",
+  "@songDeleteFailedToast": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shuffleTooltip": "شافل",
+  "repeatOffTooltip": "تکرار: خاموش",
+  "repeatAllTooltip": "تکرار: همه",
+  "repeatOneTooltip": "تکرار: همین آهنگ",
+  "playTooltip": "پخش",
+  "pauseTooltip": "توقف",
+  "nextTooltip": "بعدی",
+  "previousTooltip": "قبلی",
+  "closeTooltip": "بستن",
+  "expandPlayerTooltip": "نمایش صفحه پخش",
+  "playerScreenTitle": "در حال پخش"
+}
