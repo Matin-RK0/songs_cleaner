@@ -27,6 +27,7 @@
   "errorLoadFailedTitle": "خطا در خواندن کتابخانه",
   "errorLoadFailedMessage": "مشکلی پیش آمد؛ دوباره تلاش کنید.",
   "retry": "تلاش دوباره",
+  "actionFailedGeneric": "انجام عملیات ناموفق بود",
   "permissionTitle": "دسترسی لازم است",
   "permissionAudioMessage": "برای نمایش موزیک‌های دستگاه، اجازه دسترسی به فایل‌های صوتی را بدهید.",
   "permissionFilesMessage": "برای پاک کردن آهنگ‌ها، اجازه مدیریت فایل‌ها را در تنظیمات فعال کنید.",
@@ -71,5 +72,26 @@
   "previousTooltip": "قبلی",
   "closeTooltip": "بستن",
   "expandPlayerTooltip": "نمایش صفحه پخش",
-  "playerScreenTitle": "در حال پخش"
+  "playerScreenTitle": "در حال پخش",
+  "songCountLabel": "{count} آهنگ",
+  "@songCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "playbackFailedToast": "پخش «{title}» ممکن نشد",
+  "@playbackFailedToast": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "removeFromQueueTooltip": "حذف از صف پخش",
+  "clearQueueTooltip": "پاک کردن صف",
+  "playTooltipShort": "پخش",
+  "nothingPlayingTitle": "چیزی در حال پخش نیست",
+  "backTooltip": "بازگشت"
 }
