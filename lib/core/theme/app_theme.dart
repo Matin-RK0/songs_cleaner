@@ -23,14 +23,14 @@ abstract final class AppTheme {
       fontFamily: 'Vazirmatn',
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
-      splashFactory: InkSparkle.splashFactory,
+      splashFactory: InkRipple.splashFactory,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          fontSize: 20,
+          fontSize: 27,
           fontWeight: FontWeight.w800,
           color: AppColors.textHigh,
         ),
@@ -38,7 +38,9 @@ abstract final class AppTheme {
       tabBarTheme: TabBarThemeData(
         labelColor: AppColors.textHigh,
         unselectedLabelColor: AppColors.textMedium,
-        indicatorSize: TabBarIndicatorSize.tab,
+        indicatorSize: TabBarIndicatorSize.label,
+        indicatorColor: AppColors.primary,
+        labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         dividerColor: Colors.transparent,
         labelStyle: const TextStyle(
           fontSize: 14,
@@ -51,7 +53,7 @@ abstract final class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.surfaceHigh,
+        backgroundColor: AppColors.surfaceElevated,
         contentTextStyle: const TextStyle(color: AppColors.textHigh),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
       ),
@@ -77,10 +79,17 @@ abstract final class AppTheme {
         ),
         showDragHandle: true,
       ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
+        elevation: 0,
+        shape: StadiumBorder(),
+      ),
       sliderTheme: SliderThemeData(
         trackHeight: 3,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
         overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+        inactiveTrackColor: AppColors.outline,
       ),
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,

@@ -29,9 +29,13 @@ class SongTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: AppSpacing.xs),
+      padding: const EdgeInsetsDirectional.only(
+        start: AppSpacing.sm,
+        end: AppSpacing.sm,
+        bottom: AppSpacing.xs,
+      ),
       child: Material(
-        color: Colors.transparent,
+        color: isCurrent ? AppColors.surfaceHigh : Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -39,14 +43,20 @@ class SongTile extends ConsumerWidget {
           onLongPress:
               onDeleteDevice == null ? null : () => _showActions(context),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: AppSpacing.sm,
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.sm,
             ),
             child: Row(
               children: [
                 if (showArtwork)
-                  ArtworkImage(songId: song.id, size: 48)
+                  ArtworkImage(
+                    songId: song.id,
+                    size: 52,
+                    borderRadius: AppRadius.sm,
+                  )
                 else
                   const SizedBox(width: AppSpacing.sm),
                 const SizedBox(width: AppSpacing.md),
@@ -61,7 +71,7 @@ class SongTile extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight:
-                              isCurrent ? FontWeight.w800 : FontWeight.w600,
+                              isCurrent ? FontWeight.w700 : FontWeight.w600,
                           color: isCurrent
                               ? AppColors.primary
                               : AppColors.textHigh,

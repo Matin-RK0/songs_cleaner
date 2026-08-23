@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../application/providers/player_controller.dart';
 
@@ -50,12 +51,12 @@ class QueueSheetContent extends ConsumerWidget {
       children: [
         Row(
           children: [
-            const SizedBox(width: 20),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Text(
                 l10n.queueTitle,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textHigh,
                 ),
@@ -81,7 +82,7 @@ class QueueSheetContent extends ConsumerWidget {
               final isCurrent = index == currentIndex;
               return ListTile(
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12),
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 leading: isCurrent
                     ? const Icon(
                         Icons.graphic_eq_rounded,

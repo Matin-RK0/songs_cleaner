@@ -4,7 +4,6 @@ import 'package:songs_cleaner/features/library/application/providers/library_pro
 
 import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../player/presentation/widgets/mini_player_bar.dart';
@@ -94,8 +93,6 @@ class _HomeShellState extends ConsumerState<HomeShell>
           if (!mounted) return;
           navigator.pushNamed(RouteNames.player);
         },
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
         icon: const Icon(Icons.shuffle_rounded),
         label: Text(l10n.shuffleAll),
       ),

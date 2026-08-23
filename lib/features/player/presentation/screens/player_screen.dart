@@ -31,10 +31,11 @@ class PlayerScreen extends ConsumerWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1B1D2A),
+              AppColors.playerGradientTop,
+              AppColors.playerGradientMiddle,
               AppColors.background,
             ],
-            stops: [0.0, 0.55],
+            stops: [0.0, 0.42, 0.78],
           ),
         ),
         child: SafeArea(
