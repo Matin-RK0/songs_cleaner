@@ -162,6 +162,9 @@ class _ControlsRow extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Row(
+        // Playback order is physical: previous stays on the left and next on
+        // the right, including when the app is displayed in an RTL locale.
+        textDirection: TextDirection.ltr,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(

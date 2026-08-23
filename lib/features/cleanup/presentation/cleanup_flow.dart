@@ -7,24 +7,14 @@ import '../../library/application/providers/library_controller.dart';
 import '../../library/domain/entities/song.dart';
 import '../application/cleanup_service.dart';
 
-/// Confirm → delete file → feedback. Shared by the player screen and the
-/// library long-press menu.
+/// Deletes the file immediately and reports the outcome. Shared by the player
+/// screen and the library long-press menu.
 Future<void> deleteSongFlow(
   BuildContext context,
   WidgetRef ref,
   Song song,
 ) async {
   final l10n = context.l10n;
-  final confirmed = await showAppConfirmDialog(
-    context: context,
-    title: l10n.deleteConfirmTitle,
-    message: l10n.deleteConfirmMessage(song.title),
-    confirmLabel: l10n.delete,
-    cancelLabel: l10n.cancel,
-    destructive: true,
-  );
-  if (!confirmed || !context.mounted) return;
-
   final result = await ref.read(cleanupServiceProvider).deleteFromDevice(song);
   if (!context.mounted) return;
 
