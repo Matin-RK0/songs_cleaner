@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
+import 'core/settings/app_settings_repository.dart';
 import 'features/player/application/providers/player_controller.dart';
 import 'features/player/infrastructure/music_player_handler.dart';
 
@@ -19,8 +21,9 @@ Future<void> main() async {
   await session.configure(const AudioSessionConfiguration.music());
 
   final player = AudioPlayer();
+  final prefs = await SharedPreferences.getInstance();
   final handler = await AudioService.init(
-    builder: () => MusicPlayerHandler(player),
+    builder: () => MusicPlayerHandler(player, settings: AppSettingsRepository(prefs)),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.example.songs_cleaner.playback',
       androidNotificationChannelName: 'پخش موزیک',
@@ -34,6 +37,7 @@ Future<void> main() async {
       overrides: [
         audioPlayerProvider.overrideWithValue(player),
         musicPlayerHandlerProvider.overrideWithValue(handler),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
       child: const SongsCleanerApp(),
     ),

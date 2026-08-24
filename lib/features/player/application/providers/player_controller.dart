@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 
+import '../../../../core/settings/app_settings_repository.dart';
+import '../../../library/application/providers/library_controller.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../domain/playback_enums.dart';
 import '../../infrastructure/music_player_handler.dart';
@@ -65,6 +67,8 @@ class PlayerController extends Notifier<PlayerState> {
       }
     });
 
+    _scheduleSessionRestore();
+
     return PlayerState(
       songs: handler.queueSongs,
       index: handler.currentIndex,
@@ -76,6 +80,52 @@ class PlayerController extends Notifier<PlayerState> {
   }
 
   MusicPlayerHandler get _handler => ref.read(musicPlayerHandlerProvider);
+
+  // ---------------------------------------------------------------------------
+  // Session restore
+  // ---------------------------------------------------------------------------
+
+  /// Restores the previous playback session (paused, at the last position)
+  /// exactly once, as soon as the library is available. Listens instead of
+  /// watching so library refreshes never rebuild the player.
+  void _scheduleSessionRestore() {
+    var attempted = false;
+
+    void tryRestore(LibraryState? library) {
+      if (attempted || library == null || library.songs.isEmpty) return;
+      attempted = true;
+      if (_handler.queueSongs.isNotEmpty) return;
+      _restoreLastSession(library.songs);
+    }
+
+    final existing = ref.read(libraryProvider);
+    tryRestore(existing.value);
+    ref.listen(libraryProvider, (_, next) => tryRestore(next.value));
+  }
+
+  Future<void> _restoreLastSession(List<Song> librarySongs) async {
+    final settings = ref.read(appSettingsRepositoryProvider);
+    final session = settings.loadPlaybackSession();
+    if (session == null || !session.isRestorable) return;
+
+    final byId = {for (final song in librarySongs) song.id: song};
+    final queue = [
+      for (final id in session.queueSongIds)
+        if (byId[id] != null) byId[id]!,
+    ];
+    final current = byId[session.currentSongId];
+    if (current == null || queue.isEmpty) return;
+
+    final repeatIndex =
+        session.repeatModeIndex.clamp(0, RepeatMode.values.length - 1);
+    await _handler.restoreSession(
+      songs: queue,
+      current: current,
+      position: Duration(milliseconds: session.positionMs),
+      repeatMode: RepeatMode.values[repeatIndex],
+      shuffled: session.shuffled,
+    );
+  }
 
   /// Starts playing [songs] beginning at [startIndex].
   Future<void> playFromList(List<Song> songs, {required int startIndex}) =>

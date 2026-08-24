@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 import '../../../../core/errors/failure.dart';
+import '../../../../core/settings/app_settings_repository.dart';
 import '../../domain/entities/song.dart';
 import '../../domain/services/library_query.dart';
 import '../../domain/value_objects/song_sort.dart';
@@ -75,15 +76,27 @@ class LibraryController extends AsyncNotifier<LibraryState> {
     final source = ref.watch(deviceMusicDataSourceProvider);
     final fetched = await source.fetchSongs();
     final existing = await _keepExistingFiles(fetched);
+    final restoredSort = _loadPersistedSort();
 
     return LibraryState(
       songs: List.unmodifiable(existing),
       visibleSongs: filterAndSortSongs(
         existing,
         query: '',
-        sort: SongSort.titleAsc,
+        sort: restoredSort,
       ),
+      sort: restoredSort,
     );
+  }
+
+  /// The chosen ordering survives restarts; falls back to title ascending.
+  SongSort _loadPersistedSort() {
+    final settings = ref.watch(appSettingsRepositoryProvider);
+    final fallbackIndex = SongSort.values.indexOf(SongSort.titleAsc);
+    final index = settings
+        .loadLibrarySortIndex(fallbackIndex)
+        .clamp(0, SongSort.values.length - 1);
+    return SongSort.values[index];
   }
 
   /// MediaStore rows can outlive their files (deleted outside the app or by
@@ -113,6 +126,7 @@ class LibraryController extends AsyncNotifier<LibraryState> {
   void setSort(SongSort sort) {
     final current = state.value;
     if (current == null) return;
+    ref.read(appSettingsRepositoryProvider).saveLibrarySortIndex(sort.index);
     state = AsyncData(current.copyWith(sort: sort));
   }
 

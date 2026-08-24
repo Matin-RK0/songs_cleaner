@@ -3,28 +3,36 @@ import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../../core/settings/app_settings_repository.dart';
 import '../../library/domain/entities/song.dart';
 import '../domain/playback_enums.dart';
 import '../domain/playback_queue.dart';
 
 /// Glue between [AudioService] (notification, background, headset buttons)
 /// and [AudioPlayer]. Owns the play queue and repeat/shuffle rules so both
-/// in-app actions and notification actions behave identically.
+/// in-app actions and notification actions behave identically. Also mirrors
+/// the session into [AppSettingsRepository] so it survives app restarts.
 class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
-  MusicPlayerHandler(this._player) {
+  MusicPlayerHandler(this._player, {this.settings}) {
     _player.playbackEventStream.listen(
       _broadcastState,
       onError: (Object _, StackTrace _) {},
     );
     _player.playerStateStream.listen(_onPlayerStateChanged);
+    _player.positionStream.listen(_onPositionChanged);
   }
 
   static const int _maxAutoSkipsOnError = 3;
+  static const int _positionSaveIntervalMs = 5000;
 
   final AudioPlayer _player;
+
+  /// Persists the session across restarts; null disables persistence (tests).
+  final AppSettingsRepository? settings;
   final PlaybackQueue _queue = PlaybackQueue();
   RepeatMode _repeatMode = RepeatMode.off;
   int _consecutiveLoadFailures = 0;
+  int _lastSavedPositionMs = -1;
 
   /// Emits the title of a song whose file failed to load.
   final StreamController<String> _loadErrors =
@@ -49,6 +57,40 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   void _touchQueue() {
     _revision++;
     _queueRevisions.add(_revision);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Session persistence
+  // ---------------------------------------------------------------------------
+
+  void _onPositionChanged(Duration position) {
+    final ms = position.inMilliseconds;
+    final last = _lastSavedPositionMs;
+    if (!_player.playing) {
+      if (ms != last && _queue.isNotEmpty) {
+        _lastSavedPositionMs = ms;
+        _persistSession();
+      }
+      return;
+    }
+    if ((ms - last).abs() >= _positionSaveIntervalMs) {
+      _lastSavedPositionMs = ms;
+      _persistSession();
+    }
+  }
+
+  void _persistSession() {
+    final store = settings;
+    if (store == null || !_queue.isNotEmpty) return;
+    store.savePlaybackSession(SavedPlaybackSession(
+      queueSongIds: _queue.originalSongs
+          .map((song) => song.id)
+          .toList(growable: false),
+      currentSongId: _queue.current?.id,
+      positionMs: _player.position.inMilliseconds,
+      repeatModeIndex: _repeatMode.index,
+      shuffled: _queue.shuffled,
+    ));
   }
 
   // ---------------------------------------------------------------------------
@@ -115,6 +157,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     _queue.setShuffled(enabled);
     _publishQueueMediaItems();
     _touchQueue();
+    _persistSession();
     _broadcastState(_player.playbackEvent);
   }
 
@@ -126,6 +169,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       RepeatMode.one => RepeatMode.off,
     };
     _touchQueue();
+    _persistSession();
     _broadcastState(_player.playbackEvent);
   }
 
@@ -138,6 +182,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       _queue.removeById(songId);
       _publishQueueMediaItems();
       _touchQueue();
+      _persistSession();
       return false;
     }
     _queue.removeById(songId);
@@ -152,6 +197,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> stopAndClearQueue() async {
     _queue.clear();
     _consecutiveLoadFailures = 0;
+    await settings?.clearPlaybackSession();
     try {
       await _player.stop();
     } finally {
@@ -168,6 +214,43 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       _touchQueue();
     }
   }
+
+  /// Rebuilds a previous session paused at [position] so the user can resume
+  /// exactly where the app was closed. Never starts playback.
+  Future<bool> restoreSession({
+    required List<Song> songs,
+    required Song current,
+    required Duration position,
+    required RepeatMode repeatMode,
+    required bool shuffled,
+  }) async {
+    final startIndex = songs.indexWhere((song) => song.id == current.id);
+    if (startIndex < 0) return false;
+    _consecutiveLoadFailures = 0;
+    _repeatMode = repeatMode;
+    _queue.load(songs, startIndex: startIndex);
+    if (shuffled) _queue.setShuffled(true);
+    final restoredCurrent = _queue.current ?? current;
+    _publishQueueMediaItems();
+    try {
+      await _player.setAudioSource(AudioSource.file(restoredCurrent.path));
+      if (position > Duration.zero) {
+        await _player.seek(position);
+      }
+    } catch (_) {
+      _loadErrors.add(restoredCurrent.title);
+      _queue.clear();
+      mediaItem.add(null);
+      queue.add(const []);
+      return false;
+    }
+    _broadcastState(_player.playbackEvent);
+    _touchQueue();
+    return true;
+  }
+
+  /// Writes the current session snapshot to settings immediately.
+  void persistSession() => _persistSession();
 
   @override
   Future<void> stop() => stopAndClearQueue();
@@ -198,6 +281,11 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     if (state.processingState == ProcessingState.completed) {
       await _handleCompleted();
       return;
+    }
+    if (!state.playing) {
+      // Covers manual pauses, audio-focus loss and unplug events.
+      _lastSavedPositionMs = _player.position.inMilliseconds;
+      _persistSession();
     }
     _broadcastState(_player.playbackEvent);
   }
@@ -230,6 +318,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     try {
       await _player.setAudioSource(AudioSource.file(song.path));
       _consecutiveLoadFailures = 0;
+      _lastSavedPositionMs = _player.position.inMilliseconds;
+      _persistSession();
       if (playImmediately || _player.playing) {
         await _player.play();
       }

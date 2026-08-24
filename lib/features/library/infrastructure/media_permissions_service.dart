@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -13,9 +11,29 @@ class MediaPermissionsService {
     return storage.isGranted;
   }
 
+  /// The media notification is silently dropped on Android 13+ until
+  /// POST_NOTIFICATIONS is granted, so we ask on every startup until it is
+  /// resolved. Permanently-denied users are sent to settings by the caller.
+  Future<void> ensureNotificationPermission() async {
+    if (kIsWeb) return;
+    var status = await Permission.notification.status;
+    if (status.isGranted) return;
+    if (!status.isPermanentlyDenied) {
+      status = await Permission.notification.request();
+    }
+  }
+
   /// Requests read access to the device audio library.
   /// Returns the granted status after asking.
   Future<bool> requestAudioAccess() async {
+    final granted = await _requestMediaReadAccess();
+
+    // Awaited so both dialogs sequence cleanly instead of racing.
+    if (granted) await ensureNotificationPermission();
+    return granted;
+  }
+
+  Future<bool> _requestMediaReadAccess() async {
     if (await hasAudioAccess()) return true;
 
     // Android 13+ maps this to READ_MEDIA_AUDIO; older devices fall back
@@ -24,11 +42,7 @@ class MediaPermissionsService {
     if (!status.isGranted && !status.isLimited) {
       status = await Permission.storage.request();
     }
-    final granted = status.isGranted || status.isLimited;
-
-    // The media notification needs POST_NOTIFICATIONS on 13+; best effort.
-    if (granted) unawaited(Permission.notification.request());
-    return granted;
+    return status.isGranted || status.isLimited;
   }
 
   Future<bool> hasManageFileAccess() async {

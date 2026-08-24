@@ -3,7 +3,7 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Small filled dot centered inside the adaptive-icon safe zone. -->
+    <!-- Themed/monochrome glyph; the system applies its own tint and alpha. -->
     <path
         android:fillColor="#FFFFFFFF"
         android:pathData="M40,54a14,14 0,1 0,28 0a14,14 0,1 0,-28 0z" />

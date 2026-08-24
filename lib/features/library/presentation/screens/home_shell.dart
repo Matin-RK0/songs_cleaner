@@ -4,6 +4,7 @@ import 'package:songs_cleaner/features/library/application/providers/library_pro
 
 import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
+import '../../../../core/settings/app_settings_repository.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../player/presentation/widgets/mini_player_bar.dart';
@@ -26,7 +27,16 @@ class _HomeShellState extends ConsumerState<HomeShell>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    final savedTab = ref
+        .read(appSettingsRepositoryProvider)
+        .loadHomeTabIndex(0)
+        .clamp(0, 2);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: savedTab,
+    );
+    _tabController.addListener(_onTabChanged);
     ref.listenManual(playbackErrorEventsProvider, (previous, next) {
       next.whenData((title) {
         if (!mounted) return;
@@ -39,8 +49,16 @@ class _HomeShellState extends ConsumerState<HomeShell>
     });
   }
 
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    ref
+        .read(appSettingsRepositoryProvider)
+        .saveHomeTabIndex(_tabController.index);
+  }
+
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
