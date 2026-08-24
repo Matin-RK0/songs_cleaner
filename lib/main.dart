@@ -27,6 +27,7 @@ Future<void> main() async {
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.example.songs_cleaner.playback',
       androidNotificationChannelName: 'پخش موزیک',
+      androidNotificationIcon: 'drawable/ic_notif_applogo',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
     ),
