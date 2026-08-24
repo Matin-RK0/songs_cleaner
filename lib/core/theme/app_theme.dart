@@ -20,7 +20,7 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      fontFamily: 'Vazirmatn',
+      fontFamily: AppTypography.fontFamily,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
       splashFactory: InkRipple.splashFactory,
@@ -30,6 +30,7 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
+          fontFamily: AppTypography.fontFamily,
           fontSize: 27,
           fontWeight: FontWeight.w800,
           color: AppColors.textHigh,
@@ -43,10 +44,12 @@ abstract final class AppTheme {
         labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         dividerColor: Colors.transparent,
         labelStyle: const TextStyle(
+          fontFamily: AppTypography.fontFamily,
           fontSize: 14,
           fontWeight: FontWeight.w700,
         ),
         unselectedLabelStyle: const TextStyle(
+          fontFamily: AppTypography.fontFamily,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
@@ -54,18 +57,23 @@ abstract final class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.surfaceElevated,
-        contentTextStyle: const TextStyle(color: AppColors.textHigh),
+        contentTextStyle: const TextStyle(
+          fontFamily: AppTypography.fontFamily,
+          color: AppColors.textHigh,
+        ),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
         titleTextStyle: const TextStyle(
+          fontFamily: AppTypography.fontFamily,
           fontSize: 18,
           fontWeight: FontWeight.w800,
           color: AppColors.textHigh,
         ),
         contentTextStyle: const TextStyle(
+          fontFamily: AppTypography.fontFamily,
           fontSize: 14.5,
           height: 1.6,
           color: AppColors.textMedium,
@@ -94,7 +102,10 @@ abstract final class AppTheme {
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
         fillColor: AppColors.surfaceHigh,
-        hintStyle: const TextStyle(color: AppColors.textLow),
+        hintStyle: const TextStyle(
+          fontFamily: AppTypography.fontFamily,
+          color: AppColors.textLow,
+        ),
         border: OutlineInputBorder(
           borderRadius: AppRadius.md,
           borderSide: BorderSide.none,

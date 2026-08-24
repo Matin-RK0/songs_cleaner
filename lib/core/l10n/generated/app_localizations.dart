@@ -107,7 +107,7 @@ abstract class AppLocalizations {
   /// No description provided for @libraryTitle.
   ///
   /// In fa, this message translates to:
-  /// **'کتابخانه موزیک'**
+  /// **'آهنگ پاک کن'**
   String get libraryTitle;
 
   /// No description provided for @songsTab.

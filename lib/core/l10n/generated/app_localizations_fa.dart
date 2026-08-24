@@ -12,7 +12,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get appName => 'پاک‌کن آهنگ';
 
   @override
-  String get libraryTitle => 'کتابخانه موزیک';
+  String get libraryTitle => 'آهنگ پاک کن';
 
   @override
   String get songsTab => 'آهنگ‌ها';

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 
 class AppEmptyState extends StatelessWidget {
   const AppEmptyState({
@@ -110,7 +111,11 @@ class PrimaryActionButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
         elevation: 0,
-        textStyle: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(
+          fontFamily: AppTypography.fontFamily,
+          fontSize: 14.5,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

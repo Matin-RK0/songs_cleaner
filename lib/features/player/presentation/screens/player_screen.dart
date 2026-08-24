@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../cleanup/presentation/cleanup_flow.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../../library/presentation/widgets/artwork_image.dart';
@@ -64,7 +65,7 @@ class PlayerScreen extends ConsumerWidget {
                     const SeekBar(),
                     const SizedBox(height: AppSpacing.md),
                     const _ControlsRow(),
-                    const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.lg),
                     _DeleteCurrentButton(song: song),
                     const SizedBox(height: AppSpacing.md),
                   ],
@@ -266,6 +267,7 @@ class _DeleteCurrentButton extends ConsumerWidget {
             shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
             side: BorderSide(color: AppColors.danger.withValues(alpha: 0.45)),
             textStyle: const TextStyle(
+              fontFamily: AppTypography.fontFamily,
               fontSize: 15,
               fontWeight: FontWeight.w800,
             ),
