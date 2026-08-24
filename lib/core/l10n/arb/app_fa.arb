@@ -93,5 +93,7 @@
   "clearQueueTooltip": "پاک کردن صف",
   "playTooltipShort": "پخش",
   "nothingPlayingTitle": "چیزی در حال پخش نیست",
-  "backTooltip": "بازگشت"
+  "backTooltip": "بازگشت",
+  "notifPermissionTitle": "نمایش کنترل‌های پخش",
+  "notifPermissionMessage": "برای دیدن آهنگ در حال پخش و دکمه‌های آن در نوار وضعیت، اجازه نوتیفیکیشن را فعال کنید."
 }

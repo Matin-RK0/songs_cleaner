@@ -58,5 +58,7 @@
   "clearQueueTooltip": "Clear queue",
   "playTooltipShort": "Play",
   "nothingPlayingTitle": "Nothing is playing",
-  "backTooltip": "Back"
+  "backTooltip": "Back",
+  "notifPermissionTitle": "Show playback controls",
+  "notifPermissionMessage": "Allow notifications to see the playing song and its controls in the status bar."
 }

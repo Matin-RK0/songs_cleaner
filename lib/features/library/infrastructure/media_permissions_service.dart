@@ -23,6 +23,20 @@ class MediaPermissionsService {
     }
   }
 
+  Future<bool> hasNotificationAccess() async {
+    if (kIsWeb) return true;
+    final status = await Permission.notification.status;
+    return status.isGranted;
+  }
+
+  /// When permanently denied, Android never shows the request dialog again;
+  /// the user must flip it from the system settings page.
+  Future<bool> isNotificationPermanentlyDenied() async {
+    if (kIsWeb) return false;
+    final status = await Permission.notification.status;
+    return status.isPermanentlyDenied;
+  }
+
   /// Requests read access to the device audio library.
   /// Returns the granted status after asking.
   Future<bool> requestAudioAccess() async {

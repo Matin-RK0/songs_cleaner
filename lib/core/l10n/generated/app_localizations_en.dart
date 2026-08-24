@@ -198,4 +198,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backTooltip => 'Back';
+
+  @override
+  String get notifPermissionTitle => 'Show playback controls';
+
+  @override
+  String get notifPermissionMessage =>
+      'Allow notifications to see the playing song and its controls in the status bar.';
 }

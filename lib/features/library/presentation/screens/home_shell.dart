@@ -6,8 +6,10 @@ import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/settings/app_settings_repository.dart';
 import '../../../../core/widgets/app_feedback.dart';
+import '../../../player/application/providers/notification_gate_controller.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../player/presentation/widgets/mini_player_bar.dart';
+import '../../../player/presentation/widgets/notification_permission_banner.dart';
 import '../screens/groups_tab.dart';
 import '../screens/songs_tab.dart';
 
@@ -23,6 +25,7 @@ class HomeShell extends ConsumerStatefulWidget {
 class _HomeShellState extends ConsumerState<HomeShell>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  AppLifecycleListener? _lifecycleListener;
 
   @override
   void initState() {
@@ -57,7 +60,21 @@ class _HomeShellState extends ConsumerState<HomeShell>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Re-evaluate the notification permission when the user comes back from
+    // the system settings page.
+    _lifecycleListener ??= AppLifecycleListener(
+      onResume: () {
+        final gate = ref.read(notificationGateProvider.notifier);
+        gate.recheck();
+      },
+    );
+  }
+
+  @override
   void dispose() {
+    _lifecycleListener?.dispose();
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
@@ -82,6 +99,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
       ),
       body: Column(
         children: [
+          const NotificationPermissionBanner(),
           TabBar(
             controller: _tabController,
             tabs: [

@@ -451,6 +451,18 @@ abstract class AppLocalizations {
   /// In fa, this message translates to:
   /// **'بازگشت'**
   String get backTooltip;
+
+  /// No description provided for @notifPermissionTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'نمایش کنترل‌های پخش'**
+  String get notifPermissionTitle;
+
+  /// No description provided for @notifPermissionMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'برای دیدن آهنگ در حال پخش و دکمه‌های آن در نوار وضعیت، اجازه نوتیفیکیشن را فعال کنید.'**
+  String get notifPermissionMessage;
 }
 
 class _AppLocalizationsDelegate

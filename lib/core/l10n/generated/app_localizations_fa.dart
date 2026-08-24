@@ -197,4 +197,11 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get backTooltip => 'بازگشت';
+
+  @override
+  String get notifPermissionTitle => 'نمایش کنترل‌های پخش';
+
+  @override
+  String get notifPermissionMessage =>
+      'برای دیدن آهنگ در حال پخش و دکمه‌های آن در نوار وضعیت، اجازه نوتیفیکیشن را فعال کنید.';
 }
