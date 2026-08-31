@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/duration_format.dart';
@@ -35,15 +36,16 @@ class SongTile extends ConsumerWidget {
         bottom: AppSpacing.xs,
       ),
       child: Material(
-        color: isCurrent
-            ? AppColors.primary.withValues(alpha: 0.10)
-            : Colors.transparent,
+        // Keep the selected row's surface identical to every other row;
+        // the active title and equalizer provide the playback indication.
+        color: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          onLongPress:
-              onDeleteDevice == null ? null : () => _showActions(context),
+          onLongPress: onDeleteDevice == null
+              ? null
+              : () => _showActions(context),
           child: ListTile(
             contentPadding: const EdgeInsetsDirectional.fromSTEB(
               AppSpacing.sm,
@@ -53,11 +55,7 @@ class SongTile extends ConsumerWidget {
             ),
             minVerticalPadding: 0,
             leading: showArtwork
-                ? ArtworkImage(
-                    songId: song.id,
-                    size: 56,
-                    borderRadius: AppRadius.lg,
-                  )
+                ? _ArtworkLeading(songId: song.id, isCurrent: isCurrent)
                 : const SizedBox(width: AppSpacing.sm),
             title: Text(
               song.title,
@@ -78,13 +76,7 @@ class SongTile extends ConsumerWidget {
                 color: AppColors.textMedium,
               ),
             ),
-            trailing: isCurrent
-                ? const Icon(
-                    Icons.graphic_eq_rounded,
-                    size: 18,
-                    color: AppColors.primary,
-                  )
-                : null,
+            trailing: isCurrent ? const _FakeEqualizer() : null,
           ),
         ),
       ),
@@ -122,4 +114,112 @@ class SongTile extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _ArtworkLeading extends StatelessWidget {
+  const _ArtworkLeading({required this.songId, required this.isCurrent});
+
+  final int songId;
+  final bool isCurrent;
+
+  @override
+  Widget build(BuildContext context) {
+    const artworkSize = 56.0;
+    final artwork = ArtworkImage(
+      songId: songId,
+      size: isCurrent ? artworkSize - (AppSpacing.xs * 2) : artworkSize,
+      borderRadius: isCurrent ? AppRadius.md : AppRadius.lg,
+    );
+
+    if (!isCurrent) return artwork;
+
+    return SizedBox.square(
+      dimension: artworkSize,
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.lg,
+            side: const BorderSide(
+              color: AppColors.primary,
+              width: 3,
+            ),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xs),
+          child: artwork,
+        ),
+      ),
+    );
+  }
+}
+
+/// Lightweight animated equalizer shown beside the active song.
+class _FakeEqualizer extends StatefulWidget {
+  const _FakeEqualizer();
+
+  @override
+  State<_FakeEqualizer> createState() => _FakeEqualizerState();
+}
+
+class _FakeEqualizerState extends State<_FakeEqualizer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _barOne;
+  late final Animation<double> _barTwo;
+  late final Animation<double> _barThree;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: AppMotion.slow)
+      ..repeat(reverse: true);
+    _barOne = _bar(0.35, 1);
+    _barTwo = _bar(0.8, 0.3);
+    _barThree = _bar(0.5, 0.95);
+  }
+
+  Animation<double> _bar(double begin, double end) => Tween<double>(
+    begin: begin,
+    end: end,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) => SizedBox(
+          width: 20,
+          height: 22,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _barWidget(_barOne.value),
+              const SizedBox(width: 2),
+              _barWidget(_barTwo.value),
+              const SizedBox(width: 2),
+              _barWidget(_barThree.value),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _barWidget(double factor) => Container(
+    width: 4,
+    height: 20 * factor,
+    decoration: BoxDecoration(
+      color: AppColors.primary,
+      borderRadius: AppRadius.pill,
+    ),
+  );
 }

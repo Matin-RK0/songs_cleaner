@@ -13,16 +13,22 @@ class SongListView extends ConsumerWidget {
     required this.currentSongId,
     this.onSongTap,
     this.physics = const ClampingScrollPhysics(),
+    this.controller,
+    this.itemExtent,
   });
 
   final List<Song> songs;
   final int? currentSongId;
   final void Function(List<Song> songs, int index)? onSongTap;
   final ScrollPhysics physics;
+  final ScrollController? controller;
+  final double? itemExtent;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListView.builder(
+      controller: controller,
+      itemExtent: itemExtent,
       padding: const EdgeInsetsDirectional.only(
         bottom: AppSpacing.xl,
         start: AppSpacing.sm,

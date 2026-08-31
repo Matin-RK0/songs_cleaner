@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -25,7 +26,12 @@ class ArtworkImage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bytes = ref.watch(songArtworkProvider((songId, size.round())));
+    // MediaStore returns a thumbnail at the requested dimensions. A 256px
+    // request looks soft when the same artwork is enlarged in the player, so
+    // keep the source at the reference app's 500px minimum for every usage.
+    // Larger widgets still get a source large enough for their bounds.
+    final requestSize = math.max(500, size.round());
+    final bytes = ref.watch(songArtworkProvider((songId, requestSize)));
     return RepaintBoundary(
       child: SizedBox(
         width: expand ? double.infinity : size,
@@ -54,7 +60,7 @@ class ArtworkImage extends ConsumerWidget {
         data,
         fit: BoxFit.cover,
         gaplessPlayback: true,
-        filterQuality: FilterQuality.low,
+        filterQuality: FilterQuality.high,
       ),
     );
   }

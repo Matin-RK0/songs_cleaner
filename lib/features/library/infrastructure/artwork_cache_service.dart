@@ -28,7 +28,10 @@ class ArtworkCacheService {
         ArtworkType.AUDIO,
         size: size,
         format: ArtworkFormat.JPEG,
-        quality: 80,
+        // The artwork is also used as a large player/background image. Keep
+        // the source JPEG at full quality and let Flutter scale it for the
+        // actual widget size.
+        quality: 100,
       );
     } catch (_) {
       bytes = null;

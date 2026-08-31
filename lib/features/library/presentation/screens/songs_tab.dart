@@ -15,7 +15,9 @@ import '../widgets/permission_gate_view.dart';
 import '../widgets/song_list_view.dart';
 
 class SongsTab extends ConsumerStatefulWidget {
-  const SongsTab({super.key});
+  const SongsTab({super.key, this.scrollController});
+
+  final ScrollController? scrollController;
 
   @override
   ConsumerState<SongsTab> createState() => _SongsTabState();
@@ -25,8 +27,9 @@ class _SongsTabState extends ConsumerState<SongsTab> {
   @override
   Widget build(BuildContext context) {
     final library = ref.watch(libraryProvider);
-    final currentId =
-        ref.watch(playerProvider.select((state) => state.current?.id));
+    final currentId = ref.watch(
+      playerProvider.select((state) => state.current?.id),
+    );
 
     return library.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -51,6 +54,8 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                   : SongListView(
                       songs: state.visibleSongs,
                       currentSongId: currentId,
+                      controller: widget.scrollController,
+                      itemExtent: 76,
                       onSongTap: (songs, index) => ref
                           .read(playerProvider.notifier)
                           .playFromList(songs, startIndex: index),
@@ -94,8 +99,7 @@ class _SongsTabState extends ConsumerState<SongsTab> {
 /// Bottom sheet for choosing the song list ordering.
 Future<void> showSortSheet(BuildContext context, WidgetRef ref) async {
   final l10n = context.l10n;
-  final current =
-      ref.read(libraryProvider).value?.sort ?? SongSort.titleAsc;
+  final current = ref.read(libraryProvider).value?.sort ?? SongSort.titleAsc;
 
   final selected = await showModalBottomSheet<SongSort>(
     context: context,
@@ -117,8 +121,7 @@ Future<void> showSortSheet(BuildContext context, WidgetRef ref) async {
           ),
           RadioGroup<SongSort>(
             groupValue: current,
-            onChanged: (value) =>
-                Navigator.of(sheetContext).pop(value),
+            onChanged: (value) => Navigator.of(sheetContext).pop(value),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -143,8 +146,8 @@ Future<void> showSortSheet(BuildContext context, WidgetRef ref) async {
 }
 
 String _sortLabel(AppLocalizations l10n, SongSort sort) => switch (sort) {
-      SongSort.titleAsc => l10n.sortByTitle,
-      SongSort.artistAsc => l10n.sortByArtist,
-      SongSort.dateAddedDesc => l10n.sortByDateAdded,
-      SongSort.durationDesc => l10n.sortByDuration,
-    };
+  SongSort.titleAsc => l10n.sortByTitle,
+  SongSort.artistAsc => l10n.sortByArtist,
+  SongSort.dateAddedDesc => l10n.sortByDateAdded,
+  SongSort.durationDesc => l10n.sortByDuration,
+};
