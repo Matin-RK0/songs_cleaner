@@ -94,7 +94,12 @@ class PlayerController extends Notifier<PlayerState> {
     void tryRestore(LibraryState? library) {
       if (attempted || library == null || library.songs.isEmpty) return;
       attempted = true;
-      if (_handler.queueSongs.isNotEmpty) return;
+      // A background service may have rebuilt a metadata-only queue before
+      // the UI/library was created. Replace that snapshot with fresh
+      // MediaStore rows once they are available.
+      if (_handler.queueSongs.isNotEmpty && !_handler.hydratedFromStorage) {
+        return;
+      }
       _restoreLastSession(library.songs);
     }
 

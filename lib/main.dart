@@ -17,21 +17,38 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
   ]);
 
-  final session = await AudioSession.instance;
-  await session.configure(const AudioSessionConfiguration.music());
-
   final player = AudioPlayer();
   final prefs = await SharedPreferences.getInstance();
-  final handler = await AudioService.init(
-    builder: () => MusicPlayerHandler(player, settings: AppSettingsRepository(prefs)),
-    config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.example.songs_cleaner.playback',
-      androidNotificationChannelName: 'پخش موزیک',
-      androidNotificationIcon: 'drawable/ic_notif_applogo',
-      androidNotificationOngoing: true,
-      androidStopForegroundOnPause: true,
-    ),
-  );
+  // Audio focus setup is best effort: a transient platform audio-session
+  // failure must not prevent the library screen from opening.
+  try {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+  } catch (_) {
+    // Continue with the platform defaults; playback can still be initialized.
+  }
+
+  final settings = AppSettingsRepository(prefs);
+  late final MusicPlayerHandler handler;
+  try {
+    handler = await AudioService.init<MusicPlayerHandler>(
+      builder: () => MusicPlayerHandler(player, settings: settings),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.example.songs_cleaner.playback',
+        androidNotificationChannelName: 'پخش موزیک',
+        androidNotificationIcon: 'drawable/ic_notif_applogo',
+        // Keep the media service in the foreground while paused. Android 12+
+        // otherwise blocks a later media-button action when the activity has
+        // been swiped away because restarting foreground service is restricted.
+        androidNotificationOngoing: false,
+        androidStopForegroundOnPause: false,
+      ),
+    );
+  } catch (_) {
+    // Still launch the app if the notification service is temporarily
+    // unavailable (for example immediately after an OS process reclaim).
+    handler = MusicPlayerHandler(player, settings: settings);
+  }
 
   runApp(
     ProviderScope(

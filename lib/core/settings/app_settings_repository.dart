@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,6 +12,7 @@ class SavedPlaybackSession {
     required this.positionMs,
     required this.repeatModeIndex,
     required this.shuffled,
+    this.tracks = const [],
     this.currentSongId,
   });
 
@@ -18,9 +21,61 @@ class SavedPlaybackSession {
   final int positionMs;
   final int repeatModeIndex;
   final bool shuffled;
+  /// A small metadata snapshot lets the background service rebuild its queue
+  /// after Android recreates the process (before the Flutter UI/library loads).
+  final List<SavedPlaybackTrack> tracks;
 
   /// Nothing restorable: no queue or the current track is missing.
   bool get isRestorable => queueSongIds.isNotEmpty && currentSongId != null;
+}
+
+class SavedPlaybackTrack {
+  const SavedPlaybackTrack({
+    required this.id,
+    required this.title,
+    required this.artist,
+    required this.album,
+    required this.durationMs,
+    required this.path,
+  });
+
+  final int id;
+  final String title;
+  final String artist;
+  final String album;
+  final int durationMs;
+  final String path;
+
+  Map<String, Object> toJson() => <String, Object>{
+        'id': id,
+        'title': title,
+        'artist': artist,
+        'album': album,
+        'durationMs': durationMs,
+        'path': path,
+      };
+
+  static SavedPlaybackTrack? fromJson(Object? value) {
+    if (value is! Map) return null;
+    final id = value['id'];
+    final title = value['title'];
+    final artist = value['artist'];
+    final album = value['album'];
+    final durationMs = value['durationMs'];
+    final path = value['path'];
+    if (id is! num || title is! String || artist is! String ||
+        album is! String || durationMs is! num || path is! String) {
+      return null;
+    }
+    return SavedPlaybackTrack(
+      id: id.toInt(),
+      title: title,
+      artist: artist,
+      album: album,
+      durationMs: durationMs.toInt(),
+      path: path,
+    );
+  }
 }
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
@@ -44,6 +99,7 @@ class AppSettingsRepository {
   static const String _sessionPositionKey = 'playback.session.positionMs';
   static const String _sessionRepeatKey = 'playback.session.repeatIndex';
   static const String _sessionShuffleKey = 'playback.session.shuffled';
+  static const String _sessionTracksKey = 'playback.session.tracks';
 
   final SharedPreferences _prefs;
 
@@ -73,12 +129,28 @@ class AppSettingsRepository {
         .whereType<int>()
         .toList(growable: false);
     if (ids.isEmpty) return null;
+    final tracks = <SavedPlaybackTrack>[];
+    final rawTracks = _prefs.getString(_sessionTracksKey);
+    if (rawTracks != null) {
+      try {
+        final decoded = jsonDecode(rawTracks);
+        if (decoded is List) {
+          for (final item in decoded) {
+            final track = SavedPlaybackTrack.fromJson(item);
+            if (track != null && track.path.isNotEmpty) tracks.add(track);
+          }
+        }
+      } on FormatException {
+        // Ignore a corrupt optional snapshot; the id-based session remains.
+      }
+    }
     return SavedPlaybackSession(
       queueSongIds: ids,
       currentSongId: _prefs.getInt(_sessionCurrentKey),
       positionMs: _prefs.getInt(_sessionPositionKey) ?? 0,
       repeatModeIndex: _prefs.getInt(_sessionRepeatKey) ?? 0,
       shuffled: _prefs.getBool(_sessionShuffleKey) ?? false,
+      tracks: List.unmodifiable(tracks),
     );
   }
 
@@ -95,6 +167,10 @@ class AppSettingsRepository {
       _prefs.setInt(_sessionPositionKey, session.positionMs),
       _prefs.setInt(_sessionRepeatKey, session.repeatModeIndex),
       _prefs.setBool(_sessionShuffleKey, session.shuffled),
+      _prefs.setString(
+        _sessionTracksKey,
+        jsonEncode(session.tracks.map((track) => track.toJson()).toList()),
+      ),
     ]);
   }
 
@@ -105,6 +181,7 @@ class AppSettingsRepository {
       _prefs.remove(_sessionPositionKey),
       _prefs.remove(_sessionRepeatKey),
       _prefs.remove(_sessionShuffleKey),
+      _prefs.remove(_sessionTracksKey),
     ]);
   }
 }

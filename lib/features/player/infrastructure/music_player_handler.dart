@@ -20,6 +20,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     );
     _player.playerStateStream.listen(_onPlayerStateChanged);
     _player.positionStream.listen(_onPositionChanged);
+    _initialization = _restorePersistedQueue();
   }
 
   static const int _maxAutoSkipsOnError = 3;
@@ -29,6 +30,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   /// Persists the session across restarts; null disables persistence (tests).
   final AppSettingsRepository? settings;
+  late final Future<void> _initialization;
+  bool _hydratedFromStorage = false;
   final PlaybackQueue _queue = PlaybackQueue();
   RepeatMode _repeatMode = RepeatMode.off;
   int _consecutiveLoadFailures = 0;
@@ -53,6 +56,10 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   List<Song> get queueSongs => _queue.songs;
   int get currentIndex => _queue.currentIndex;
   Song? get currentSong => _queue.current;
+
+  /// True until the UI has had a chance to replace the lightweight snapshot
+  /// with the current MediaStore metadata.
+  bool get hydratedFromStorage => _hydratedFromStorage;
 
   void _touchQueue() {
     _revision++;
@@ -90,7 +97,63 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       positionMs: _player.position.inMilliseconds,
       repeatModeIndex: _repeatMode.index,
       shuffled: _queue.shuffled,
+      tracks: _queue.originalSongs
+          .map((song) => SavedPlaybackTrack(
+                id: song.id,
+                title: song.title,
+                artist: song.artist,
+                album: song.album,
+                durationMs: song.duration.inMilliseconds,
+                path: song.path,
+              ))
+          .toList(growable: false),
     ));
+  }
+
+  Future<void> _restorePersistedQueue() async {
+    final session = settings?.loadPlaybackSession();
+    if (session == null || session.tracks.isEmpty || session.currentSongId == null) {
+      return;
+    }
+    final byId = {for (final track in session.tracks) track.id: track};
+    final songs = <Song>[];
+    for (final id in session.queueSongIds) {
+      final track = byId[id];
+      if (track == null) continue;
+      songs.add(Song(
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        album: track.album,
+        albumId: 0,
+        artistId: 0,
+        duration: Duration(milliseconds: track.durationMs),
+        path: track.path,
+        sizeBytes: 0,
+        dateAddedSeconds: 0,
+      ));
+    }
+    final startIndex = songs.indexWhere((song) => song.id == session.currentSongId);
+    if (songs.isEmpty || startIndex < 0) return;
+    _queue.load(songs, startIndex: startIndex);
+    if (session.shuffled) _queue.setShuffled(true);
+    _hydratedFromStorage = true;
+    _publishQueueMediaItems();
+    mediaItem.add(_mediaItemFor(_queue.current!));
+    _touchQueue();
+    try {
+      await _player.setAudioSource(AudioSource.file(_queue.current!.path));
+      if (session.positionMs > 0) {
+        await _player.seek(Duration(milliseconds: session.positionMs));
+      }
+      _broadcastState(_player.playbackEvent);
+    } catch (_) {
+      _queue.clear();
+      _hydratedFromStorage = false;
+      mediaItem.add(null);
+      queue.add(const []);
+      _touchQueue();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -98,6 +161,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   // ---------------------------------------------------------------------------
 
   Future<void> loadAndPlay(List<Song> songs, {int startIndex = 0}) async {
+    await _initialization;
     if (songs.isEmpty) return;
     _queue.load(songs, startIndex: startIndex);
     await _loadCurrent(playImmediately: true);
@@ -113,21 +177,25 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> play() async {
+    await _initialization;
     if (_queue.current == null) return;
     await _player.play();
   }
 
   @override
   Future<void> pause() async {
+    await _initialization;
     await _player.pause();
   }
 
   @override
   Future<void> seek(Duration position) async {
+    await _initialization;
     await _player.seek(position);
   }
 
   Future<void> next({bool wrap = true}) async {
+    await _initialization;
     if (!_queue.isNotEmpty) return;
     if (!_queue.next(wrap: wrap)) {
       await stopAndClearQueue();
@@ -137,6 +205,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> previous() async {
+    await _initialization;
     if (!_queue.isNotEmpty) return;
     if (_player.position > const Duration(seconds: 3)) {
       await _player.seek(Duration.zero);
@@ -147,6 +216,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> jumpTo(int index) async {
+    await _initialization;
     if (!_queue.jumpTo(index)) return;
     await _loadCurrent(playImmediately: true);
   }
@@ -177,6 +247,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   /// continues with the next song automatically. Returns true when the
   /// removed song was the current one.
   Future<bool> removeSong(int songId) async {
+    await _initialization;
     final currentId = _queue.current?.id;
     if (currentId != songId) {
       _queue.removeById(songId);
@@ -195,6 +266,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> stopAndClearQueue() async {
+    await _initialization;
     _queue.clear();
     _consecutiveLoadFailures = 0;
     await settings?.clearPlaybackSession();
@@ -224,6 +296,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     required RepeatMode repeatMode,
     required bool shuffled,
   }) async {
+    await _initialization;
+    _hydratedFromStorage = false;
     final startIndex = songs.indexWhere((song) => song.id == current.id);
     if (startIndex < 0) return false;
     _consecutiveLoadFailures = 0;
@@ -232,6 +306,10 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     if (shuffled) _queue.setShuffled(true);
     final restoredCurrent = _queue.current ?? current;
     _publishQueueMediaItems();
+    mediaItem.add(_mediaItemFor(restoredCurrent));
+    // Publish the queue before touching disk. Loading a MediaStore file can
+    // take a moment; the UI and media session should already know the track.
+    _touchQueue();
     try {
       await _player.setAudioSource(AudioSource.file(restoredCurrent.path));
       if (position > Duration.zero) {
@@ -242,10 +320,10 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       _queue.clear();
       mediaItem.add(null);
       queue.add(const []);
+      _touchQueue();
       return false;
     }
     _broadcastState(_player.playbackEvent);
-    _touchQueue();
     return true;
   }
 
@@ -254,6 +332,13 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> stop() => stopAndClearQueue();
+
+  @override
+  Future<void> onTaskRemoved() async {
+    // Android can remove the activity while the foreground media service is
+    // still alive. Save the exact position so media controls remain usable.
+    _persistSession();
+  }
 
   @override
   Future<void> skipToNext() => next();
@@ -266,8 +351,10 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     switch (name) {
       case 'toggleShuffle':
         toggleShuffle();
+        return;
       case 'cycleRepeat':
         cycleRepeatMode();
+        return;
       default:
         break;
     }
