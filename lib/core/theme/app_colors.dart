@@ -7,11 +7,12 @@ abstract final class AppColors {
   static const Color surfaceElevated = Color(0xFF2A2A2A);
   static const Color outline = Color(0xFF343434);
 
-  static const Color primary = Color(0xFF43DE88);
-  static const Color onPrimary = Color(0xFF06140C);
-  static const Color accent = Color(0xFF78E6B0);
-  static const Color playerGradientTop = Color(0xFF264E3B);
-  static const Color playerGradientMiddle = Color(0xFF123020);
+  // Blue Music visual identity.
+  static const Color primary = Color(0xFF2196F3);
+  static const Color onPrimary = Color(0xFFFFFFFF);
+  static const Color accent = Color(0xFF90CAF9);
+  static const Color playerGradientTop = Color(0xFF123A63);
+  static const Color playerGradientMiddle = Color(0xFF0B2138);
 
   static const Color textHigh = Color(0xFFF5F5F5);
   static const Color textMedium = Color(0xFFB3B3B3);

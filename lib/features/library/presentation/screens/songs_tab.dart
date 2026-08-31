@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,23 +22,6 @@ class SongsTab extends ConsumerStatefulWidget {
 }
 
 class _SongsTabState extends ConsumerState<SongsTab> {
-  final TextEditingController _searchController = TextEditingController();
-  Timer? _debounce;
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _onSearchChanged(String value) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 350), () {
-      ref.read(libraryProvider.notifier).setQuery(value);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final library = ref.watch(libraryProvider);
@@ -60,33 +41,6 @@ class _SongsTabState extends ConsumerState<SongsTab> {
         }
         return Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.xs,
-                AppSpacing.md,
-                AppSpacing.sm,
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: context.l10n.searchHint,
-                  prefixIcon: const Icon(Icons.search_rounded, size: 22),
-                  suffixIcon: state.query.isEmpty
-                      ? null
-                      : IconButton(
-                          tooltip: context.l10n.closeTooltip,
-                          icon: const Icon(Icons.close_rounded, size: 20),
-                          onPressed: () {
-                            _searchController.clear();
-                            ref.read(libraryProvider.notifier).setQuery('');
-                          },
-                        ),
-                ),
-              ),
-            ),
             Expanded(
               child: state.visibleSongs.isEmpty
                   ? AppEmptyState(

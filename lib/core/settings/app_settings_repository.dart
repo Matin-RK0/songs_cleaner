@@ -21,6 +21,7 @@ class SavedPlaybackSession {
   final int positionMs;
   final int repeatModeIndex;
   final bool shuffled;
+
   /// A small metadata snapshot lets the background service rebuild its queue
   /// after Android recreates the process (before the Flutter UI/library loads).
   final List<SavedPlaybackTrack> tracks;
@@ -47,13 +48,13 @@ class SavedPlaybackTrack {
   final String path;
 
   Map<String, Object> toJson() => <String, Object>{
-        'id': id,
-        'title': title,
-        'artist': artist,
-        'album': album,
-        'durationMs': durationMs,
-        'path': path,
-      };
+    'id': id,
+    'title': title,
+    'artist': artist,
+    'album': album,
+    'durationMs': durationMs,
+    'path': path,
+  };
 
   static SavedPlaybackTrack? fromJson(Object? value) {
     if (value is! Map) return null;
@@ -63,8 +64,12 @@ class SavedPlaybackTrack {
     final album = value['album'];
     final durationMs = value['durationMs'];
     final path = value['path'];
-    if (id is! num || title is! String || artist is! String ||
-        album is! String || durationMs is! num || path is! String) {
+    if (id is! num ||
+        title is! String ||
+        artist is! String ||
+        album is! String ||
+        durationMs is! num ||
+        path is! String) {
       return null;
     }
     return SavedPlaybackTrack(

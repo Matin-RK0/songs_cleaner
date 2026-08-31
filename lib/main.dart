@@ -13,9 +13,7 @@ import 'features/player/infrastructure/music_player_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   final player = AudioPlayer();
   final prefs = await SharedPreferences.getInstance();

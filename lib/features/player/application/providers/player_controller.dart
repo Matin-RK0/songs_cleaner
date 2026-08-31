@@ -17,11 +17,13 @@ final audioPlayerProvider = Provider<AudioPlayer>(
 
 /// Injected from main() after AudioService.init().
 final musicPlayerHandlerProvider = Provider<MusicPlayerHandler>(
-  (ref) => throw UnimplementedError('Override musicPlayerHandlerProvider in main'),
+  (ref) =>
+      throw UnimplementedError('Override musicPlayerHandlerProvider in main'),
 );
 
-final playerProvider =
-    NotifierProvider<PlayerController, PlayerState>(PlayerController.new);
+final playerProvider = NotifierProvider<PlayerController, PlayerState>(
+  PlayerController.new,
+);
 
 /// Broadcasts titles of songs whose files failed to load, for snackbars.
 final playbackErrorEventsProvider = StreamProvider<String>(
@@ -36,30 +38,40 @@ class PlayerController extends Notifier<PlayerState> {
     final subscriptions = <StreamSubscription<dynamic>>[];
 
     subscriptions
-      ..add(player.positionStream.listen((position) {
-        state = state.copyWith(position: position);
-      }))
-      ..add(player.bufferedPositionStream.listen((buffered) {
-        state = state.copyWith(bufferedPosition: buffered);
-      }))
-      ..add(player.durationStream.listen((duration) {
-        state = state.copyWith(duration: duration ?? Duration.zero);
-      }))
-      ..add(player.playerStateStream.listen((playerState) {
-        state = state.copyWith(
-          playing: playerState.playing,
-          processingState: _mapProcessingState(playerState.processingState),
-        );
-      }))
-      ..add(handler.queueRevisions.listen((_) {
-        state = state.copyWith(
-          songs: handler.queueSongs,
-          index: handler.currentIndex,
-          shuffled: handler.shuffled,
-          repeatMode: handler.repeatMode,
-          queueRevision: state.queueRevision + 1,
-        );
-      }));
+      ..add(
+        player.positionStream.listen((position) {
+          state = state.copyWith(position: position);
+        }),
+      )
+      ..add(
+        player.bufferedPositionStream.listen((buffered) {
+          state = state.copyWith(bufferedPosition: buffered);
+        }),
+      )
+      ..add(
+        player.durationStream.listen((duration) {
+          state = state.copyWith(duration: duration ?? Duration.zero);
+        }),
+      )
+      ..add(
+        player.playerStateStream.listen((playerState) {
+          state = state.copyWith(
+            playing: playerState.playing,
+            processingState: _mapProcessingState(playerState.processingState),
+          );
+        }),
+      )
+      ..add(
+        handler.queueRevisions.listen((_) {
+          state = state.copyWith(
+            songs: handler.queueSongs,
+            index: handler.currentIndex,
+            shuffled: handler.shuffled,
+            repeatMode: handler.repeatMode,
+            queueRevision: state.queueRevision + 1,
+          );
+        }),
+      );
 
     ref.onDispose(() {
       for (final subscription in subscriptions) {
@@ -121,8 +133,10 @@ class PlayerController extends Notifier<PlayerState> {
     final current = byId[session.currentSongId];
     if (current == null || queue.isEmpty) return;
 
-    final repeatIndex =
-        session.repeatModeIndex.clamp(0, RepeatMode.values.length - 1);
+    final repeatIndex = session.repeatModeIndex.clamp(
+      0,
+      RepeatMode.values.length - 1,
+    );
     await _handler.restoreSession(
       songs: queue,
       current: current,

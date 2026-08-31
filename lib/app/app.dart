@@ -12,10 +12,10 @@ class SongsCleanerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Songs Cleaner',
+      title: 'Blue Music',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark(),
-      locale: const Locale('fa'),
+      locale: const Locale('en'),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
         AppLocalizations.delegate,

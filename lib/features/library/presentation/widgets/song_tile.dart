@@ -35,81 +35,56 @@ class SongTile extends ConsumerWidget {
         bottom: AppSpacing.xs,
       ),
       child: Material(
-        color: isCurrent ? AppColors.surfaceHigh : Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
+        color: isCurrent
+            ? AppColors.primary.withValues(alpha: 0.10)
+            : Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           onLongPress:
               onDeleteDevice == null ? null : () => _showActions(context),
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(
+          child: ListTile(
+            contentPadding: const EdgeInsetsDirectional.fromSTEB(
               AppSpacing.sm,
+              AppSpacing.xs,
               AppSpacing.sm,
-              AppSpacing.md,
-              AppSpacing.sm,
+              AppSpacing.xs,
             ),
-            child: Row(
-              children: [
-                if (showArtwork)
-                  ArtworkImage(
+            minVerticalPadding: 0,
+            leading: showArtwork
+                ? ArtworkImage(
                     songId: song.id,
-                    size: 52,
-                    borderRadius: AppRadius.sm,
+                    size: 56,
+                    borderRadius: AppRadius.lg,
                   )
-                else
-                  const SizedBox(width: AppSpacing.sm),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        song.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight:
-                              isCurrent ? FontWeight.w700 : FontWeight.w600,
-                          color: isCurrent
-                              ? AppColors.primary
-                              : AppColors.textHigh,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        song.artist.isEmpty
-                            ? l10n.unknownArtist
-                            : song.artist,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          color: AppColors.textMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  song.duration.mmss,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textLow,
-                  ),
-                ),
-                if (isCurrent) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  const Icon(
+                : const SizedBox(width: AppSpacing.sm),
+            title: Text(
+              song.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
+                color: isCurrent ? AppColors.primary : AppColors.textHigh,
+              ),
+            ),
+            subtitle: Text(
+              '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: AppColors.textMedium,
+              ),
+            ),
+            trailing: isCurrent
+                ? const Icon(
                     Icons.graphic_eq_rounded,
                     size: 18,
                     color: AppColors.primary,
-                  ),
-                ],
-              ],
-            ),
+                  )
+                : null,
           ),
         ),
       ),

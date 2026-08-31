@@ -12,11 +12,13 @@ class SongListView extends ConsumerWidget {
     required this.songs,
     required this.currentSongId,
     this.onSongTap,
+    this.physics = const ClampingScrollPhysics(),
   });
 
   final List<Song> songs;
   final int? currentSongId;
   final void Function(List<Song> songs, int index)? onSongTap;
+  final ScrollPhysics physics;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,7 +28,7 @@ class SongListView extends ConsumerWidget {
         start: AppSpacing.sm,
         end: AppSpacing.sm,
       ),
-      physics: const ClampingScrollPhysics(),
+      physics: physics,
       itemCount: songs.length,
       itemBuilder: (context, index) {
         final song = songs[index];
@@ -35,8 +37,7 @@ class SongListView extends ConsumerWidget {
           song: song,
           isCurrent: song.id == currentSongId,
           onTap: () => onSongTap?.call(songs, index),
-          onDeleteDevice: (target) =>
-              deleteSongFlow(context, ref, target),
+          onDeleteDevice: (target) => deleteSongFlow(context, ref, target),
         );
       },
     );

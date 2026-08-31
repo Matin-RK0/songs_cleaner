@@ -5,6 +5,7 @@ import 'package:songs_cleaner/features/library/application/providers/library_pro
 import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/settings/app_settings_repository.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../player/application/providers/notification_gate_controller.dart';
 import '../../../player/application/providers/player_controller.dart';
@@ -83,56 +84,83 @@ class _HomeShellState extends ConsumerState<HomeShell>
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final hasCurrent =
-        ref.watch(playerProvider.select((state) => state.hasCurrent));
+    final hasCurrent = ref.watch(
+      playerProvider.select((state) => state.hasCurrent),
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.libraryTitle),
         actions: [
           IconButton(
+            tooltip: l10n.searchHint,
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () => Navigator.of(context).pushNamed(RouteNames.search),
+          ),
+          IconButton(
             tooltip: l10n.sortLabel,
             icon: const Icon(Icons.sort_rounded),
             onPressed: () => showSortSheet(context, ref),
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          indicatorWeight: 4,
+          indicatorSize: TabBarIndicatorSize.label,
+          indicatorPadding: const EdgeInsets.symmetric(
+            horizontal: -4,
+            vertical: -2,
+          ),
+          tabs: [
+            Tab(text: l10n.songsTab),
+            Tab(text: l10n.artistsTab),
+            Tab(text: l10n.albumsTab),
+          ],
+        ),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          const NotificationPermissionBanner(),
-          TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(text: l10n.songsTab),
-              Tab(text: l10n.artistsTab),
-              Tab(text: l10n.albumsTab),
+          Column(
+            children: [
+              const NotificationPermissionBanner(),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: const [
+                    SongsTab(),
+                    GroupsTab(isArtists: true),
+                    GroupsTab(isArtists: false),
+                  ],
+                ),
+              ),
             ],
           ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: const [
-                SongsTab(),
-                GroupsTab(isArtists: true),
-                GroupsTab(isArtists: false),
-              ],
+          if (hasCurrent)
+            const Align(
+              alignment: Alignment.bottomCenter,
+              child: MiniPlayerBar(),
+            ),
+          PositionedDirectional(
+            end: AppSpacing.md,
+            bottom: hasCurrent
+                ? MiniPlayerBar.height + AppSpacing.md
+                : AppSpacing.md,
+            child: FloatingActionButton(
+              heroTag: 'shuffle-all',
+              tooltip: l10n.shuffleAll,
+              onPressed: () async {
+                final songs = ref.read(allSongsProvider);
+                if (songs.isEmpty) return;
+                await ref.read(playerProvider.notifier).playAllShuffled(songs);
+                if (!context.mounted) return;
+                Navigator.of(context).pushNamed(RouteNames.player);
+              },
+              child: const Icon(Icons.shuffle_rounded),
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final songs = ref.read(allSongsProvider);
-          if (songs.isEmpty) return;
-          final navigator = Navigator.of(context);
-          await ref.read(playerProvider.notifier).playAllShuffled(songs);
-          if (!mounted) return;
-          navigator.pushNamed(RouteNames.player);
-        },
-        icon: const Icon(Icons.shuffle_rounded),
-        label: Text(l10n.shuffleAll),
-      ),
-      bottomNavigationBar: hasCurrent ? const MiniPlayerBar() : null,
     );
   }
 }

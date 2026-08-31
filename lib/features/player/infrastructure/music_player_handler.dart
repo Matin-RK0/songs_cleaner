@@ -89,30 +89,36 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   void _persistSession() {
     final store = settings;
     if (store == null || !_queue.isNotEmpty) return;
-    store.savePlaybackSession(SavedPlaybackSession(
-      queueSongIds: _queue.originalSongs
-          .map((song) => song.id)
-          .toList(growable: false),
-      currentSongId: _queue.current?.id,
-      positionMs: _player.position.inMilliseconds,
-      repeatModeIndex: _repeatMode.index,
-      shuffled: _queue.shuffled,
-      tracks: _queue.originalSongs
-          .map((song) => SavedPlaybackTrack(
+    store.savePlaybackSession(
+      SavedPlaybackSession(
+        queueSongIds: _queue.originalSongs
+            .map((song) => song.id)
+            .toList(growable: false),
+        currentSongId: _queue.current?.id,
+        positionMs: _player.position.inMilliseconds,
+        repeatModeIndex: _repeatMode.index,
+        shuffled: _queue.shuffled,
+        tracks: _queue.originalSongs
+            .map(
+              (song) => SavedPlaybackTrack(
                 id: song.id,
                 title: song.title,
                 artist: song.artist,
                 album: song.album,
                 durationMs: song.duration.inMilliseconds,
                 path: song.path,
-              ))
-          .toList(growable: false),
-    ));
+              ),
+            )
+            .toList(growable: false),
+      ),
+    );
   }
 
   Future<void> _restorePersistedQueue() async {
     final session = settings?.loadPlaybackSession();
-    if (session == null || session.tracks.isEmpty || session.currentSongId == null) {
+    if (session == null ||
+        session.tracks.isEmpty ||
+        session.currentSongId == null) {
       return;
     }
     final byId = {for (final track in session.tracks) track.id: track};
@@ -120,20 +126,24 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     for (final id in session.queueSongIds) {
       final track = byId[id];
       if (track == null) continue;
-      songs.add(Song(
-        id: track.id,
-        title: track.title,
-        artist: track.artist,
-        album: track.album,
-        albumId: 0,
-        artistId: 0,
-        duration: Duration(milliseconds: track.durationMs),
-        path: track.path,
-        sizeBytes: 0,
-        dateAddedSeconds: 0,
-      ));
+      songs.add(
+        Song(
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          albumId: 0,
+          artistId: 0,
+          duration: Duration(milliseconds: track.durationMs),
+          path: track.path,
+          sizeBytes: 0,
+          dateAddedSeconds: 0,
+        ),
+      );
     }
-    final startIndex = songs.indexWhere((song) => song.id == session.currentSongId);
+    final startIndex = songs.indexWhere(
+      (song) => song.id == session.currentSongId,
+    );
     if (songs.isEmpty || startIndex < 0) return;
     _queue.load(songs, startIndex: startIndex);
     if (session.shuffled) _queue.setShuffled(true);
@@ -413,7 +423,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     } catch (error) {
       _consecutiveLoadFailures++;
       _loadErrors.add(song.title);
-      final canSkip = _consecutiveLoadFailures < _maxAutoSkipsOnError &&
+      final canSkip =
+          _consecutiveLoadFailures < _maxAutoSkipsOnError &&
           _queue.currentIndex < _queue.length - 1;
       if (canSkip) {
         await next(wrap: false);
@@ -430,8 +441,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       title: song.title,
       album: song.album.isEmpty ? null : song.album,
       artist: song.artist.isEmpty ? null : song.artist,
-      duration:
-          song.duration > Duration.zero ? song.duration : null,
+      duration: song.duration > Duration.zero ? song.duration : null,
       artUri: Uri.parse(
         'content://media/external/audio/media/${song.id}/albumart',
       ),
@@ -472,22 +482,24 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
           ]
         : const <MediaControl>[];
 
-    playbackState.add(playbackState.value.copyWith(
-      controls: controls,
-      systemActions: const {MediaAction.seek},
-      androidCompactActionIndices: const [1, 2, 3],
-      processingState: switch (_player.processingState) {
-        ProcessingState.idle => AudioProcessingState.idle,
-        ProcessingState.loading => AudioProcessingState.loading,
-        ProcessingState.buffering => AudioProcessingState.buffering,
-        ProcessingState.ready => AudioProcessingState.ready,
-        ProcessingState.completed => AudioProcessingState.completed,
-      },
-      playing: playing,
-      updatePosition: event.updatePosition,
-      bufferedPosition: event.bufferedPosition,
-      speed: _player.speed,
-      queueIndex: event.currentIndex,
-    ));
+    playbackState.add(
+      playbackState.value.copyWith(
+        controls: controls,
+        systemActions: const {MediaAction.seek},
+        androidCompactActionIndices: const [1, 2, 3],
+        processingState: switch (_player.processingState) {
+          ProcessingState.idle => AudioProcessingState.idle,
+          ProcessingState.loading => AudioProcessingState.loading,
+          ProcessingState.buffering => AudioProcessingState.buffering,
+          ProcessingState.ready => AudioProcessingState.ready,
+          ProcessingState.completed => AudioProcessingState.completed,
+        },
+        playing: playing,
+        updatePosition: event.updatePosition,
+        bufferedPosition: event.bufferedPosition,
+        speed: _player.speed,
+        queueIndex: event.currentIndex,
+      ),
+    );
   }
 }

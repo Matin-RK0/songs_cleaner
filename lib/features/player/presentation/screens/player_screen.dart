@@ -25,20 +25,9 @@ class PlayerScreen extends ConsumerWidget {
     final song = ref.watch(playerProvider.select((state) => state.current));
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.playerGradientTop,
-              AppColors.playerGradientMiddle,
-              AppColors.background,
-            ],
-            stops: [0.0, 0.42, 0.78],
-          ),
-        ),
+      backgroundColor: AppColors.surface,
+      body: ColoredBox(
+        color: AppColors.surface,
         child: SafeArea(
           child: song == null
               ? const NothingPlayingView()
