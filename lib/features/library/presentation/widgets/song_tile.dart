@@ -46,6 +46,10 @@ class SongTile extends ConsumerWidget {
           onLongPress: onDeleteDevice == null
               ? null
               : () => _showActions(context),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          focusColor: Colors.transparent,
           child: ListTile(
             contentPadding: const EdgeInsetsDirectional.fromSTEB(
               AppSpacing.sm,

@@ -31,7 +31,7 @@ class SongListView extends ConsumerWidget {
       itemExtent: itemExtent,
       padding: const EdgeInsetsDirectional.only(
         bottom: AppSpacing.xl,
-        start: AppSpacing.sm,
+        start: AppSpacing.xs,
         end: AppSpacing.sm,
       ),
       physics: physics,

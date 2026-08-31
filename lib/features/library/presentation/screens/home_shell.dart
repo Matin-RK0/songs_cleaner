@@ -114,8 +114,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
           indicatorWeight: 4,
           indicatorSize: TabBarIndicatorSize.label,
           indicatorPadding: const EdgeInsets.symmetric(
-            horizontal: -4,
-            vertical: -2,
+            horizontal: -8,
           ),
           tabs: [
             Tab(text: l10n.songsTab),
