@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../../../core/settings/app_settings_repository.dart';
@@ -367,6 +368,14 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
         return;
       case 'closePlayer':
         await stopAndClearQueue();
+        // Close the foreground Activity as well as the media service. The
+        // idle state above removes the notification through audio_service.
+        try {
+          await SystemNavigator.pop();
+        } catch (_) {
+          // There may be no Flutter Activity when the service is running
+          // after the app was swiped away; stopping the service is sufficient.
+        }
         return;
       default:
         break;
