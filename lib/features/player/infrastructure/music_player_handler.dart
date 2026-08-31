@@ -365,6 +365,9 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       case 'cycleRepeat':
         cycleRepeatMode();
         return;
+      case 'closePlayer':
+        await stopAndClearQueue();
+        return;
       default:
         break;
     }
@@ -471,13 +474,9 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
             playing ? MediaControl.pause : MediaControl.play,
             MediaControl.skipToNext,
             MediaControl.custom(
-              androidIcon: switch (_repeatMode) {
-                RepeatMode.off => 'drawable/ic_notif_repeat_off',
-                RepeatMode.all => 'drawable/ic_notif_repeat_all',
-                RepeatMode.one => 'drawable/ic_notif_repeat_one',
-              },
-              label: 'Repeat',
-              name: 'cycleRepeat',
+              androidIcon: 'drawable/ic_notif_close',
+              label: 'Close',
+              name: 'closePlayer',
             ),
           ]
         : const <MediaControl>[];

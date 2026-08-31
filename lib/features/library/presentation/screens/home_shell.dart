@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:songs_cleaner/features/library/application/providers/library_providers.dart';
 
+import '../../../../app/router/app_router.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/settings/app_settings_repository.dart';
@@ -158,7 +159,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 if (songs.isEmpty) return;
                 await ref.read(playerProvider.notifier).playAllShuffled(songs);
                 if (!context.mounted) return;
-                Navigator.of(context).pushNamed(RouteNames.player);
+                AppRouter.openPlayer(context);
               },
               child: const Icon(Icons.shuffle_rounded),
             ),

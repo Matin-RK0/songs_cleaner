@@ -8,6 +8,17 @@ import '../../features/player/presentation/screens/player_screen.dart';
 import 'route_names.dart';
 
 abstract final class AppRouter {
+  /// Opens the player as a singleton above the home screen.
+  ///
+  /// Keeping [RouteNames.home] as the stop point removes stale player routes
+  /// that may have been pushed by an earlier track/session.
+  static Future<T?> openPlayer<T>(BuildContext context) {
+    return Navigator.of(context).pushNamedAndRemoveUntil<T>(
+      RouteNames.player,
+      ModalRoute.withName(RouteNames.home),
+    );
+  }
+
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case RouteNames.home:

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../app/router/route_names.dart';
+import '../../../../app/router/app_router.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -57,7 +57,7 @@ class MiniPlayerBar extends ConsumerWidget {
               children: [
                 ListTile(
                   onTap: () =>
-                      Navigator.of(context).pushNamed(RouteNames.player),
+                      AppRouter.openPlayer(context),
                   contentPadding: const EdgeInsetsDirectional.fromSTEB(
                     AppSpacing.md,
                     0,
@@ -184,24 +184,55 @@ class _PlayPauseProgress extends StatelessWidget {
   }
 }
 
-class _MiniSongProgress extends StatelessWidget {
+class _MiniSongProgress extends StatefulWidget {
   const _MiniSongProgress({required this.value, required this.onChanged});
 
   final double value;
-  final ValueChanged<double> onChanged;
+  final Future<void> Function(double value) onChanged;
+
+  @override
+  State<_MiniSongProgress> createState() => _MiniSongProgressState();
+}
+
+class _MiniSongProgressState extends State<_MiniSongProgress> {
+  double? _dragValue;
+  bool _committing = false;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final value = _dragValue ?? widget.value;
+
         void update(Offset localPosition) {
           if (constraints.maxWidth <= 0) return;
-          onChanged((localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0));
+          setState(() {
+            _dragValue =
+                (localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+          });
+        }
+
+        Future<void> commit() async {
+          final target = _dragValue;
+          if (target == null || _committing) return;
+          _committing = true;
+          try {
+            await widget.onChanged(target);
+          } finally {
+            if (mounted) {
+              setState(() {
+                _dragValue = null;
+                _committing = false;
+              });
+            }
+          }
         }
 
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapDown: (details) => update(details.localPosition),
+          onTapUp: (_) => commit(),
+          onHorizontalDragEnd: (_) => commit(),
           onHorizontalDragUpdate: (details) => update(details.localPosition),
           child: SizedBox(
             height: 28,
