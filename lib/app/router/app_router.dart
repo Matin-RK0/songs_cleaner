@@ -12,8 +12,18 @@ abstract final class AppRouter {
   ///
   /// Keeping [RouteNames.home] as the stop point removes stale player routes
   /// that may have been pushed by an earlier track/session.
+  ///
+  /// If the player is already the topmost route (e.g. a tap reached the mini
+  /// player still layered beneath the transparent player route), this does
+  /// nothing instead of pushing a second player on top, which would replay
+  /// the slide-up transition.
   static Future<T?> openPlayer<T>(BuildContext context) {
-    return Navigator.of(context).pushNamedAndRemoveUntil<T>(
+    final navigator = Navigator.of(context);
+    final topRoute = ModalRoute.of(navigator.context);
+    if (topRoute?.settings.name == RouteNames.player) {
+      return Future<T?>.value();
+    }
+    return navigator.pushNamedAndRemoveUntil<T>(
       RouteNames.player,
       ModalRoute.withName(RouteNames.home),
     );
@@ -78,6 +88,11 @@ class PlayerRoute extends PageRouteBuilder<void> {
           transitionDuration: AppMotion.normal,
           reverseTransitionDuration: AppMotion.normal,
           opaque: false,
+          // A tap outside the player must not dismiss it: the transparent
+          // player route leaves home (with the mini player / song tiles)
+          // layered underneath, and a stray tap there would pop the player
+          // and immediately re-push it.
+          barrierDismissible: false,
           barrierColor: Colors.black54,
           pageBuilder: (_, _, _) => const PlayerScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
