@@ -7,7 +7,7 @@ abstract final class AppColors {
   static const Color surfaceElevated = Color(0xFF2A2A2A);
   static const Color outline = Color(0xFF343434);
 
-  // Blue Music visual identity.
+  // Songs Cleaner visual identity.
   static const Color primary = Color(0xFF2196F3);
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color accent = Color(0xFF90CAF9);
