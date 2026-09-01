@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../player/application/providers/player_controller.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_motion.dart';
@@ -29,6 +30,11 @@ class SongTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    // Animate the equalizer only while playback is actually running; pausing
+    // a song freezes the bars (they hold their last height) instead of
+    // continuing to bob.
+    final playing = isCurrent &&
+        ref.watch(playerProvider.select((state) => state.playing));
     return Padding(
       padding: const EdgeInsetsDirectional.only(
         start: AppSpacing.sm,
@@ -80,7 +86,7 @@ class SongTile extends ConsumerWidget {
                 color: AppColors.textMedium,
               ),
             ),
-            trailing: isCurrent ? const _FakeEqualizer() : null,
+            trailing: isCurrent ? _FakeEqualizer(playing: playing) : null,
           ),
         ),
       ),
@@ -158,9 +164,14 @@ class _ArtworkLeading extends StatelessWidget {
   }
 }
 
-/// Lightweight animated equalizer shown beside the active song.
+/// Lightweight animated equalizer shown beside the active song. The bars bob
+/// only while playback is "playing"; pausing freezes them in place (the
+/// controller is stopped without resetting, so the bars keep their last
+/// height rather than collapsing).
 class _FakeEqualizer extends StatefulWidget {
-  const _FakeEqualizer();
+  const _FakeEqualizer({required this.playing});
+
+  final bool playing;
 
   @override
   State<_FakeEqualizer> createState() => _FakeEqualizerState();
@@ -176,11 +187,29 @@ class _FakeEqualizerState extends State<_FakeEqualizer>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: AppMotion.slow)
-      ..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: AppMotion.slow);
     _barOne = _bar(0.35, 1);
     _barTwo = _bar(0.8, 0.3);
     _barThree = _bar(0.5, 0.95);
+    _syncPlayback();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FakeEqualizer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.playing != widget.playing) {
+      _syncPlayback();
+    }
+  }
+
+  /// Starts the loop while playing and stops it (holding the current bar
+  /// heights) while paused. Repeated forwarding is harmless.
+  void _syncPlayback() {
+    if (widget.playing) {
+      _controller.repeat(reverse: true);
+    } else {
+      _controller.stop();
+    }
   }
 
   Animation<double> _bar(double begin, double end) => Tween<double>(

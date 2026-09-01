@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 
@@ -9,32 +11,75 @@ import '../../../library/domain/entities/song.dart';
 import '../../domain/playback_enums.dart';
 import '../../infrastructure/music_player_handler.dart';
 import '../models/player_state.dart';
+import '../session_resume.dart';
 
-/// Injected from main() after AudioService.init().
+/// Injected from main(); owns the concrete AudioPlayer.
 final audioPlayerProvider = Provider<AudioPlayer>(
   (ref) => throw UnimplementedError('Override audioPlayerProvider in main'),
 );
 
-/// Injected from main() after AudioService.init().
-final musicPlayerHandlerProvider = Provider<MusicPlayerHandler>(
-  (ref) =>
-      throw UnimplementedError('Override musicPlayerHandlerProvider in main'),
+/// Lazily boots the background media handler so app startup never blocks on
+/// [AudioService.init]. Resolves to the handler, or a plain fallback when the
+/// platform service is temporarily unavailable (e.g. right after an OS process
+/// reclaim), mirroring the previous resilience in main().
+final musicPlayerHandlerProvider =
+    AsyncNotifierProvider<MusicPlayerBootstrap, MusicPlayerHandler>(
+  MusicPlayerBootstrap.new,
 );
+
+class MusicPlayerBootstrap extends AsyncNotifier<MusicPlayerHandler> {
+  @override
+  Future<MusicPlayerHandler> build() async {
+    final player = ref.watch(audioPlayerProvider);
+    final settings = ref.watch(appSettingsRepositoryProvider);
+
+    // Audio focus setup is best effort: a transient platform audio-session
+    // failure must not prevent the library screen from opening.
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration.music());
+    } catch (_) {
+      // Continue with the platform defaults; playback can still be initialized.
+    }
+
+    try {
+      return await AudioService.init<MusicPlayerHandler>(
+        builder: () => MusicPlayerHandler(player, settings: settings),
+        config: const AudioServiceConfig(
+          androidNotificationChannelId: 'com.example.songs_cleaner.playback',
+          androidNotificationChannelName: 'پخش موزیک',
+          androidNotificationIcon: 'drawable/ic_notif_applogo',
+          // Keep the media service in the foreground while paused. Android 12+
+          // otherwise blocks a later media-button action when the activity has
+          // been swiped away because restarting foreground service is restricted.
+          androidNotificationOngoing: false,
+          androidStopForegroundOnPause: false,
+        ),
+      );
+    } catch (_) {
+      return MusicPlayerHandler(player, settings: settings);
+    }
+  }
+}
 
 final playerProvider = NotifierProvider<PlayerController, PlayerState>(
   PlayerController.new,
 );
 
 /// Broadcasts titles of songs whose files failed to load, for snackbars.
-final playbackErrorEventsProvider = StreamProvider<String>(
-  (ref) => ref.watch(musicPlayerHandlerProvider).loadErrors,
-);
+final playbackErrorEventsProvider = StreamProvider<String>((ref) {
+  final handler = ref.watch(musicPlayerHandlerProvider).value;
+  return handler?.loadErrors ?? const Stream<String>.empty();
+});
 
 class PlayerController extends Notifier<PlayerState> {
   @override
   PlayerState build() {
-    final handler = ref.watch(musicPlayerHandlerProvider);
+    // Watch the async handler so this controller re-runs once the background
+    // service finishes booting; playback stays inert until then.
+    final handler = ref.watch(musicPlayerHandlerProvider).value;
     final player = ref.watch(audioPlayerProvider);
+
     final subscriptions = <StreamSubscription<dynamic>>[];
 
     subscriptions
@@ -60,18 +105,16 @@ class PlayerController extends Notifier<PlayerState> {
             processingState: _mapProcessingState(playerState.processingState),
           );
         }),
-      )
-      ..add(
-        handler.queueRevisions.listen((_) {
-          state = state.copyWith(
-            songs: handler.queueSongs,
-            index: handler.currentIndex,
-            shuffled: handler.shuffled,
-            repeatMode: handler.repeatMode,
-            queueRevision: state.queueRevision + 1,
-          );
-        }),
       );
+
+    // Mirror the handler's queue. The initial read at the end of build already
+    // captures any queue a background-process restore produced before this
+    // controller subscribed, and this listener covers every later change.
+    if (handler != null) {
+      subscriptions.add(
+        handler.queueRevisions.listen((_) => _mirrorHandler(handler)),
+      );
+    }
 
     ref.onDispose(() {
       for (final subscription in subscriptions) {
@@ -79,103 +122,164 @@ class PlayerController extends Notifier<PlayerState> {
       }
     });
 
-    _scheduleSessionRestore();
+    _restoreWhenReady(handler);
 
     return PlayerState(
-      songs: handler.queueSongs,
-      index: handler.currentIndex,
+      songs: handler?.queueSongs ?? const [],
+      index: handler?.currentIndex ?? -1,
       playing: false,
-      repeatMode: handler.repeatMode,
-      shuffled: handler.shuffled,
+      repeatMode: handler?.repeatMode ?? RepeatMode.off,
+      shuffled: handler?.shuffled ?? false,
       queueRevision: 0,
     );
   }
 
-  MusicPlayerHandler get _handler => ref.read(musicPlayerHandlerProvider);
+  /// Resolves to the booted handler, waiting for it if a user action fires
+  /// before the background service finished starting.
+  Future<MusicPlayerHandler> _handler() =>
+      ref.read(musicPlayerHandlerProvider.future);
 
   // ---------------------------------------------------------------------------
   // Session restore
   // ---------------------------------------------------------------------------
 
-  /// Restores the previous playback session (paused, at the last position)
-  /// exactly once, as soon as the library is available. Listens instead of
-  /// watching so library refreshes never rebuild the player.
-  void _scheduleSessionRestore() {
-    var attempted = false;
+  /// Restores the previous playback session (paused, at the last position) as
+  /// soon as both the handler and the library are available, exactly once.
+  ///
+  /// Reads state directly at the end instead of relying only on the
+  /// queueRevisions stream, so the restore is deterministic regardless of
+  /// subscription timing.
+  void _restoreWhenReady(MusicPlayerHandler? handler) {
+    if (handler == null) return;
 
-    void tryRestore(LibraryState? library) {
-      if (attempted || library == null || library.songs.isEmpty) return;
-      attempted = true;
-      // A background service may have rebuilt a metadata-only queue before
-      // the UI/library was created. Replace that snapshot with fresh
-      // MediaStore rows once they are available.
-      if (_handler.queueSongs.isNotEmpty && !_handler.hydratedFromStorage) {
-        return;
-      }
-      _restoreLastSession(library.songs);
+    var started = false;
+
+    void onLibrary(LibraryState? library) {
+      if (started || library == null || library.songs.isEmpty) return;
+      started = true;
+      _restoreLastSession(handler, library.songs);
     }
 
-    final existing = ref.read(libraryProvider);
-    tryRestore(existing.value);
-    ref.listen(libraryProvider, (_, next) => tryRestore(next.value));
+    final existing = ref.read(libraryProvider).value;
+    if (existing != null && existing.songs.isNotEmpty) {
+      started = true;
+      _restoreLastSession(handler, existing.songs);
+    } else {
+      ref.listen(libraryProvider, (_, next) => onLibrary(next.value));
+    }
   }
 
-  Future<void> _restoreLastSession(List<Song> librarySongs) async {
+  Future<void> _restoreLastSession(
+    MusicPlayerHandler handler,
+    List<Song> librarySongs,
+  ) async {
     final settings = ref.read(appSettingsRepositoryProvider);
     final session = settings.loadPlaybackSession();
-    if (session == null || !session.isRestorable) return;
+    final plan = SessionResumePlanner.plan(session, librarySongs);
 
-    final byId = {for (final song in librarySongs) song.id: song};
-    final queue = [
-      for (final id in session.queueSongIds)
-        if (byId[id] != null) byId[id]!,
-    ];
-    final current = byId[session.currentSongId];
-    if (current == null || queue.isEmpty) return;
+    // No persisted session (or the tracks are gone): surface whatever the
+    // background process restored instead of leaving an empty player.
+    if (plan == null) {
+      _mirrorHandler(handler);
+      return;
+    }
 
-    final repeatIndex = session.repeatModeIndex.clamp(
-      0,
-      RepeatMode.values.length - 1,
+    final restored = await handler.restoreSession(
+      songs: plan.queue,
+      current: plan.current,
+      position: plan.position,
+      repeatMode: plan.repeatMode,
+      shuffled: plan.shuffled,
     );
-    await _handler.restoreSession(
-      songs: queue,
-      current: current,
-      position: Duration(milliseconds: session.positionMs),
-      repeatMode: RepeatMode.values[repeatIndex],
-      shuffled: session.shuffled,
+    if (!restored) return;
+
+    // Seed the seek position directly: a paused player emits no position
+    // stream updates, so without this the seek bar would look wrong after
+    // reopening the app.
+    state = state.copyWith(
+      songs: handler.queueSongs,
+      index: handler.currentIndex,
+      repeatMode: handler.repeatMode,
+      shuffled: handler.shuffled,
+      position: plan.position,
+      queueRevision: state.queueRevision + 1,
     );
   }
 
+  /// Copies the handler's current queue/modes into state (single source of
+  /// truth). Safe to call multiple times; also reflects a cleared queue.
+  void _mirrorHandler(MusicPlayerHandler handler) {
+    state = state.copyWith(
+      songs: handler.queueSongs,
+      index: handler.currentIndex,
+      repeatMode: handler.repeatMode,
+      shuffled: handler.shuffled,
+      queueRevision: state.queueRevision + 1,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Playback actions
+  // ---------------------------------------------------------------------------
+
   /// Starts playing [songs] beginning at [startIndex].
-  Future<void> playFromList(List<Song> songs, {required int startIndex}) =>
-      _handler.loadAndPlay(songs, startIndex: startIndex);
+  Future<void> playFromList(List<Song> songs, {required int startIndex}) async {
+    final handler = await _handler();
+    await handler.loadAndPlay(songs, startIndex: startIndex);
+  }
 
   /// Builds a fresh shuffled order of the whole list and starts it.
-  Future<void> playAllShuffled(List<Song> songs) {
+  Future<void> playAllShuffled(List<Song> songs) async {
+    final handler = await _handler();
     final shuffledCopy = [...songs]..shuffle();
-    return _handler.loadAndPlay(shuffledCopy, startIndex: 0);
+    await handler.loadAndPlay(shuffledCopy, startIndex: 0);
   }
 
   Future<void> toggleShuffle() async {
-    _handler.toggleShuffle();
+    final handler = await _handler();
+    handler.toggleShuffle();
   }
 
-  void cycleRepeatMode() => _handler.cycleRepeatMode();
+  Future<void> cycleRepeatMode() async {
+    final handler = await _handler();
+    handler.cycleRepeatMode();
+  }
 
-  Future<void> playPause() => _handler.playPause();
+  Future<void> playPause() async {
+    final handler = await _handler();
+    await handler.playPause();
+  }
 
-  Future<void> next() => _handler.next();
+  Future<void> next() async {
+    final handler = await _handler();
+    await handler.next();
+  }
 
-  Future<void> previous() => _handler.previous();
+  Future<void> previous() async {
+    final handler = await _handler();
+    await handler.previous();
+  }
 
-  Future<void> jumpToQueueIndex(int index) => _handler.jumpTo(index);
+  Future<void> jumpToQueueIndex(int index) async {
+    final handler = await _handler();
+    await handler.jumpTo(index);
+  }
 
-  Future<void> seek(Duration position) => _handler.seek(position);
+  Future<void> seek(Duration position) async {
+    final handler = await _handler();
+    await handler.seek(position);
+  }
 
-  Future<bool> removeFromQueue(int songId) => _handler.removeSong(songId);
+  Future<bool> removeFromQueue(int songId) async {
+    final handler = await _handler();
+    return handler.removeSong(songId);
+  }
 
   /// Stops playback and empties the queue (used by the queue sheet).
-  Future<void> clearQueue() => _handler.stopAndClearQueue();
+  Future<void> clearQueue() async {
+    final handler = await _handler();
+    await handler.stopAndClearQueue();
+  }
 
   static PlayerProcessingState _mapProcessingState(ProcessingState source) =>
       switch (source) {
