@@ -14,6 +14,7 @@ class SavedPlaybackSession {
     required this.shuffled,
     this.tracks = const [],
     this.currentSongId,
+    this.wasPlaying = false,
   });
 
   final List<int> queueSongIds;
@@ -25,9 +26,55 @@ class SavedPlaybackSession {
   /// A small metadata snapshot lets the background service rebuild its queue
   /// after Android recreates the process (before the Flutter UI/library loads).
   final List<SavedPlaybackTrack> tracks;
+  final bool wasPlaying;
 
   /// Nothing restorable: no queue or the current track is missing.
   bool get isRestorable => queueSongIds.isNotEmpty && currentSongId != null;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'queueSongIds': queueSongIds,
+    'currentSongId': currentSongId,
+    'positionMs': positionMs,
+    'repeatModeIndex': repeatModeIndex,
+    'shuffled': shuffled,
+    'wasPlaying': wasPlaying,
+    'tracks': tracks.map((track) => track.toJson()).toList(growable: false),
+  };
+
+  static SavedPlaybackSession? fromJson(Object? value) {
+    if (value is! Map) return null;
+    final rawIds = value['queueSongIds'];
+    final currentSongId = value['currentSongId'];
+    final positionMs = value['positionMs'];
+    final repeatModeIndex = value['repeatModeIndex'];
+    final shuffled = value['shuffled'];
+    final wasPlaying = value['wasPlaying'];
+    final rawTracks = value['tracks'];
+    if (rawIds is! List ||
+        currentSongId is! num ||
+        positionMs is! num ||
+        repeatModeIndex is! num ||
+        shuffled is! bool) {
+      return null;
+    }
+    final ids = rawIds.whereType<num>().map((id) => id.toInt()).toList();
+    if (ids.isEmpty) return null;
+    final tracks = rawTracks is List
+        ? rawTracks
+              .map(SavedPlaybackTrack.fromJson)
+              .whereType<SavedPlaybackTrack>()
+              .toList(growable: false)
+        : const <SavedPlaybackTrack>[];
+    return SavedPlaybackSession(
+      queueSongIds: List.unmodifiable(ids),
+      currentSongId: currentSongId.toInt(),
+      positionMs: positionMs.toInt().clamp(0, 1 << 53).toInt(),
+      repeatModeIndex: repeatModeIndex.toInt(),
+      shuffled: shuffled,
+      wasPlaying: wasPlaying is bool && wasPlaying,
+      tracks: List.unmodifiable(tracks),
+    );
+  }
 }
 
 class SavedPlaybackTrack {
@@ -105,6 +152,7 @@ class AppSettingsRepository {
   static const String _sessionRepeatKey = 'playback.session.repeatIndex';
   static const String _sessionShuffleKey = 'playback.session.shuffled';
   static const String _sessionTracksKey = 'playback.session.tracks';
+  static const String _sessionSnapshotKey = 'playback.session.snapshot.v2';
 
   final SharedPreferences _prefs;
 
@@ -127,6 +175,19 @@ class AppSettingsRepository {
   // -- Playback session -------------------------------------------------------
 
   SavedPlaybackSession? loadPlaybackSession() {
+    final rawSnapshot = _prefs.getString(_sessionSnapshotKey);
+    if (rawSnapshot != null) {
+      try {
+        final session = SavedPlaybackSession.fromJson(jsonDecode(rawSnapshot));
+        if (session != null) return session;
+      } on FormatException {
+        // Fall back to the legacy keys if a snapshot was interrupted or corrupt.
+      }
+    }
+    return _loadLegacyPlaybackSession();
+  }
+
+  SavedPlaybackSession? _loadLegacyPlaybackSession() {
     final rawIds = _prefs.getStringList(_sessionQueueKey);
     if (rawIds == null || rawIds.isEmpty) return null;
     final ids = rawIds
@@ -160,23 +221,9 @@ class AppSettingsRepository {
   }
 
   Future<void> savePlaybackSession(SavedPlaybackSession session) async {
-    await Future.wait(<Future<void>>[
-      _prefs.setStringList(
-        _sessionQueueKey,
-        session.queueSongIds.map((id) => id.toString()).toList(growable: false),
-      ),
-      if (session.currentSongId != null)
-        _prefs.setInt(_sessionCurrentKey, session.currentSongId!)
-      else
-        _prefs.remove(_sessionCurrentKey),
-      _prefs.setInt(_sessionPositionKey, session.positionMs),
-      _prefs.setInt(_sessionRepeatKey, session.repeatModeIndex),
-      _prefs.setBool(_sessionShuffleKey, session.shuffled),
-      _prefs.setString(
-        _sessionTracksKey,
-        jsonEncode(session.tracks.map((track) => track.toJson()).toList()),
-      ),
-    ]);
+    // A single native preference write prevents a process kill from leaving
+    // queue, current item and track metadata from different playback moments.
+    await _prefs.setString(_sessionSnapshotKey, jsonEncode(session.toJson()));
   }
 
   Future<void> clearPlaybackSession() async {
@@ -187,6 +234,7 @@ class AppSettingsRepository {
       _prefs.remove(_sessionRepeatKey),
       _prefs.remove(_sessionShuffleKey),
       _prefs.remove(_sessionTracksKey),
+      _prefs.remove(_sessionSnapshotKey),
     ]);
   }
 }

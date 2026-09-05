@@ -37,6 +37,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   RepeatMode _repeatMode = RepeatMode.off;
   int _consecutiveLoadFailures = 0;
   int _lastSavedPositionMs = -1;
+  Future<void> _sessionWrite = Future<void>.value();
 
   /// Emits the title of a song whose file failed to load.
   final StreamController<String> _loadErrors =
@@ -87,32 +88,46 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     }
   }
 
-  void _persistSession() {
+  Future<void> _persistSession() {
     final store = settings;
-    if (store == null || !_queue.isNotEmpty) return;
-    store.savePlaybackSession(
-      SavedPlaybackSession(
-        queueSongIds: _queue.originalSongs
-            .map((song) => song.id)
-            .toList(growable: false),
-        currentSongId: _queue.current?.id,
-        positionMs: _player.position.inMilliseconds,
-        repeatModeIndex: _repeatMode.index,
-        shuffled: _queue.shuffled,
-        tracks: _queue.originalSongs
-            .map(
-              (song) => SavedPlaybackTrack(
-                id: song.id,
-                title: song.title,
-                artist: song.artist,
-                album: song.album,
-                durationMs: song.duration.inMilliseconds,
-                path: song.path,
-              ),
-            )
-            .toList(growable: false),
-      ),
+    if (store == null || !_queue.isNotEmpty) return Future<void>.value();
+    final snapshot = SavedPlaybackSession(
+      queueSongIds: _queue.originalSongs
+          .map((song) => song.id)
+          .toList(growable: false),
+      currentSongId: _queue.current?.id,
+      positionMs: _player.position.inMilliseconds,
+      repeatModeIndex: _repeatMode.index,
+      shuffled: _queue.shuffled,
+      wasPlaying: _player.playing,
+      tracks: _queue.originalSongs
+          .map(
+            (song) => SavedPlaybackTrack(
+              id: song.id,
+              title: song.title,
+              artist: song.artist,
+              album: song.album,
+              durationMs: song.duration.inMilliseconds,
+              path: song.path,
+            ),
+          )
+          .toList(growable: false),
     );
+    return _enqueueSessionWrite(() => store.savePlaybackSession(snapshot));
+  }
+
+  Future<void> _clearPersistedSession() {
+    final store = settings;
+    if (store == null) return Future<void>.value();
+    return _enqueueSessionWrite(store.clearPlaybackSession);
+  }
+
+  Future<void> _enqueueSessionWrite(Future<void> Function() write) {
+    _sessionWrite = _sessionWrite
+        .catchError((Object _) {})
+        .then((_) => write())
+        .catchError((Object _) {});
+    return _sessionWrite;
   }
 
   Future<void> _restorePersistedQueue() async {
@@ -146,6 +161,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       (song) => song.id == session.currentSongId,
     );
     if (songs.isEmpty || startIndex < 0) return;
+    _repeatMode = RepeatMode
+        .values[session.repeatModeIndex.clamp(0, RepeatMode.values.length - 1)];
     _queue.load(songs, startIndex: startIndex);
     if (session.shuffled) _queue.setShuffled(true);
     _hydratedFromStorage = true;
@@ -164,6 +181,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       mediaItem.add(null);
       queue.add(const []);
       _touchQueue();
+      await _clearPersistedSession();
     }
   }
 
@@ -254,6 +272,25 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     _broadcastState(_player.playbackEvent);
   }
 
+  @override
+  Future<void> setRepeatMode(AudioServiceRepeatMode repeatMode) async {
+    await _initialization;
+    _repeatMode = switch (repeatMode) {
+      AudioServiceRepeatMode.one => RepeatMode.one,
+      AudioServiceRepeatMode.all => RepeatMode.all,
+      _ => RepeatMode.off,
+    };
+    _touchQueue();
+    await _persistSession();
+    _broadcastState(_player.playbackEvent);
+  }
+
+  @override
+  Future<void> setShuffleMode(AudioServiceShuffleMode shuffleMode) async {
+    await _initialization;
+    setShuffled(shuffleMode != AudioServiceShuffleMode.none);
+  }
+
   /// Removes a song from the queue. If it was the playing track, playback
   /// continues with the next song automatically. Returns true when the
   /// removed song was the current one.
@@ -280,7 +317,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     await _initialization;
     _queue.clear();
     _consecutiveLoadFailures = 0;
-    await settings?.clearPlaybackSession();
+    await _clearPersistedSession();
     try {
       await _player.stop();
     } finally {
@@ -339,7 +376,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   /// Writes the current session snapshot to settings immediately.
-  void persistSession() => _persistSession();
+  Future<void> persistSession() => _persistSession();
 
   @override
   Future<void> stop() => stopAndClearQueue();
@@ -348,7 +385,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> onTaskRemoved() async {
     // Android can remove the activity while the foreground media service is
     // still alive. Save the exact position so media controls remain usable.
-    _persistSession();
+    await _persistSession();
   }
 
   @override
@@ -428,7 +465,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       await _player.setAudioSource(AudioSource.file(song.path));
       _consecutiveLoadFailures = 0;
       _lastSavedPositionMs = _player.position.inMilliseconds;
-      _persistSession();
+      await _persistSession();
       if (playImmediately || _player.playing) {
         await _player.play();
       }
@@ -506,6 +543,14 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
         updatePosition: event.updatePosition,
         bufferedPosition: event.bufferedPosition,
         speed: _player.speed,
+        repeatMode: switch (_repeatMode) {
+          RepeatMode.off => AudioServiceRepeatMode.none,
+          RepeatMode.all => AudioServiceRepeatMode.all,
+          RepeatMode.one => AudioServiceRepeatMode.one,
+        },
+        shuffleMode: shuffled
+            ? AudioServiceShuffleMode.all
+            : AudioServiceShuffleMode.none,
         queueIndex: event.currentIndex,
       ),
     );

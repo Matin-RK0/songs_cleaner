@@ -14,16 +14,20 @@ Future<void> main() async {
 
   final player = AudioPlayer();
   final prefs = await SharedPreferences.getInstance();
+  final settings = AppSettingsRepository(prefs);
+  final handler = await initializeMusicPlayerHandler(
+    player: player,
+    settings: settings,
+  );
 
-  // The background media handler (audio_service) is booted lazily by
-  // MusicPlayerBootstrap once the UI is on screen, so an OS/plugin hiccup
-  // there can never block the library from opening (which previously forced
-  // users to force-stop the app).
+  // Create MediaSession before rendering so system play requests can restore
+  // and start the persisted track even when no player screen was opened yet.
   runApp(
     ProviderScope(
       overrides: [
         audioPlayerProvider.overrideWithValue(player),
         sharedPreferencesProvider.overrideWithValue(prefs),
+        musicPlayerHandlerProvider.overrideWithValue(handler),
       ],
       child: const SongsCleanerApp(),
     ),

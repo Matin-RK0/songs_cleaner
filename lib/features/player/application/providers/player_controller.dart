@@ -18,47 +18,44 @@ final audioPlayerProvider = Provider<AudioPlayer>(
   (ref) => throw UnimplementedError('Override audioPlayerProvider in main'),
 );
 
-/// Lazily boots the background media handler so app startup never blocks on
-/// [AudioService.init]. Resolves to the handler, or a plain fallback when the
-/// platform service is temporarily unavailable (e.g. right after an OS process
-/// reclaim), mirroring the previous resilience in main().
-final musicPlayerHandlerProvider =
-    AsyncNotifierProvider<MusicPlayerBootstrap, MusicPlayerHandler>(
-  MusicPlayerBootstrap.new,
+/// The media handler is initialized before the first frame so Android media
+/// commands (including Samsung Modes and Routines) always target a live media
+/// session rather than waiting for a screen to subscribe to this provider.
+final musicPlayerHandlerProvider = Provider<MusicPlayerHandler>(
+  (ref) =>
+      throw UnimplementedError('Override musicPlayerHandlerProvider in main'),
 );
 
-class MusicPlayerBootstrap extends AsyncNotifier<MusicPlayerHandler> {
-  @override
-  Future<MusicPlayerHandler> build() async {
-    final player = ref.watch(audioPlayerProvider);
-    final settings = ref.watch(appSettingsRepositoryProvider);
+/// Boots the Android media session before the app UI. The fallback preserves
+/// in-app playback if a device-specific audio_service initialization fails.
+Future<MusicPlayerHandler> initializeMusicPlayerHandler({
+  required AudioPlayer player,
+  required AppSettingsRepository settings,
+}) async {
+  try {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+  } catch (_) {
+    // Continue with platform defaults when audio focus configuration fails.
+  }
 
-    // Audio focus setup is best effort: a transient platform audio-session
-    // failure must not prevent the library screen from opening.
-    try {
-      final session = await AudioSession.instance;
-      await session.configure(const AudioSessionConfiguration.music());
-    } catch (_) {
-      // Continue with the platform defaults; playback can still be initialized.
-    }
-
-    try {
-      return await AudioService.init<MusicPlayerHandler>(
-        builder: () => MusicPlayerHandler(player, settings: settings),
-        config: const AudioServiceConfig(
-          androidNotificationChannelId: 'com.example.songs_cleaner.playback',
-          androidNotificationChannelName: 'پخش موزیک',
-          androidNotificationIcon: 'drawable/ic_notif_applogo',
-          // Keep the media service in the foreground while paused. Android 12+
-          // otherwise blocks a later media-button action when the activity has
-          // been swiped away because restarting foreground service is restricted.
-          androidNotificationOngoing: false,
-          androidStopForegroundOnPause: false,
-        ),
-      );
-    } catch (_) {
-      return MusicPlayerHandler(player, settings: settings);
-    }
+  try {
+    return await AudioService.init<MusicPlayerHandler>(
+      builder: () => MusicPlayerHandler(player, settings: settings),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.example.songs_cleaner.playback',
+        androidNotificationChannelName: 'پخش موزیک',
+        androidNotificationIcon: 'drawable/ic_notif_applogo',
+        androidResumeOnClick: true,
+        // Retain a foreground media session while paused. This lets Android
+        // dispatch a later routine/headset play command after the Activity is
+        // removed from recents instead of treating the player as closed.
+        androidNotificationOngoing: false,
+        androidStopForegroundOnPause: false,
+      ),
+    );
+  } catch (_) {
+    return MusicPlayerHandler(player, settings: settings);
   }
 }
 
@@ -68,16 +65,13 @@ final playerProvider = NotifierProvider<PlayerController, PlayerState>(
 
 /// Broadcasts titles of songs whose files failed to load, for snackbars.
 final playbackErrorEventsProvider = StreamProvider<String>((ref) {
-  final handler = ref.watch(musicPlayerHandlerProvider).value;
-  return handler?.loadErrors ?? const Stream<String>.empty();
+  return ref.watch(musicPlayerHandlerProvider).loadErrors;
 });
 
 class PlayerController extends Notifier<PlayerState> {
   @override
   PlayerState build() {
-    // Watch the async handler so this controller re-runs once the background
-    // service finishes booting; playback stays inert until then.
-    final handler = ref.watch(musicPlayerHandlerProvider).value;
+    final handler = ref.watch(musicPlayerHandlerProvider);
     final player = ref.watch(audioPlayerProvider);
 
     final subscriptions = <StreamSubscription<dynamic>>[];
@@ -110,11 +104,9 @@ class PlayerController extends Notifier<PlayerState> {
     // Mirror the handler's queue. The initial read at the end of build already
     // captures any queue a background-process restore produced before this
     // controller subscribed, and this listener covers every later change.
-    if (handler != null) {
-      subscriptions.add(
-        handler.queueRevisions.listen((_) => _mirrorHandler(handler)),
-      );
-    }
+    subscriptions.add(
+      handler.queueRevisions.listen((_) => _mirrorHandler(handler)),
+    );
 
     ref.onDispose(() {
       for (final subscription in subscriptions) {
@@ -125,19 +117,17 @@ class PlayerController extends Notifier<PlayerState> {
     _restoreWhenReady(handler);
 
     return PlayerState(
-      songs: handler?.queueSongs ?? const [],
-      index: handler?.currentIndex ?? -1,
+      songs: handler.queueSongs,
+      index: handler.currentIndex,
       playing: false,
-      repeatMode: handler?.repeatMode ?? RepeatMode.off,
-      shuffled: handler?.shuffled ?? false,
+      repeatMode: handler.repeatMode,
+      shuffled: handler.shuffled,
       queueRevision: 0,
     );
   }
 
-  /// Resolves to the booted handler, waiting for it if a user action fires
-  /// before the background service finished starting.
-  Future<MusicPlayerHandler> _handler() =>
-      ref.read(musicPlayerHandlerProvider.future);
+  Future<MusicPlayerHandler> _handler() async =>
+      ref.read(musicPlayerHandlerProvider);
 
   // ---------------------------------------------------------------------------
   // Session restore
@@ -149,9 +139,7 @@ class PlayerController extends Notifier<PlayerState> {
   /// Reads state directly at the end instead of relying only on the
   /// queueRevisions stream, so the restore is deterministic regardless of
   /// subscription timing.
-  void _restoreWhenReady(MusicPlayerHandler? handler) {
-    if (handler == null) return;
-
+  void _restoreWhenReady(MusicPlayerHandler handler) {
     var started = false;
 
     void onLibrary(LibraryState? library) {
