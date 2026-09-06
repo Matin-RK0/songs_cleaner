@@ -40,6 +40,12 @@ android {
     }
 }
 
+dependencies {
+    // The cold-start receiver subclasses audio_service's MediaButtonReceiver.
+    // Its AndroidX media superclass must be visible to Kotlin at compile time.
+    implementation("androidx.media:media:1.7.0")
+}
+
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
