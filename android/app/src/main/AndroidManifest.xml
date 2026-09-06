@@ -57,7 +57,7 @@
             </intent-filter>
         </service>
         <receiver
-            android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+            android:name=".ColdStartMediaButtonReceiver"
             android:exported="true"
             tools:ignore="Instantiatable">
             <intent-filter>
