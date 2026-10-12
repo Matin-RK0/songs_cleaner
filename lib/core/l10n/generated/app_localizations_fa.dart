@@ -276,4 +276,115 @@ class AppLocalizationsFa extends AppLocalizations {
   @override
   String get previousGoesToPreviousSubtitle =>
       'روشن: بدون توقف، بلافاصله به آهنگ قبلی بروید. خاموش: ابتدا آهنگ فعلی از اول پخش شود.';
+
+  @override
+  String get playlistsTab => 'پلی‌لیست‌ها';
+
+  @override
+  String get smartPlaylistsSection => 'پلی‌لیست‌های هوشمند';
+
+  @override
+  String get myPlaylistsSection => 'پلی‌لیست‌های من';
+
+  @override
+  String get smartLikedTitle => 'آهنگ‌های موردعلاقه';
+
+  @override
+  String get smartRecentTitle => 'تازه‌افزوده‌شده‌ها';
+
+  @override
+  String get smartMostPlayedTitle => 'پربازدیدترین‌ها';
+
+  @override
+  String get playlistsEmptyTitle => 'هنوز پلی‌لیستی نیست';
+
+  @override
+  String get playlistsEmptyMessage =>
+      'یک پلی‌لیست بسازید و با نگه‌داشتن انگشت روی آهنگ‌ها آن‌ها را اضافه کنید.';
+
+  @override
+  String get newPlaylist => 'پلی‌لیست جدید';
+
+  @override
+  String get playlistNameLabel => 'نام پلی‌لیست';
+
+  @override
+  String get createAction => 'ساختن';
+
+  @override
+  String get saveAction => 'ذخیره';
+
+  @override
+  String get renamePlaylist => 'تغییر نام پلی‌لیست';
+
+  @override
+  String get deletePlaylist => 'حذف پلی‌لیست';
+
+  @override
+  String deletePlaylistConfirmTitle(String name) {
+    return '«$name» حذف شود؟';
+  }
+
+  @override
+  String get deletePlaylistConfirmMessage =>
+      'این پلی‌لیست حذف می‌شود؛ خود آهنگ‌ها روی دستگاه باقی می‌مانند.';
+
+  @override
+  String playlistCreatedToast(String name) {
+    return '«$name» ساخته شد';
+  }
+
+  @override
+  String get playlistRenamedToast => 'نام پلی‌لیست تغییر کرد';
+
+  @override
+  String playlistDeletedToast(String name) {
+    return '«$name» حذف شد';
+  }
+
+  @override
+  String addedToPlaylistToast(String name) {
+    return 'به «$name» اضافه شد';
+  }
+
+  @override
+  String get addToPlaylist => 'افزودن به پلی‌لیست';
+
+  @override
+  String get addToFavorites => 'افزودن به موردعلاقه‌ها';
+
+  @override
+  String get removeFromFavorites => 'حذف از موردعلاقه‌ها';
+
+  @override
+  String get reorderTooltip => 'چیدن ترتیب';
+
+  @override
+  String get removeFromPlaylist => 'حذف از پلی‌لیست';
+
+  @override
+  String playlistMetaLabel(int count, String duration) {
+    return '$count آهنگ · $duration';
+  }
+
+  @override
+  String get playlistEmptySongsTitle => 'این پلی‌لیست خالی است';
+
+  @override
+  String get playlistEmptySongsMessage =>
+      'روی یک آهنگ در کتابخانه نگه دارید و «افزودن به پلی‌لیست» را انتخاب کنید.';
+
+  @override
+  String get likedEmptyTitle => 'آهنگ موردعلاقه‌ای نیست';
+
+  @override
+  String get likedEmptyMessage =>
+      'روی یک آهنگ نگه دارید و آن را به موردعلاقه‌ها اضافه کنید.';
+
+  @override
+  String get mostPlayedEmptyTitle => 'هنوز سابقه‌ای نیست';
+
+  @override
+  String get mostPlayedEmptyMessage =>
+      'آهنگ‌هایی که زیاد پخش می‌کنید اینجا نمایش داده می‌شوند.';
 }

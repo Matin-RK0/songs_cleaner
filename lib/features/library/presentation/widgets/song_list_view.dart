@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../cleanup/presentation/cleanup_flow.dart';
+import '../../../playlists/presentation/widgets/add_to_playlist_sheet.dart';
+import '../../application/providers/library_stats_controller.dart';
 import '../../domain/entities/song.dart';
 import '../widgets/song_tile.dart';
 
@@ -38,11 +40,19 @@ class SongListView extends ConsumerWidget {
       itemCount: songs.length,
       itemBuilder: (context, index) {
         final song = songs[index];
+        final isFavorite = ref.watch(
+          libraryStatsProvider.select((stats) => stats.isFavorite(song.id)),
+        );
         return SongTile(
           key: ValueKey(song.id),
           song: song,
           isCurrent: song.id == currentSongId,
+          isFavorite: isFavorite,
           onTap: () => onSongTap?.call(songs, index),
+          onAddToPlaylist: (target) =>
+              showAddToPlaylistSheet(context, target),
+          onToggleFavorite: () =>
+              ref.read(libraryStatsProvider.notifier).toggleFavorite(song.id),
           onDeleteDevice: (target) => deleteSongFlow(context, ref, target),
         );
       },

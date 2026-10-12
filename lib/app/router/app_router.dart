@@ -7,6 +7,7 @@ import '../../features/library/presentation/screens/search_screen.dart';
 import '../../features/lockscreen/presentation/screens/lock_screen_player_screen.dart';
 import '../../features/lockscreen/presentation/screens/settings_screen.dart';
 import '../../features/player/presentation/screens/player_screen.dart';
+import '../../features/playlists/presentation/screens/playlist_detail_screen.dart';
 import 'route_names.dart';
 
 abstract final class AppRouter {
@@ -50,6 +51,12 @@ abstract final class AppRouter {
             settings,
             GroupSongsScreen(args: args),
           );
+        }
+        return _fadeRoute(settings, const HomeShell());
+      case RouteNames.playlistDetail:
+        final args = settings.arguments;
+        if (args is PlaylistDetailArgs) {
+          return _slideRoute(settings, PlaylistDetailScreen(args: args));
         }
         return _fadeRoute(settings, const HomeShell());
       default:

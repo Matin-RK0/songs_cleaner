@@ -276,4 +276,115 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get previousGoesToPreviousSubtitle =>
       'On: jump straight to the previous song. Off: restart the current song first.';
+
+  @override
+  String get playlistsTab => 'Playlists';
+
+  @override
+  String get smartPlaylistsSection => 'Smart playlists';
+
+  @override
+  String get myPlaylistsSection => 'My playlists';
+
+  @override
+  String get smartLikedTitle => 'Liked songs';
+
+  @override
+  String get smartRecentTitle => 'Recently added';
+
+  @override
+  String get smartMostPlayedTitle => 'Most played';
+
+  @override
+  String get playlistsEmptyTitle => 'No playlists yet';
+
+  @override
+  String get playlistsEmptyMessage =>
+      'Create a playlist and add songs by long-pressing them.';
+
+  @override
+  String get newPlaylist => 'New playlist';
+
+  @override
+  String get playlistNameLabel => 'Playlist name';
+
+  @override
+  String get createAction => 'Create';
+
+  @override
+  String get saveAction => 'Save';
+
+  @override
+  String get renamePlaylist => 'Rename playlist';
+
+  @override
+  String get deletePlaylist => 'Delete playlist';
+
+  @override
+  String deletePlaylistConfirmTitle(String name) {
+    return 'Delete \"$name\"?';
+  }
+
+  @override
+  String get deletePlaylistConfirmMessage =>
+      'This playlist will be removed. The songs themselves stay on your device.';
+
+  @override
+  String playlistCreatedToast(String name) {
+    return '\"$name\" created';
+  }
+
+  @override
+  String get playlistRenamedToast => 'Playlist renamed';
+
+  @override
+  String playlistDeletedToast(String name) {
+    return '\"$name\" deleted';
+  }
+
+  @override
+  String addedToPlaylistToast(String name) {
+    return 'Added to \"$name\"';
+  }
+
+  @override
+  String get addToPlaylist => 'Add to playlist';
+
+  @override
+  String get addToFavorites => 'Add to favorites';
+
+  @override
+  String get removeFromFavorites => 'Remove from favorites';
+
+  @override
+  String get reorderTooltip => 'Reorder';
+
+  @override
+  String get removeFromPlaylist => 'Remove from playlist';
+
+  @override
+  String playlistMetaLabel(int count, String duration) {
+    return '$count songs · $duration';
+  }
+
+  @override
+  String get playlistEmptySongsTitle => 'This playlist is empty';
+
+  @override
+  String get playlistEmptySongsMessage =>
+      'Long-press a song in your library and choose \"Add to playlist\".';
+
+  @override
+  String get likedEmptyTitle => 'No liked songs';
+
+  @override
+  String get likedEmptyMessage =>
+      'Long-press a song and add it to your favorites.';
+
+  @override
+  String get mostPlayedEmptyTitle => 'No play history yet';
+
+  @override
+  String get mostPlayedEmptyMessage =>
+      'Songs you play often will show up here.';
 }

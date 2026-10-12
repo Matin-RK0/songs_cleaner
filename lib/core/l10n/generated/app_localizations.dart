@@ -595,6 +595,198 @@ abstract class AppLocalizations {
   /// In fa, this message translates to:
   /// **'روشن: بدون توقف، بلافاصله به آهنگ قبلی بروید. خاموش: ابتدا آهنگ فعلی از اول پخش شود.'**
   String get previousGoesToPreviousSubtitle;
+
+  /// No description provided for @playlistsTab.
+  ///
+  /// In fa, this message translates to:
+  /// **'پلی‌لیست‌ها'**
+  String get playlistsTab;
+
+  /// No description provided for @smartPlaylistsSection.
+  ///
+  /// In fa, this message translates to:
+  /// **'پلی‌لیست‌های هوشمند'**
+  String get smartPlaylistsSection;
+
+  /// No description provided for @myPlaylistsSection.
+  ///
+  /// In fa, this message translates to:
+  /// **'پلی‌لیست‌های من'**
+  String get myPlaylistsSection;
+
+  /// No description provided for @smartLikedTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگ‌های موردعلاقه'**
+  String get smartLikedTitle;
+
+  /// No description provided for @smartRecentTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تازه‌افزوده‌شده‌ها'**
+  String get smartRecentTitle;
+
+  /// No description provided for @smartMostPlayedTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'پربازدیدترین‌ها'**
+  String get smartMostPlayedTitle;
+
+  /// No description provided for @playlistsEmptyTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'هنوز پلی‌لیستی نیست'**
+  String get playlistsEmptyTitle;
+
+  /// No description provided for @playlistsEmptyMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'یک پلی‌لیست بسازید و با نگه‌داشتن انگشت روی آهنگ‌ها آن‌ها را اضافه کنید.'**
+  String get playlistsEmptyMessage;
+
+  /// No description provided for @newPlaylist.
+  ///
+  /// In fa, this message translates to:
+  /// **'پلی‌لیست جدید'**
+  String get newPlaylist;
+
+  /// No description provided for @playlistNameLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'نام پلی‌لیست'**
+  String get playlistNameLabel;
+
+  /// No description provided for @createAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'ساختن'**
+  String get createAction;
+
+  /// No description provided for @saveAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'ذخیره'**
+  String get saveAction;
+
+  /// No description provided for @renamePlaylist.
+  ///
+  /// In fa, this message translates to:
+  /// **'تغییر نام پلی‌لیست'**
+  String get renamePlaylist;
+
+  /// No description provided for @deletePlaylist.
+  ///
+  /// In fa, this message translates to:
+  /// **'حذف پلی‌لیست'**
+  String get deletePlaylist;
+
+  /// No description provided for @deletePlaylistConfirmTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'«{name}» حذف شود؟'**
+  String deletePlaylistConfirmTitle(String name);
+
+  /// No description provided for @deletePlaylistConfirmMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'این پلی‌لیست حذف می‌شود؛ خود آهنگ‌ها روی دستگاه باقی می‌مانند.'**
+  String get deletePlaylistConfirmMessage;
+
+  /// No description provided for @playlistCreatedToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'«{name}» ساخته شد'**
+  String playlistCreatedToast(String name);
+
+  /// No description provided for @playlistRenamedToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'نام پلی‌لیست تغییر کرد'**
+  String get playlistRenamedToast;
+
+  /// No description provided for @playlistDeletedToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'«{name}» حذف شد'**
+  String playlistDeletedToast(String name);
+
+  /// No description provided for @addedToPlaylistToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'به «{name}» اضافه شد'**
+  String addedToPlaylistToast(String name);
+
+  /// No description provided for @addToPlaylist.
+  ///
+  /// In fa, this message translates to:
+  /// **'افزودن به پلی‌لیست'**
+  String get addToPlaylist;
+
+  /// No description provided for @addToFavorites.
+  ///
+  /// In fa, this message translates to:
+  /// **'افزودن به موردعلاقه‌ها'**
+  String get addToFavorites;
+
+  /// No description provided for @removeFromFavorites.
+  ///
+  /// In fa, this message translates to:
+  /// **'حذف از موردعلاقه‌ها'**
+  String get removeFromFavorites;
+
+  /// No description provided for @reorderTooltip.
+  ///
+  /// In fa, this message translates to:
+  /// **'چیدن ترتیب'**
+  String get reorderTooltip;
+
+  /// No description provided for @removeFromPlaylist.
+  ///
+  /// In fa, this message translates to:
+  /// **'حذف از پلی‌لیست'**
+  String get removeFromPlaylist;
+
+  /// No description provided for @playlistMetaLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} آهنگ · {duration}'**
+  String playlistMetaLabel(int count, String duration);
+
+  /// No description provided for @playlistEmptySongsTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'این پلی‌لیست خالی است'**
+  String get playlistEmptySongsTitle;
+
+  /// No description provided for @playlistEmptySongsMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'روی یک آهنگ در کتابخانه نگه دارید و «افزودن به پلی‌لیست» را انتخاب کنید.'**
+  String get playlistEmptySongsMessage;
+
+  /// No description provided for @likedEmptyTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگ موردعلاقه‌ای نیست'**
+  String get likedEmptyTitle;
+
+  /// No description provided for @likedEmptyMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'روی یک آهنگ نگه دارید و آن را به موردعلاقه‌ها اضافه کنید.'**
+  String get likedEmptyMessage;
+
+  /// No description provided for @mostPlayedEmptyTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'هنوز سابقه‌ای نیست'**
+  String get mostPlayedEmptyTitle;
+
+  /// No description provided for @mostPlayedEmptyMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگ‌هایی که زیاد پخش می‌کنید اینجا نمایش داده می‌شوند.'**
+  String get mostPlayedEmptyMessage;
 }
 
 class _AppLocalizationsDelegate

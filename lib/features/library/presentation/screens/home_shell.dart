@@ -13,6 +13,9 @@ import '../../../player/application/providers/notification_gate_controller.dart'
 import '../../../player/application/providers/player_controller.dart';
 import '../../../player/presentation/widgets/mini_player_bar.dart';
 import '../../../player/presentation/widgets/notification_permission_banner.dart';
+import '../../../playlists/application/providers/playlists_controller.dart';
+import '../../../playlists/presentation/screens/playlists_tab.dart';
+import '../../../playlists/presentation/widgets/playlist_name_sheet.dart';
 import '../screens/groups_tab.dart';
 import '../screens/songs_tab.dart';
 import '../../application/providers/library_controller.dart';
@@ -32,6 +35,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
   late final TabController _tabController;
   late final ScrollController _songsScrollController;
   AppLifecycleListener? _lifecycleListener;
+  late int _lastTabIndex;
 
   @override
   void initState() {
@@ -39,9 +43,10 @@ class _HomeShellState extends ConsumerState<HomeShell>
     final savedTab = ref
         .read(appSettingsRepositoryProvider)
         .loadHomeTabIndex(0)
-        .clamp(0, 2);
+        .clamp(0, 3);
+    _lastTabIndex = savedTab;
     _tabController = TabController(
-      length: 3,
+      length: 4,
       vsync: this,
       initialIndex: savedTab,
     );
@@ -61,9 +66,26 @@ class _HomeShellState extends ConsumerState<HomeShell>
 
   void _onTabChanged() {
     if (_tabController.indexIsChanging) return;
+    if (_tabController.index == _lastTabIndex) return;
+    _lastTabIndex = _tabController.index;
     ref
         .read(appSettingsRepositoryProvider)
-        .saveHomeTabIndex(_tabController.index);
+        .saveHomeTabIndex(_lastTabIndex);
+    // Swap the floating action (shuffle vs. new playlist) for the active tab.
+    setState(() {});
+  }
+
+  Future<void> _createPlaylist() async {
+    final l10n = context.l10n;
+    final name = await showPlaylistNameSheet(
+      context: context,
+      title: l10n.newPlaylist,
+      actionLabel: l10n.createAction,
+    );
+    if (name == null) return;
+    final playlist = await ref.read(playlistsProvider.notifier).create(name);
+    if (!mounted) return;
+    showAppSnackBar(context, l10n.playlistCreatedToast(playlist.name));
   }
 
   Future<void> _refreshLibrary() async {
@@ -108,6 +130,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
     final hasCurrent = ref.watch(
       playerProvider.select((state) => state.hasCurrent),
     );
+    final onPlaylistsTab = _tabController.index == 3;
 
     return Scaffold(
       appBar: AppBar(
@@ -123,11 +146,12 @@ class _HomeShellState extends ConsumerState<HomeShell>
             icon: const Icon(Icons.search_rounded),
             onPressed: () => Navigator.of(context).pushNamed(RouteNames.search),
           ),
-          IconButton(
-            tooltip: l10n.sortLabel,
-            icon: const Icon(Icons.sort_rounded),
-            onPressed: () => showSortSheet(context, ref),
-          ),
+          if (!onPlaylistsTab)
+            IconButton(
+              tooltip: l10n.sortLabel,
+              icon: const Icon(Icons.sort_rounded),
+              onPressed: () => showSortSheet(context, ref),
+            ),
           IconButton(
             tooltip: l10n.settingsTitle,
             icon: const Icon(Icons.settings_rounded),
@@ -147,6 +171,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
             Tab(text: l10n.songsTab),
             Tab(text: l10n.artistsTab),
             Tab(text: l10n.albumsTab),
+            Tab(text: l10n.playlistsTab),
           ],
         ),
       ),
@@ -162,6 +187,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
                     SongsTab(scrollController: _songsScrollController),
                     GroupsTab(isArtists: true),
                     GroupsTab(isArtists: false),
+                    const PlaylistsTab(),
                   ],
                 ),
               ),
@@ -172,36 +198,53 @@ class _HomeShellState extends ConsumerState<HomeShell>
               alignment: Alignment.bottomCenter,
               child: MiniPlayerBar(),
             ),
-          PositionedDirectional(
-            end: AppSpacing.md,
-            bottom: hasCurrent
-                ? MiniPlayerBar.height + AppSpacing.md
-                : AppSpacing.md,
-            child: FloatingActionButton(
-              heroTag: 'shuffle-all',
-              tooltip: l10n.shuffleAll,
-              onPressed: () async {
-                final songs = ref.read(allSongsProvider);
-                if (songs.isEmpty) return;
-                await ref.read(playerProvider.notifier).playAllShuffled(songs);
-                if (!context.mounted) return;
-                AppRouter.openPlayer(context);
-              },
-              child: const Icon(Icons.shuffle_rounded),
+          if (onPlaylistsTab)
+            PositionedDirectional(
+              end: AppSpacing.md,
+              bottom: hasCurrent
+                  ? MiniPlayerBar.height + AppSpacing.md
+                  : AppSpacing.md,
+              child: FloatingActionButton(
+                heroTag: 'new-playlist',
+                tooltip: l10n.newPlaylist,
+                onPressed: _createPlaylist,
+                child: const Icon(Icons.add_rounded),
+              ),
+            )
+          else ...[
+            PositionedDirectional(
+              end: AppSpacing.md,
+              bottom: hasCurrent
+                  ? MiniPlayerBar.height + AppSpacing.md
+                  : AppSpacing.md,
+              child: FloatingActionButton(
+                heroTag: 'shuffle-all',
+                tooltip: l10n.shuffleAll,
+                onPressed: () async {
+                  final songs = ref.read(allSongsProvider);
+                  if (songs.isEmpty) return;
+                  await ref
+                      .read(playerProvider.notifier)
+                      .playAllShuffled(songs);
+                  if (!context.mounted) return;
+                  AppRouter.openPlayer(context);
+                },
+                child: const Icon(Icons.shuffle_rounded),
+              ),
             ),
-          ),
-          PositionedDirectional(
-            end: AppSpacing.md + 64,
-            bottom: hasCurrent
-                ? MiniPlayerBar.height + AppSpacing.md
-                : AppSpacing.md,
-            child: FloatingActionButton.small(
-              heroTag: 'scroll-to-current',
-              tooltip: l10n.nowPlaying,
-              onPressed: _scrollToCurrent,
-              child: const Icon(Icons.my_location_rounded),
+            PositionedDirectional(
+              end: AppSpacing.md + 64,
+              bottom: hasCurrent
+                  ? MiniPlayerBar.height + AppSpacing.md
+                  : AppSpacing.md,
+              child: FloatingActionButton.small(
+                heroTag: 'scroll-to-current',
+                tooltip: l10n.nowPlaying,
+                onPressed: _scrollToCurrent,
+                child: const Icon(Icons.my_location_rounded),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

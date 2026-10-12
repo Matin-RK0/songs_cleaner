@@ -24,6 +24,14 @@ final allSongsProvider = Provider<List<Song>>(
   (ref) => ref.watch(libraryProvider).value?.songs ?? const [],
 );
 
+/// Lookup table for resolving stored song ids (e.g. playlist entries) back to
+/// the current library songs.
+final songsByIdProvider = Provider<Map<int, Song>>(
+  (ref) => <int, Song>{
+    for (final song in ref.watch(allSongsProvider)) song.id: song,
+  },
+);
+
 final artistGroupsProvider = Provider<List<MusicGroup>>(
   (ref) => groupSongs(
     ref.watch(allSongsProvider),

@@ -117,5 +117,75 @@
   "lockScreenDisabledToast": "کنترل صفحه قفل غیرفعال شد",
   "settingsPlaybackSection": "پخش",
   "previousGoesToPreviousTitle": "دکمه آهنگ قبلی مستقیم به آهنگ قبلی برود",
-  "previousGoesToPreviousSubtitle": "روشن: بدون توقف، بلافاصله به آهنگ قبلی بروید. خاموش: ابتدا آهنگ فعلی از اول پخش شود."
+  "previousGoesToPreviousSubtitle": "روشن: بدون توقف، بلافاصله به آهنگ قبلی بروید. خاموش: ابتدا آهنگ فعلی از اول پخش شود.",
+  "playlistsTab": "پلی‌لیست‌ها",
+  "smartPlaylistsSection": "پلی‌لیست‌های هوشمند",
+  "myPlaylistsSection": "پلی‌لیست‌های من",
+  "smartLikedTitle": "آهنگ‌های موردعلاقه",
+  "smartRecentTitle": "تازه‌افزوده‌شده‌ها",
+  "smartMostPlayedTitle": "پربازدیدترین‌ها",
+  "playlistsEmptyTitle": "هنوز پلی‌لیستی نیست",
+  "playlistsEmptyMessage": "یک پلی‌لیست بسازید و با نگه‌داشتن انگشت روی آهنگ‌ها آن‌ها را اضافه کنید.",
+  "newPlaylist": "پلی‌لیست جدید",
+  "playlistNameLabel": "نام پلی‌لیست",
+  "createAction": "ساختن",
+  "saveAction": "ذخیره",
+  "renamePlaylist": "تغییر نام پلی‌لیست",
+  "deletePlaylist": "حذف پلی‌لیست",
+  "deletePlaylistConfirmTitle": "«{name}» حذف شود؟",
+  "@deletePlaylistConfirmTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deletePlaylistConfirmMessage": "این پلی‌لیست حذف می‌شود؛ خود آهنگ‌ها روی دستگاه باقی می‌مانند.",
+  "playlistCreatedToast": "«{name}» ساخته شد",
+  "@playlistCreatedToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistRenamedToast": "نام پلی‌لیست تغییر کرد",
+  "playlistDeletedToast": "«{name}» حذف شد",
+  "@playlistDeletedToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addedToPlaylistToast": "به «{name}» اضافه شد",
+  "@addedToPlaylistToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addToPlaylist": "افزودن به پلی‌لیست",
+  "addToFavorites": "افزودن به موردعلاقه‌ها",
+  "removeFromFavorites": "حذف از موردعلاقه‌ها",
+  "reorderTooltip": "چیدن ترتیب",
+  "removeFromPlaylist": "حذف از پلی‌لیست",
+  "playlistMetaLabel": "{count} آهنگ · {duration}",
+  "@playlistMetaLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistEmptySongsTitle": "این پلی‌لیست خالی است",
+  "playlistEmptySongsMessage": "روی یک آهنگ در کتابخانه نگه دارید و «افزودن به پلی‌لیست» را انتخاب کنید.",
+  "likedEmptyTitle": "آهنگ موردعلاقه‌ای نیست",
+  "likedEmptyMessage": "روی یک آهنگ نگه دارید و آن را به موردعلاقه‌ها اضافه کنید.",
+  "mostPlayedEmptyTitle": "هنوز سابقه‌ای نیست",
+  "mostPlayedEmptyMessage": "آهنگ‌هایی که زیاد پخش می‌کنید اینجا نمایش داده می‌شوند."
 }

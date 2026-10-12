@@ -19,6 +19,9 @@ class SongTile extends ConsumerWidget {
     this.isCurrent = false,
     this.showArtwork = true,
     this.onDeleteDevice,
+    this.onAddToPlaylist,
+    this.isFavorite = false,
+    this.onToggleFavorite,
   });
 
   final Song song;
@@ -26,6 +29,14 @@ class SongTile extends ConsumerWidget {
   final bool isCurrent;
   final bool showArtwork;
   final ValueChanged<Song>? onDeleteDevice;
+  final ValueChanged<Song>? onAddToPlaylist;
+  final bool isFavorite;
+  final VoidCallback? onToggleFavorite;
+
+  bool get _hasActions =>
+      onDeleteDevice != null ||
+      onAddToPlaylist != null ||
+      onToggleFavorite != null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,9 +61,7 @@ class SongTile extends ConsumerWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          onLongPress: onDeleteDevice == null
-              ? null
-              : () => _showActions(context),
+          onLongPress: _hasActions ? () => _showActions(context) : null,
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
           hoverColor: Colors.transparent,
@@ -111,16 +120,44 @@ class SongTile extends ConsumerWidget {
                 onTap();
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline_rounded),
-              iconColor: colors.danger,
-              textColor: colors.danger,
-              title: Text(l10n.deleteAction),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                onDeleteDevice?.call(song);
-              },
-            ),
+            if (onAddToPlaylist != null)
+              ListTile(
+                leading: const Icon(Icons.playlist_add_rounded),
+                title: Text(l10n.addToPlaylist),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  onAddToPlaylist!(song);
+                },
+              ),
+            if (onToggleFavorite != null)
+              ListTile(
+                leading: Icon(
+                  isFavorite
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                ),
+                iconColor: colors.danger,
+                title: Text(
+                  isFavorite
+                      ? l10n.removeFromFavorites
+                      : l10n.addToFavorites,
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  onToggleFavorite!();
+                },
+              ),
+            if (onDeleteDevice != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded),
+                iconColor: colors.danger,
+                textColor: colors.danger,
+                title: Text(l10n.deleteAction),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  onDeleteDevice!(song);
+                },
+              ),
           ],
         ),
       ),

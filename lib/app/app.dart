@@ -10,6 +10,7 @@ import '../core/theme/theme_mode_controller.dart';
 import '../features/lockscreen/application/providers/lock_screen_controller.dart';
 import '../features/lockscreen/infrastructure/lock_screen_service.dart';
 import '../features/player/application/providers/player_controller.dart';
+import '../features/player/application/providers/playback_stats_recorder.dart';
 import 'router/app_router.dart';
 import 'router/route_names.dart';
 
@@ -76,6 +77,9 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Records plays for the "most played" smart playlist; keep it alive.
+    ref.watch(playbackStatsRecorderProvider);
+
     // Drives the native side: the lock screen only reacts while a song plays.
     ref.listen(
       playerProvider.select((state) => state.hasCurrent && state.playing),

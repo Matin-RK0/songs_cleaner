@@ -17,6 +17,7 @@ class ArtworkImage extends ConsumerWidget {
     this.size = 48,
     this.borderRadius,
     this.expand = false,
+    this.resolution,
   });
 
   final int songId;
@@ -24,13 +25,17 @@ class ArtworkImage extends ConsumerWidget {
   final BorderRadius? borderRadius;
   final bool expand;
 
+  /// Overrides the requested source resolution. Small collage cells can pass a
+  /// lower value so they are not decoded at the full list-thumbnail size.
+  final int? resolution;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // MediaStore returns a thumbnail at the requested dimensions. A 256px
     // request looks soft when the same artwork is enlarged in the player, so
     // keep the source at the reference app's 500px minimum for every usage.
     // Larger widgets still get a source large enough for their bounds.
-    final requestSize = math.max(500, size.round());
+    final requestSize = resolution ?? math.max(500, size.round());
     final bytes = ref.watch(songArtworkProvider((songId, requestSize)));
     final colors = context.colors;
     return RepaintBoundary(
