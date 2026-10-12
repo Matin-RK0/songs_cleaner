@@ -45,7 +45,7 @@ class _SeekBarState extends ConsumerState<SeekBar> {
               thumbColor: colors.primary,
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Slider(
                 value: value,
                 max: maxMs <= 0 ? 1 : maxMs,
