@@ -97,12 +97,7 @@ class LockScreenPlayerScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.md),
                       const PlayerTrackInfo(),
                       const SizedBox(height: AppSpacing.sm),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                        ),
-                        child: SeekBar(),
-                      ),
+                      SeekBar(),
                       const SizedBox(height: AppSpacing.md),
                       const PlayerControlsRow(),
                       const SizedBox(height: AppSpacing.xl),
