@@ -5,6 +5,7 @@ import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../library/presentation/widgets/artwork_image.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../player/presentation/widgets/delete_current_button.dart';
@@ -24,6 +25,7 @@ class LockScreenPlayerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final song = ref.watch(playerProvider.select((state) => state.current));
     final l10n = context.l10n;
+    final surface = context.colors.surface;
 
     return PopScope(
       // The route is removed by the lock-screen coordinator (unlock or back);
@@ -32,21 +34,52 @@ class LockScreenPlayerScreen extends ConsumerWidget {
         if (didPop) ref.read(lockScreenServiceProvider).dismiss();
       },
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: surface,
         body: ColoredBox(
-          color: AppColors.surface,
+          color: surface,
           child: SafeArea(
             child: song == null
                 ? const NothingPlayingView()
                 : Column(
                     children: [
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: IconButton(
-                          tooltip: l10n.backTooltip,
-                          iconSize: 30,
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                          onPressed: () => Navigator.of(context).maybePop(),
+                      Padding(
+                        padding: AppSpacing.screenPadding,
+                        child: SizedBox(
+                          height: 48,
+                          child: Stack(
+                            alignment: AlignmentDirectional.center,
+                            children: [
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: IconButton(
+                                  tooltip: l10n.backTooltip,
+                                  iconSize: 30,
+                                  icon: const Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                  ),
+                                  onPressed: () =>
+                                      Navigator.of(context).maybePop(),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.xl,
+                                ),
+                                child: Text(
+                                  l10n.playerScreenTitle,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.fontFamily,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.colors.textHigh,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       Expanded(

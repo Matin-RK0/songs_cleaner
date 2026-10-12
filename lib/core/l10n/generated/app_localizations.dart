@@ -482,6 +482,36 @@ abstract class AppLocalizations {
   /// **'تنظیمات'**
   String get settingsTitle;
 
+  /// No description provided for @settingsAppearanceSection.
+  ///
+  /// In fa, this message translates to:
+  /// **'ظاهر'**
+  String get settingsAppearanceSection;
+
+  /// No description provided for @themeModeTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تم'**
+  String get themeModeTitle;
+
+  /// No description provided for @themeModeSystem.
+  ///
+  /// In fa, this message translates to:
+  /// **'سیستم'**
+  String get themeModeSystem;
+
+  /// No description provided for @themeModeLight.
+  ///
+  /// In fa, this message translates to:
+  /// **'روشن'**
+  String get themeModeLight;
+
+  /// No description provided for @themeModeDark.
+  ///
+  /// In fa, this message translates to:
+  /// **'تیره'**
+  String get themeModeDark;
+
   /// No description provided for @settingsLockScreenSection.
   ///
   /// In fa, this message translates to:

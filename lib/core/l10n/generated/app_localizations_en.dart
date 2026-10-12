@@ -216,6 +216,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get settingsAppearanceSection => 'Appearance';
+
+  @override
+  String get themeModeTitle => 'Theme';
+
+  @override
+  String get themeModeSystem => 'System';
+
+  @override
+  String get themeModeLight => 'Light';
+
+  @override
+  String get themeModeDark => 'Dark';
+
+  @override
   String get settingsLockScreenSection => 'Lock screen';
 
   @override

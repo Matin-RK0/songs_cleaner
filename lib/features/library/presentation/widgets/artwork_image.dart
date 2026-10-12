@@ -32,13 +32,14 @@ class ArtworkImage extends ConsumerWidget {
     // Larger widgets still get a source large enough for their bounds.
     final requestSize = math.max(500, size.round());
     final bytes = ref.watch(songArtworkProvider((songId, requestSize)));
+    final colors = context.colors;
     return RepaintBoundary(
       child: SizedBox(
         width: expand ? double.infinity : size,
         height: expand ? double.infinity : size,
         child: DecoratedBox(
           decoration: ShapeDecoration(
-            color: AppColors.artworkPlaceholder,
+            color: colors.artworkPlaceholder,
             shape: RoundedRectangleBorder(
               borderRadius: borderRadius ?? AppRadius.md,
             ),
@@ -47,7 +48,7 @@ class ArtworkImage extends ConsumerWidget {
               bytes.whenOrNull(
                 data: (data) => data == null ? null : _image(data),
               ) ??
-              _placeholder(),
+              _placeholder(colors.textLow),
         ),
       ),
     );
@@ -65,11 +66,11 @@ class ArtworkImage extends ConsumerWidget {
     );
   }
 
-  Widget _placeholder() {
+  Widget _placeholder(Color color) {
     return Icon(
       Icons.music_note_rounded,
       size: size * 0.5,
-      color: AppColors.textLow,
+      color: color,
     );
   }
 }

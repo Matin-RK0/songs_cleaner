@@ -17,6 +17,7 @@ class NotificationPermissionBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final colors = context.colors;
     final status =
         ref.watch(notificationGateProvider).value ?? NotificationGateStatus.checking;
 
@@ -32,17 +33,17 @@ class NotificationPermissionBanner extends ConsumerWidget {
         AppSpacing.xs,
       ),
       child: Material(
-        color: AppColors.surfaceHigh,
+        color: colors.surfaceHigh,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
         clipBehavior: Clip.antiAlias,
         child: Row(
           children: [
-            const Padding(
-              padding: EdgeInsetsDirectional.only(start: AppSpacing.md),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: AppSpacing.md),
               child: Icon(
                 Icons.notifications_off_rounded,
                 size: 20,
-                color: AppColors.textMedium,
+                color: colors.textMedium,
               ),
             ),
             Expanded(
@@ -59,20 +60,20 @@ class NotificationPermissionBanner extends ConsumerWidget {
                   children: [
                     Text(
                       l10n.notifPermissionTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textHigh,
+                        color: colors.textHigh,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       l10n.notifPermissionMessage,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 11.5,
-                        color: AppColors.textMedium,
+                        color: colors.textMedium,
                       ),
                     ),
                   ],

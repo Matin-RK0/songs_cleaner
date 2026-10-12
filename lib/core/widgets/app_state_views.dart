@@ -19,6 +19,7 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Center(
       child: Padding(
         padding: AppSpacing.allMd,
@@ -27,20 +28,20 @@ class AppEmptyState extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: const ShapeDecoration(
-                color: AppColors.surfaceHigh,
-                shape: CircleBorder(),
+              decoration: ShapeDecoration(
+                color: colors.surfaceHigh,
+                shape: const CircleBorder(),
               ),
-              child: Icon(icon, size: 32, color: AppColors.textLow),
+              child: Icon(icon, size: 32, color: colors.textLow),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textHigh,
+                color: colors.textHigh,
               ),
             ),
             if (message != null) ...[
@@ -48,10 +49,10 @@ class AppEmptyState extends StatelessWidget {
               Text(
                 message!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13.5,
                   height: 1.6,
-                  color: AppColors.textMedium,
+                  color: colors.textMedium,
                 ),
               ),
             ],
@@ -100,7 +101,9 @@ class PrimaryActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = destructive ? AppColors.danger : AppColors.primary;
+    final background = destructive
+        ? context.colors.danger
+        : context.colors.primary;
     return FilledButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 19),

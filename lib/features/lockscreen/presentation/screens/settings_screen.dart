@@ -7,12 +7,13 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../player/application/providers/player_preferences_controller.dart';
 import '../../application/providers/lock_screen_controller.dart';
 
-/// App settings. Currently exposes the lock-screen music controls toggle.
+/// App settings. Exposes appearance, lock-screen and playback toggles.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -81,10 +82,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<bool> _showPermissionSheet() async {
     final l10n = context.l10n;
+    final colors = context.colors;
     final result = await showModalBottomSheet<bool>(
       context: context,
       showDragHandle: true,
-      backgroundColor: AppColors.surfaceHigh,
+      backgroundColor: colors.surfaceHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
       ),
@@ -99,29 +101,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.layers_rounded,
-              size: 34,
-              color: AppColors.primary,
-            ),
+            Icon(Icons.layers_rounded, size: 34, color: colors.primary),
             const SizedBox(height: AppSpacing.md),
             Text(
               l10n.lockScreenPermissionTitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: AppTypography.fontFamily,
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textHigh,
+                color: colors.textHigh,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               l10n.lockScreenPermissionMessage,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: AppTypography.fontFamily,
                 fontSize: 14,
                 height: 1.6,
-                color: AppColors.textMedium,
+                color: colors.textMedium,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -146,17 +144,98 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return result ?? false;
   }
 
+  Future<void> _showThemeSheet() async {
+    final l10n = context.l10n;
+    final current = ref.read(appThemeModeProvider);
+
+    final selected = await showModalBottomSheet<ThemeMode>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Text(
+                l10n.themeModeTitle,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: sheetContext.colors.textHigh,
+                ),
+              ),
+            ),
+            RadioGroup<ThemeMode>(
+              groupValue: current,
+              onChanged: (value) => Navigator.of(sheetContext).pop(value),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final mode in ThemeMode.values)
+                    RadioListTile<ThemeMode>(
+                      value: mode,
+                      activeColor: sheetContext.colors.primary,
+                      title: Text(_themeModeLabel(l10n, mode)),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+
+    if (selected != null) {
+      await ref.read(appThemeModeProvider.notifier).setMode(selected);
+    }
+  }
+
+  String _themeModeLabel(AppLocalizations l10n, ThemeMode mode) =>
+      switch (mode) {
+        ThemeMode.system => l10n.themeModeSystem,
+        ThemeMode.light => l10n.themeModeLight,
+        ThemeMode.dark => l10n.themeModeDark,
+      };
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final colors = context.colors;
     final lockScreenState = ref.watch(lockScreenControllerProvider);
     final previousGoesToPrevious = ref.watch(previousGoesToPreviousProvider);
+    final themeMode = ref.watch(appThemeModeProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         children: [
+          _SectionHeader(title: l10n.settingsAppearanceSection),
+          ListTile(
+            leading: Icon(_themeModeIcon(themeMode), color: colors.primary),
+            title: Text(
+              l10n.themeModeTitle,
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: colors.textHigh,
+              ),
+            ),
+            subtitle: Text(
+              _themeModeLabel(l10n, themeMode),
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                fontSize: 12.5,
+                height: 1.4,
+                color: colors.textMedium,
+              ),
+            ),
+            trailing: Icon(Icons.chevron_left_rounded, color: colors.textLow),
+            onTap: _showThemeSheet,
+          ),
           _SectionHeader(title: l10n.settingsLockScreenSection),
           lockScreenState.when(
             loading: () => const Padding(
@@ -189,6 +268,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  IconData _themeModeIcon(ThemeMode mode) => switch (mode) {
+    ThemeMode.system => Icons.brightness_auto_rounded,
+    ThemeMode.light => Icons.light_mode_rounded,
+    ThemeMode.dark => Icons.dark_mode_rounded,
+  };
+
   String _subtitle(AppLocalizations l10n, LockScreenState state) {
     if (!state.supported) return l10n.lockScreenUnsupportedSubtitle;
     if (!state.overlayGranted) return l10n.lockScreenPermissionNeeded;
@@ -213,31 +298,29 @@ class _SettingSwitchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return SwitchListTile(
       value: value,
       onChanged: onChanged,
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: AppTypography.fontFamily,
           fontSize: 15,
           fontWeight: FontWeight.w700,
-          color: AppColors.textHigh,
+          color: colors.textHigh,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: AppTypography.fontFamily,
           fontSize: 12.5,
           height: 1.4,
-          color: AppColors.textMedium,
+          color: colors.textMedium,
         ),
       ),
-      secondary: Icon(
-        icon,
-        color: value ? AppColors.primary : AppColors.textLow,
-      ),
+      secondary: Icon(icon, color: value ? colors.primary : colors.textLow),
     );
   }
 }
@@ -258,12 +341,12 @@ class _SectionHeader extends StatelessWidget {
       ),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: AppTypography.fontFamily,
           fontSize: 13,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.4,
-          color: AppColors.primary,
+          color: context.colors.primary,
         ),
       ),
     );

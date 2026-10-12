@@ -30,6 +30,7 @@ class SongTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final colors = context.colors;
     // Animate the equalizer only while playback is actually running; pausing
     // a song freezes the bars (they hold their last height) instead of
     // continuing to bob.
@@ -74,16 +75,16 @@ class SongTile extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
-                color: isCurrent ? AppColors.primary : AppColors.textHigh,
+                color: isCurrent ? colors.primary : colors.textHigh,
               ),
             ),
             subtitle: Text(
               '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
-                color: AppColors.textMedium,
+                color: colors.textMedium,
               ),
             ),
             trailing: isCurrent ? _FakeEqualizer(playing: playing) : null,
@@ -95,6 +96,7 @@ class SongTile extends ConsumerWidget {
 
   void _showActions(BuildContext context) {
     final l10n = context.l10n;
+    final colors = context.colors;
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -111,8 +113,8 @@ class SongTile extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline_rounded),
-              iconColor: AppColors.danger,
-              textColor: AppColors.danger,
+              iconColor: colors.danger,
+              textColor: colors.danger,
               title: Text(l10n.deleteAction),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -149,8 +151,8 @@ class _ArtworkLeading extends StatelessWidget {
         decoration: ShapeDecoration(
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.lg,
-            side: const BorderSide(
-              color: AppColors.primary,
+            side: BorderSide(
+              color: context.colors.primary,
               width: 3,
             ),
           ),
@@ -225,6 +227,7 @@ class _FakeEqualizerState extends State<_FakeEqualizer>
 
   @override
   Widget build(BuildContext context) {
+    final barColor = context.colors.primary;
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: _controller,
@@ -235,11 +238,11 @@ class _FakeEqualizerState extends State<_FakeEqualizer>
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _barWidget(_barOne.value),
+              _barWidget(_barOne.value, barColor),
               const SizedBox(width: 2),
-              _barWidget(_barTwo.value),
+              _barWidget(_barTwo.value, barColor),
               const SizedBox(width: 2),
-              _barWidget(_barThree.value),
+              _barWidget(_barThree.value, barColor),
             ],
           ),
         ),
@@ -247,11 +250,11 @@ class _FakeEqualizerState extends State<_FakeEqualizer>
     );
   }
 
-  Widget _barWidget(double factor) => Container(
+  Widget _barWidget(double factor, Color color) => Container(
     width: 4,
     height: 20 * factor,
     decoration: BoxDecoration(
-      color: AppColors.primary,
+      color: color,
       borderRadius: AppRadius.pill,
     ),
   );

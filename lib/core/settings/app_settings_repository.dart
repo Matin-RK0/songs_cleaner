@@ -156,6 +156,7 @@ class AppSettingsRepository {
   static const String _lockScreenEnabledKey = 'lockscreen.enabled';
   static const String _previousGoesToPreviousKey =
       'player.previousGoesToPrevious';
+  static const String _themeModeKey = 'appearance.themeMode';
 
   final SharedPreferences _prefs;
 
@@ -182,6 +183,14 @@ class AppSettingsRepository {
 
   Future<void> saveLockScreenEnabled(bool enabled) =>
       _prefs.setBool(_lockScreenEnabledKey, enabled);
+
+  // -- Appearance -------------------------------------------------------------
+
+  String loadThemeMode(String fallback) =>
+      _prefs.getString(_themeModeKey) ?? fallback;
+
+  Future<void> saveThemeMode(String value) =>
+      _prefs.setString(_themeModeKey, value);
 
   // -- Player controls --------------------------------------------------------
 

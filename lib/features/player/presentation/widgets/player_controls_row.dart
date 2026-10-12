@@ -16,6 +16,7 @@ class PlayerControlsRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final colors = context.colors;
     final playing = ref.watch(playerProvider.select((state) => state.playing));
     final shuffled = ref.watch(
       playerProvider.select((state) => state.shuffled),
@@ -38,22 +39,22 @@ class PlayerControlsRow extends ConsumerWidget {
             icon: Icon(
               Icons.shuffle_rounded,
               size: 26,
-              color: shuffled ? AppColors.primary : AppColors.textMedium,
+              color: shuffled ? colors.primary : colors.textMedium,
             ),
           ),
           IconButton(
             tooltip: l10n.previousTooltip,
             onPressed: () => ref.read(playerProvider.notifier).previous(),
-            icon: const Icon(
+            icon: Icon(
               Icons.skip_previous_rounded,
               size: 36,
-              color: AppColors.textHigh,
+              color: colors.textHigh,
             ),
           ),
           DecoratedBox(
-            decoration: const ShapeDecoration(
-              color: AppColors.primary,
-              shape: CircleBorder(),
+            decoration: ShapeDecoration(
+              color: colors.primary,
+              shape: const CircleBorder(),
             ),
             child: IconButton.filled(
               tooltip: playing ? l10n.pauseTooltip : l10n.playTooltip,
@@ -64,7 +65,7 @@ class PlayerControlsRow extends ConsumerWidget {
                   playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   key: ValueKey(playing),
                   size: 34,
-                  color: AppColors.onPrimary,
+                  color: colors.onPrimary,
                 ),
               ),
             ),
@@ -72,10 +73,10 @@ class PlayerControlsRow extends ConsumerWidget {
           IconButton(
             tooltip: l10n.nextTooltip,
             onPressed: () => ref.read(playerProvider.notifier).next(),
-            icon: const Icon(
+            icon: Icon(
               Icons.skip_next_rounded,
               size: 36,
-              color: AppColors.textHigh,
+              color: colors.textHigh,
             ),
           ),
           IconButton(
@@ -94,8 +95,8 @@ class PlayerControlsRow extends ConsumerWidget {
               },
               size: 26,
               color: repeatMode == RepeatMode.off
-                  ? AppColors.textMedium
-                  : AppColors.primary,
+                  ? colors.textMedium
+                  : colors.primary,
             ),
           ),
         ],

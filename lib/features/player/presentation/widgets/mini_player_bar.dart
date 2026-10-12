@@ -39,7 +39,7 @@ class MiniPlayerBar extends ConsumerWidget {
         onNext: () => ref.read(playerProvider.notifier).next(),
         onOpen: () => AppRouter.openPlayer(context),
         child: Material(
-          color: AppColors.surfaceHigh,
+          color: context.colors.surfaceHigh,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
           ),
@@ -70,7 +70,7 @@ class MiniPlayerBar extends ConsumerWidget {
                     splashColor: Colors.transparent,
                     leading: DecoratedBox(
                       decoration: ShapeDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.24),
+                        color: context.colors.primary.withValues(alpha: 0.24),
                         shape: RoundedRectangleBorder(
                           borderRadius: AppRadius.lg,
                         ),
@@ -88,7 +88,7 @@ class MiniPlayerBar extends ConsumerWidget {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textHigh,
+                        color: Colors.white,
                       ),
                     ),
                     subtitle: Text(
@@ -97,7 +97,7 @@ class MiniPlayerBar extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12.5,
-                        color: AppColors.textMedium,
+                        color: Colors.white70,
                       ),
                     ),
                     trailing: SizedBox(
@@ -237,7 +237,7 @@ class _PlayPauseProgress extends StatelessWidget {
             ),
             Icon(
               playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              color: AppColors.textHigh,
+              color: Colors.white,
               size: 30,
             ),
           ],

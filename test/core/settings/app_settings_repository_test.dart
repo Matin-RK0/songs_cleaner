@@ -101,4 +101,15 @@ void main() {
     await repository.savePreviousGoesToPrevious(false);
     expect(repository.loadPreviousGoesToPrevious(true), isFalse);
   });
+
+  test('round-trips the appearance theme mode', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadThemeMode('dark'), 'dark');
+
+    await repository.saveThemeMode('light');
+    expect(repository.loadThemeMode('dark'), 'light');
+  });
 }

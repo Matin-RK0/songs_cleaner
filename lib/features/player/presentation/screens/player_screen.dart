@@ -5,6 +5,7 @@ import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../library/presentation/widgets/artwork_image.dart';
 import '../../application/providers/player_controller.dart';
 import '../widgets/delete_current_button.dart';
@@ -22,12 +23,13 @@ class PlayerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final song = ref.watch(playerProvider.select((state) => state.current));
+    final surface = context.colors.surface;
 
     return SwipeDownToDismiss(
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: surface,
         body: ColoredBox(
-          color: AppColors.surface,
+          color: surface,
           child: SafeArea(
             child: song == null
                 ? const NothingPlayingView()
@@ -87,7 +89,20 @@ class _HeaderBar extends StatelessWidget {
             icon: const Icon(Icons.keyboard_arrow_down_rounded),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
-          const Spacer(),
+          Expanded(
+            child: Text(
+              l10n.playerScreenTitle,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: context.colors.textHigh,
+              ),
+            ),
+          ),
           IconButton(
             tooltip: l10n.queueTitle,
             iconSize: 30,

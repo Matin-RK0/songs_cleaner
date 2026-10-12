@@ -99,6 +99,7 @@ class _SongsTabState extends ConsumerState<SongsTab> {
 /// Bottom sheet for choosing the song list ordering.
 Future<void> showSortSheet(BuildContext context, WidgetRef ref) async {
   final l10n = context.l10n;
+  final colors = context.colors;
   final current = ref.read(libraryProvider).value?.sort ?? SongSort.titleAsc;
 
   final selected = await showModalBottomSheet<SongSort>(
@@ -112,10 +113,10 @@ Future<void> showSortSheet(BuildContext context, WidgetRef ref) async {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Text(
               l10n.sortLabel,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textHigh,
+                color: colors.textHigh,
               ),
             ),
           ),
@@ -128,7 +129,7 @@ Future<void> showSortSheet(BuildContext context, WidgetRef ref) async {
                 for (final sort in SongSort.values)
                   RadioListTile<SongSort>(
                     value: sort,
-                    activeColor: AppColors.primary,
+                    activeColor: colors.primary,
                     title: Text(_sortLabel(l10n, sort)),
                   ),
               ],

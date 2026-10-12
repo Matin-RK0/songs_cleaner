@@ -19,18 +19,19 @@ class DeleteCurrentButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.danger.withValues(alpha: 0.16),
-            foregroundColor: AppColors.danger,
+            backgroundColor: colors.danger.withValues(alpha: 0.16),
+            foregroundColor: colors.danger,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
-            side: BorderSide(color: AppColors.danger.withValues(alpha: 0.45)),
+            side: BorderSide(color: colors.danger.withValues(alpha: 0.45)),
             textStyle: const TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 15,

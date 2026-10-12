@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/l10n/generated/app_localizations.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/theme_mode_controller.dart';
 import '../features/lockscreen/application/providers/lock_screen_controller.dart';
 import '../features/lockscreen/infrastructure/lock_screen_service.dart';
 import '../features/player/application/providers/player_controller.dart';
@@ -86,7 +87,9 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
       title: 'Songs Cleaner',
       debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
-      theme: AppTheme.dark(),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ref.watch(appThemeModeProvider),
       locale: const Locale('en'),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [

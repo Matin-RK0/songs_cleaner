@@ -215,6 +215,21 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsTitle => 'تنظیمات';
 
   @override
+  String get settingsAppearanceSection => 'ظاهر';
+
+  @override
+  String get themeModeTitle => 'تم';
+
+  @override
+  String get themeModeSystem => 'سیستم';
+
+  @override
+  String get themeModeLight => 'روشن';
+
+  @override
+  String get themeModeDark => 'تیره';
+
+  @override
   String get settingsLockScreenSection => 'صفحه قفل';
 
   @override

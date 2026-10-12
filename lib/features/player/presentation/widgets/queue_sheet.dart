@@ -26,6 +26,7 @@ class QueueSheetContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final colors = context.colors;
     final songs = ref.watch(playerProvider.select((state) => state.songs));
     final currentIndex =
         ref.watch(playerProvider.select((state) => state.index));
@@ -40,7 +41,7 @@ class QueueSheetContent extends ConsumerWidget {
             const SizedBox(height: 16),
             Text(
               l10n.queueEmpty,
-              style: const TextStyle(color: AppColors.textMedium),
+              style: TextStyle(color: colors.textMedium),
             ),
           ],
         ),
@@ -55,10 +56,10 @@ class QueueSheetContent extends ConsumerWidget {
             Expanded(
               child: Text(
                 l10n.queueTitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textHigh,
+                  color: colors.textHigh,
                 ),
               ),
             ),
@@ -72,7 +73,7 @@ class QueueSheetContent extends ConsumerWidget {
             ),
           ],
         ),
-        const Divider(height: 1, color: AppColors.outline),
+        Divider(height: 1, color: colors.outline),
         Expanded(
           child: ListView.builder(
             physics: const ClampingScrollPhysics(),
@@ -84,14 +85,14 @@ class QueueSheetContent extends ConsumerWidget {
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 leading: isCurrent
-                    ? const Icon(
+                    ? Icon(
                         Icons.graphic_eq_rounded,
-                        color: AppColors.primary,
+                        color: colors.primary,
                       )
                     : Text(
                         '${index + 1}',
-                        style: const TextStyle(
-                          color: AppColors.textLow,
+                        style: TextStyle(
+                          color: colors.textLow,
                           fontSize: 12,
                         ),
                       ),
@@ -104,8 +105,8 @@ class QueueSheetContent extends ConsumerWidget {
                     fontWeight:
                         isCurrent ? FontWeight.w800 : FontWeight.w500,
                     color: isCurrent
-                        ? AppColors.primary
-                        : AppColors.textHigh,
+                        ? colors.primary
+                        : colors.textHigh,
                   ),
                 ),
                 subtitle: Text(

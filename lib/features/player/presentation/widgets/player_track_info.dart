@@ -17,6 +17,7 @@ class PlayerTrackInfo extends ConsumerWidget {
     if (song == null) return const SizedBox.shrink();
 
     final l10n = context.l10n;
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
@@ -26,10 +27,10 @@ class PlayerTrackInfo extends ConsumerWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
-              color: AppColors.textHigh,
+              color: colors.textHigh,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -38,7 +39,7 @@ class PlayerTrackInfo extends ConsumerWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 14, color: AppColors.textMedium),
+            style: TextStyle(fontSize: 14, color: colors.textMedium),
           ),
         ],
       ),

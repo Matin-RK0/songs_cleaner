@@ -19,6 +19,7 @@ class GroupsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final colors = context.colors;
     final library = ref.watch(libraryProvider);
 
     return library.when(
@@ -26,7 +27,7 @@ class GroupsTab extends ConsumerWidget {
       error: (error, _) => Center(
         child: Text(
           l10n.errorLoadFailedTitle,
-          style: const TextStyle(color: AppColors.textMedium),
+          style: TextStyle(color: colors.textMedium),
         ),
       ),
       data: (_) {
@@ -52,7 +53,7 @@ class GroupsTab extends ConsumerWidget {
             return Padding(
               padding: const EdgeInsetsDirectional.only(bottom: AppSpacing.xs),
               child: Material(
-                color: AppColors.surface,
+                color: colors.surface,
                 shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
                 clipBehavior: Clip.antiAlias,
                 child: ListTile(
@@ -71,15 +72,15 @@ class GroupsTab extends ConsumerWidget {
                     name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textHigh,
+                      color: colors.textHigh,
                     ),
                   ),
                   subtitle: Text(l10n.songCountLabel(group.songCount)),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.chevron_left_rounded,
-                    color: AppColors.textLow,
+                    color: colors.textLow,
                   ),
                   onTap: () {
                     Navigator.of(context).pushNamed(

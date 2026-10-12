@@ -30,6 +30,7 @@ class _SeekBarState extends ConsumerState<SeekBar> {
     final maxMs = duration.inMilliseconds.toDouble();
     final value = _dragValueMs ??
         position.inMilliseconds.toDouble().clamp(0.0, maxMs == 0 ? 1 : maxMs);
+    final colors = context.colors;
 
     return Directionality(
       // Audio timelines always advance from the physical left edge.
@@ -38,9 +39,9 @@ class _SeekBarState extends ConsumerState<SeekBar> {
         children: [
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppColors.primary,
-              inactiveTrackColor: AppColors.outline,
-              thumbColor: AppColors.primary,
+              activeTrackColor: colors.primary,
+              inactiveTrackColor: colors.outline,
+              thumbColor: colors.primary,
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -66,16 +67,16 @@ class _SeekBarState extends ConsumerState<SeekBar> {
               children: [
                 Text(
                   Duration(milliseconds: value.round()).mmss,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textMedium,
+                    color: colors.textMedium,
                   ),
                 ),
                 Text(
                   duration.mmss,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textLow,
+                    color: colors.textLow,
                   ),
                 ),
               ],
