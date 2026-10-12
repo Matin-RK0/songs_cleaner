@@ -7,6 +7,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../library/presentation/widgets/artwork_image.dart';
 import '../../../player/application/providers/player_controller.dart';
+import '../../../player/presentation/widgets/delete_current_button.dart';
 import '../../../player/presentation/widgets/player_controls_row.dart';
 import '../../../player/presentation/widgets/player_state_views.dart';
 import '../../../player/presentation/widgets/player_track_info.dart';
@@ -65,9 +66,16 @@ class LockScreenPlayerScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.md),
                       const PlayerTrackInfo(),
                       const SizedBox(height: AppSpacing.sm),
-                      const SeekBar(),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                        ),
+                        child: SeekBar(),
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       const PlayerControlsRow(),
+                      const SizedBox(height: AppSpacing.lg),
+                      DeleteCurrentButton(song: song),
                       const SizedBox(height: AppSpacing.md),
                     ],
                   ),
