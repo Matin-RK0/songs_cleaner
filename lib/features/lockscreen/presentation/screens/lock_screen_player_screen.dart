@@ -74,7 +74,7 @@ class LockScreenPlayerScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       const PlayerControlsRow(),
-                      const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.xl),
                       DeleteCurrentButton(song: song),
                       const SizedBox(height: AppSpacing.md),
                     ],
