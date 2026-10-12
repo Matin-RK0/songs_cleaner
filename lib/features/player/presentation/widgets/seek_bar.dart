@@ -60,7 +60,7 @@ class _SeekBarState extends ConsumerState<SeekBar> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
