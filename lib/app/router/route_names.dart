@@ -3,6 +3,8 @@ abstract final class RouteNames {
   static const String player = '/player';
   static const String search = '/search';
   static const String groupSongs = '/group-songs';
+  static const String settings = '/settings';
+  static const String lockScreen = '/lock-screen';
 }
 
 class GroupSongsArgs {

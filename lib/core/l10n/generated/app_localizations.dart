@@ -475,6 +475,78 @@ abstract class AppLocalizations {
   /// In fa, this message translates to:
   /// **'برای دیدن آهنگ در حال پخش و دکمه‌های آن در نوار وضعیت، اجازه نوتیفیکیشن را فعال کنید.'**
   String get notifPermissionMessage;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تنظیمات'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsLockScreenSection.
+  ///
+  /// In fa, this message translates to:
+  /// **'صفحه قفل'**
+  String get settingsLockScreenSection;
+
+  /// No description provided for @lockScreenControlTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'کنترل موزیک روی صفحه قفل'**
+  String get lockScreenControlTitle;
+
+  /// No description provided for @lockScreenControlSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'وقتی موزیک در حال پخش است و صفحه روشن می‌شود، پخش‌کننده نمایش داده شود.'**
+  String get lockScreenControlSubtitle;
+
+  /// No description provided for @lockScreenPermissionNeeded.
+  ///
+  /// In fa, this message translates to:
+  /// **'برای فعال‌سازی، اجازه «نمایش روی برنامه‌های دیگر» را بدهید.'**
+  String get lockScreenPermissionNeeded;
+
+  /// No description provided for @lockScreenUnsupportedSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'روی این دستگاه پشتیبانی نمی‌شود.'**
+  String get lockScreenUnsupportedSubtitle;
+
+  /// No description provided for @lockScreenPermissionTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'دسترسی لازم است'**
+  String get lockScreenPermissionTitle;
+
+  /// No description provided for @lockScreenPermissionMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'برای نمایش کنترل‌های موزیک روی صفحه قفل، اجازه دهید آهنگ پاک‌کن روی برنامه‌های دیگر نمایش داده شود.'**
+  String get lockScreenPermissionMessage;
+
+  /// No description provided for @lockScreenPermissionAllow.
+  ///
+  /// In fa, this message translates to:
+  /// **'باز کردن تنظیمات'**
+  String get lockScreenPermissionAllow;
+
+  /// No description provided for @lockScreenPermissionNotNow.
+  ///
+  /// In fa, this message translates to:
+  /// **'الان نه'**
+  String get lockScreenPermissionNotNow;
+
+  /// No description provided for @lockScreenEnabledToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'کنترل صفحه قفل فعال شد'**
+  String get lockScreenEnabledToast;
+
+  /// No description provided for @lockScreenDisabledToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'کنترل صفحه قفل غیرفعال شد'**
+  String get lockScreenDisabledToast;
 }
 
 class _AppLocalizationsDelegate

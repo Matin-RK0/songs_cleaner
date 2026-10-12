@@ -211,4 +211,43 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notifPermissionMessage =>
       'Allow notifications to see the playing song and its controls in the status bar.';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsLockScreenSection => 'Lock screen';
+
+  @override
+  String get lockScreenControlTitle => 'Music controls on lock screen';
+
+  @override
+  String get lockScreenControlSubtitle =>
+      'Show the player when the screen turns on while music is playing.';
+
+  @override
+  String get lockScreenPermissionNeeded =>
+      'Allow \"Display over other apps\" to turn this on.';
+
+  @override
+  String get lockScreenUnsupportedSubtitle => 'Not supported on this device.';
+
+  @override
+  String get lockScreenPermissionTitle => 'Permission needed';
+
+  @override
+  String get lockScreenPermissionMessage =>
+      'To show music controls over the lock screen, allow Songs Cleaner to display over other apps.';
+
+  @override
+  String get lockScreenPermissionAllow => 'Open settings';
+
+  @override
+  String get lockScreenPermissionNotNow => 'Not now';
+
+  @override
+  String get lockScreenEnabledToast => 'Lock screen controls enabled';
+
+  @override
+  String get lockScreenDisabledToast => 'Lock screen controls disabled';
 }

@@ -153,6 +153,7 @@ class AppSettingsRepository {
   static const String _sessionShuffleKey = 'playback.session.shuffled';
   static const String _sessionTracksKey = 'playback.session.tracks';
   static const String _sessionSnapshotKey = 'playback.session.snapshot.v2';
+  static const String _lockScreenEnabledKey = 'lockscreen.enabled';
 
   final SharedPreferences _prefs;
 
@@ -171,6 +172,14 @@ class AppSettingsRepository {
 
   Future<void> saveHomeTabIndex(int index) =>
       _prefs.setInt(_homeTabIndexKey, index);
+
+  // -- Lock screen ------------------------------------------------------------
+
+  bool loadLockScreenEnabled(bool fallback) =>
+      _prefs.getBool(_lockScreenEnabledKey) ?? fallback;
+
+  Future<void> saveLockScreenEnabled(bool enabled) =>
+      _prefs.setBool(_lockScreenEnabledKey, enabled);
 
   // -- Playback session -------------------------------------------------------
 

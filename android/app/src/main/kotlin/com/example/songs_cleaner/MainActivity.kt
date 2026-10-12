@@ -1,6 +1,7 @@
 package com.example.songs_cleaner
 
 import android.content.Intent
+import android.os.Bundle
 import androidx.core.content.ContextCompat
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -11,8 +12,31 @@ class MainActivity : AudioServiceActivity() {
     // destroy handler does not re-arm the routine playback service.
     private var closingApp = false
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        LockScreenController.onActivityCreated(this)
+        // A cold start triggered by LockScreenController carries the extra that
+        // asks Dart to open the lock-screen player route.
+        LockScreenController.onNewIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        LockScreenController.onNewIntent(intent)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        LockScreenController.attach(
+            this,
+            MethodChannel(
+                flutterEngine.dartExecutor.binaryMessenger,
+                LOCK_SCREEN_CHANNEL,
+            ).apply {
+                setMethodCallHandler(LockScreenController::handleMethodCall)
+            },
+        )
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             ROUTINE_PLAYBACK_CHANNEL,
@@ -51,6 +75,7 @@ class MainActivity : AudioServiceActivity() {
     }
 
     override fun onDestroy() {
+        LockScreenController.detach(this)
         if (!isChangingConfigurations && !closingApp) {
             try {
                 ContextCompat.startForegroundService(
@@ -67,5 +92,7 @@ class MainActivity : AudioServiceActivity() {
     private companion object {
         const val ROUTINE_PLAYBACK_CHANNEL =
             "com.example.songs_cleaner/routine_playback"
+        const val LOCK_SCREEN_CHANNEL =
+            "com.example.songs_cleaner/lock_screen"
     }
 }

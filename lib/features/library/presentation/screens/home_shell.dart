@@ -128,6 +128,12 @@ class _HomeShellState extends ConsumerState<HomeShell>
             icon: const Icon(Icons.sort_rounded),
             onPressed: () => showSortSheet(context, ref),
           ),
+          IconButton(
+            tooltip: l10n.settingsTitle,
+            icon: const Icon(Icons.settings_rounded),
+            onPressed: () =>
+                Navigator.of(context).pushNamed(RouteNames.settings),
+          ),
         ],
         bottom: TabBar(
           controller: _tabController,

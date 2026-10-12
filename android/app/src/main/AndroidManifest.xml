@@ -18,6 +18,13 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!--
+        Lock-screen music controls: "Display over other apps" is a hard
+        background-activity-launch exemption, so the player screen can be shown
+        over the keyguard when the screen turns on during playback.
+    -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
     <application
         android:label="Songs Cleaner"
         android:name="${applicationName}"

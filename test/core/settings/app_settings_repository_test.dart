@@ -73,4 +73,18 @@ void main() {
     expect(restored.tracks.single.path, '/legacy.mp3');
     expect(restored.wasPlaying, isFalse);
   });
+
+  test('round-trips the lock-screen controls toggle', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadLockScreenEnabled(false), isFalse);
+
+    await repository.saveLockScreenEnabled(true);
+    expect(repository.loadLockScreenEnabled(false), isTrue);
+
+    await repository.saveLockScreenEnabled(false);
+    expect(repository.loadLockScreenEnabled(true), isFalse);
+  });
 }

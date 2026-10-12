@@ -62,5 +62,17 @@
   "nothingPlayingTitle": "Nothing is playing",
   "backTooltip": "Back",
   "notifPermissionTitle": "Show playback controls",
-  "notifPermissionMessage": "Allow notifications to see the playing song and its controls in the status bar."
+  "notifPermissionMessage": "Allow notifications to see the playing song and its controls in the status bar.",
+  "settingsTitle": "Settings",
+  "settingsLockScreenSection": "Lock screen",
+  "lockScreenControlTitle": "Music controls on lock screen",
+  "lockScreenControlSubtitle": "Show the player when the screen turns on while music is playing.",
+  "lockScreenPermissionNeeded": "Allow \"Display over other apps\" to turn this on.",
+  "lockScreenUnsupportedSubtitle": "Not supported on this device.",
+  "lockScreenPermissionTitle": "Permission needed",
+  "lockScreenPermissionMessage": "To show music controls over the lock screen, allow Songs Cleaner to display over other apps.",
+  "lockScreenPermissionAllow": "Open settings",
+  "lockScreenPermissionNotNow": "Not now",
+  "lockScreenEnabledToast": "Lock screen controls enabled",
+  "lockScreenDisabledToast": "Lock screen controls disabled"
 }

@@ -97,5 +97,17 @@
   "nothingPlayingTitle": "چیزی در حال پخش نیست",
   "backTooltip": "بازگشت",
   "notifPermissionTitle": "نمایش کنترل‌های پخش",
-  "notifPermissionMessage": "برای دیدن آهنگ در حال پخش و دکمه‌های آن در نوار وضعیت، اجازه نوتیفیکیشن را فعال کنید."
+  "notifPermissionMessage": "برای دیدن آهنگ در حال پخش و دکمه‌های آن در نوار وضعیت، اجازه نوتیفیکیشن را فعال کنید.",
+  "settingsTitle": "تنظیمات",
+  "settingsLockScreenSection": "صفحه قفل",
+  "lockScreenControlTitle": "کنترل موزیک روی صفحه قفل",
+  "lockScreenControlSubtitle": "وقتی موزیک در حال پخش است و صفحه روشن می‌شود، پخش‌کننده نمایش داده شود.",
+  "lockScreenPermissionNeeded": "برای فعال‌سازی، اجازه «نمایش روی برنامه‌های دیگر» را بدهید.",
+  "lockScreenUnsupportedSubtitle": "روی این دستگاه پشتیبانی نمی‌شود.",
+  "lockScreenPermissionTitle": "دسترسی لازم است",
+  "lockScreenPermissionMessage": "برای نمایش کنترل‌های موزیک روی صفحه قفل، اجازه دهید آهنگ پاک‌کن روی برنامه‌های دیگر نمایش داده شود.",
+  "lockScreenPermissionAllow": "باز کردن تنظیمات",
+  "lockScreenPermissionNotNow": "الان نه",
+  "lockScreenEnabledToast": "کنترل صفحه قفل فعال شد",
+  "lockScreenDisabledToast": "کنترل صفحه قفل غیرفعال شد"
 }

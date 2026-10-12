@@ -210,4 +210,44 @@ class AppLocalizationsFa extends AppLocalizations {
   @override
   String get notifPermissionMessage =>
       'برای دیدن آهنگ در حال پخش و دکمه‌های آن در نوار وضعیت، اجازه نوتیفیکیشن را فعال کنید.';
+
+  @override
+  String get settingsTitle => 'تنظیمات';
+
+  @override
+  String get settingsLockScreenSection => 'صفحه قفل';
+
+  @override
+  String get lockScreenControlTitle => 'کنترل موزیک روی صفحه قفل';
+
+  @override
+  String get lockScreenControlSubtitle =>
+      'وقتی موزیک در حال پخش است و صفحه روشن می‌شود، پخش‌کننده نمایش داده شود.';
+
+  @override
+  String get lockScreenPermissionNeeded =>
+      'برای فعال‌سازی، اجازه «نمایش روی برنامه‌های دیگر» را بدهید.';
+
+  @override
+  String get lockScreenUnsupportedSubtitle =>
+      'روی این دستگاه پشتیبانی نمی‌شود.';
+
+  @override
+  String get lockScreenPermissionTitle => 'دسترسی لازم است';
+
+  @override
+  String get lockScreenPermissionMessage =>
+      'برای نمایش کنترل‌های موزیک روی صفحه قفل، اجازه دهید آهنگ پاک‌کن روی برنامه‌های دیگر نمایش داده شود.';
+
+  @override
+  String get lockScreenPermissionAllow => 'باز کردن تنظیمات';
+
+  @override
+  String get lockScreenPermissionNotNow => 'الان نه';
+
+  @override
+  String get lockScreenEnabledToast => 'کنترل صفحه قفل فعال شد';
+
+  @override
+  String get lockScreenDisabledToast => 'کنترل صفحه قفل غیرفعال شد';
 }

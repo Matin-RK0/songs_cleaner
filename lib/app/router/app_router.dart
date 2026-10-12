@@ -4,6 +4,8 @@ import '../../core/theme/app_motion.dart';
 import '../../features/library/presentation/screens/group_songs_screen.dart';
 import '../../features/library/presentation/screens/home_shell.dart';
 import '../../features/library/presentation/screens/search_screen.dart';
+import '../../features/lockscreen/presentation/screens/lock_screen_player_screen.dart';
+import '../../features/lockscreen/presentation/screens/settings_screen.dart';
 import '../../features/player/presentation/screens/player_screen.dart';
 import 'route_names.dart';
 
@@ -37,6 +39,10 @@ abstract final class AppRouter {
         return PlayerRoute(settings: settings);
       case RouteNames.search:
         return _slideRoute(settings, const SearchScreen());
+      case RouteNames.settings:
+        return _slideRoute(settings, const SettingsScreen());
+      case RouteNames.lockScreen:
+        return _fadeRoute(settings, const LockScreenPlayerScreen());
       case RouteNames.groupSongs:
         final args = settings.arguments;
         if (args is GroupSongsArgs) {
