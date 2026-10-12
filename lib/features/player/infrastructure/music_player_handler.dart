@@ -516,16 +516,19 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   MediaItem _mediaItemFor(Song song) {
+    // The bare media URI resolves album art on Android 10+ through
+    // ContentResolver.loadThumbnail. `loadThumbnailUri` must be non-null so
+    // audio_service picks that path instead of the removed `/albumart` legacy
+    // URI, otherwise the notification shows no artwork.
+    final mediaUri = 'content://media/external/audio/media/${song.id}';
     return MediaItem(
       id: 'song_${song.id}',
       title: song.title,
       album: song.album.isEmpty ? null : song.album,
       artist: song.artist.isEmpty ? null : song.artist,
       duration: song.duration > Duration.zero ? song.duration : null,
-      artUri: Uri.parse(
-        'content://media/external/audio/media/${song.id}/albumart',
-      ),
-      extras: {'path': song.path},
+      artUri: Uri.parse(mediaUri),
+      extras: {'path': song.path, 'loadThumbnailUri': mediaUri},
     );
   }
 

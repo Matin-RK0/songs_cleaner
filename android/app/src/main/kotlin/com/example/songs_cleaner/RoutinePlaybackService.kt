@@ -5,10 +5,14 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -19,6 +23,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import android.util.Size
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 import java.io.File
@@ -45,6 +50,7 @@ class RoutinePlaybackService : Service() {
     private var player: MediaPlayer? = null
     private var resumePoint: ResumePoint? = null
     private var prepared = false
+    private var artBitmap: Bitmap? = null
 
     /** Set once Flutter takes over so an in-flight native load cannot start. */
     private var handedOff = false
@@ -118,11 +124,13 @@ class RoutinePlaybackService : Service() {
         loading = true
         worker.execute {
             val point = readResumePoint()
+            val art = point?.let { loadArtwork(it.id) }
             Log.i(LOG_TAG, "Resume point resolved: ${point != null}")
             mainHandler.post {
                 loading = false
                 if (handedOff) return@post
                 if (point != null) {
+                    artBitmap = art
                     prepareAndPlay(point)
                 } else {
                     publishPlaybackState(playing = false)
@@ -254,14 +262,17 @@ class RoutinePlaybackService : Service() {
     private fun publishPlaybackState(playing: Boolean) {
         val point = resumePoint
         if (point != null) {
-            mediaSession.setMetadata(
-                MediaMetadataCompat.Builder()
-                    .putString(MediaMetadataCompat.METADATA_KEY_TITLE, point.title)
-                    .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, point.artist)
-                    .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, point.album)
-                    .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, point.durationMs)
-                    .build(),
-            )
+            val metadata = MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, point.title)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, point.artist)
+                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, point.album)
+                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, point.durationMs)
+            artBitmap?.let { art ->
+                metadata
+                    .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, art)
+                    .putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, art)
+            }
+            mediaSession.setMetadata(metadata.build())
         }
         mediaSession.setPlaybackState(
             PlaybackStateCompat.Builder()
@@ -304,6 +315,7 @@ class RoutinePlaybackService : Service() {
                         val path = track.optString("path")
                         if (path.isNotBlank() && File(path).isFile) {
                             return ResumePoint(
+                                id = currentId,
                                 path = path,
                                 positionMs = positionMs.coerceAtLeast(0),
                                 title = track.optString("title"),
@@ -325,6 +337,7 @@ class RoutinePlaybackService : Service() {
         val cursor = contentResolver.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
             arrayOf(
+                MediaStore.Audio.Media._ID,
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.ARTIST,
@@ -337,19 +350,48 @@ class RoutinePlaybackService : Service() {
         ) ?: return null
         cursor.use {
             while (it.moveToNext()) {
-                val path = it.getString(0) ?: continue
+                val path = it.getString(1) ?: continue
                 if (!File(path).isFile) continue
                 return ResumePoint(
+                    id = it.getInt(0),
                     path = path,
                     positionMs = 0,
-                    title = it.getString(1) ?: "",
-                    artist = it.getString(2) ?: "",
-                    album = it.getString(3) ?: "",
-                    durationMs = it.getLong(4),
+                    title = it.getString(2) ?: "",
+                    artist = it.getString(3) ?: "",
+                    album = it.getString(4) ?: "",
+                    durationMs = it.getLong(5),
                 )
             }
         }
         return null
+    }
+
+    /**
+     * Loads album art for the notification: loadThumbnail on Android 10+, the
+     * legacy albumart file descriptor below that. Best-effort; null on failure.
+     */
+    private fun loadArtwork(songId: Int): Bitmap? {
+        if (songId <= 0) return null
+        val mediaUri = ContentUris.withAppendedId(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            songId.toLong(),
+        )
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                contentResolver.loadThumbnail(mediaUri, Size(384, 384), null)
+            } else {
+                @Suppress("DEPRECATION")
+                contentResolver.openFileDescriptor(
+                    Uri.parse("$mediaUri/albumart"),
+                    "r",
+                )?.use { descriptor ->
+                    BitmapFactory.decodeFileDescriptor(descriptor.fileDescriptor)
+                }
+            }
+        } catch (error: Exception) {
+            Log.w(LOG_TAG, "Failed to load artwork", error)
+            null
+        }
     }
 
     // ---------------------------------------------------------------------------
@@ -409,6 +451,7 @@ class RoutinePlaybackService : Service() {
                     .setMediaSession(mediaSession.sessionToken)
                     .setShowActionsInCompactView(0),
             )
+        artBitmap?.let(builder::setLargeIcon)
         point?.artist?.takeIf { it.isNotBlank() }?.let(builder::setContentText)
         return builder.build()
     }
@@ -423,6 +466,7 @@ class RoutinePlaybackService : Service() {
     }
 
     private data class ResumePoint(
+        val id: Int,
         val path: String,
         val positionMs: Int,
         val title: String,
