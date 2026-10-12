@@ -250,4 +250,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lockScreenDisabledToast => 'Lock screen controls disabled';
+
+  @override
+  String get settingsPlaybackSection => 'Playback';
+
+  @override
+  String get previousGoesToPreviousTitle =>
+      'Previous button goes to previous song';
+
+  @override
+  String get previousGoesToPreviousSubtitle =>
+      'On: jump straight to the previous song. Off: restart the current song first.';
 }

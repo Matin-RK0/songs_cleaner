@@ -547,6 +547,24 @@ abstract class AppLocalizations {
   /// In fa, this message translates to:
   /// **'کنترل صفحه قفل غیرفعال شد'**
   String get lockScreenDisabledToast;
+
+  /// No description provided for @settingsPlaybackSection.
+  ///
+  /// In fa, this message translates to:
+  /// **'پخش'**
+  String get settingsPlaybackSection;
+
+  /// No description provided for @previousGoesToPreviousTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'دکمه آهنگ قبلی مستقیم به آهنگ قبلی برود'**
+  String get previousGoesToPreviousTitle;
+
+  /// No description provided for @previousGoesToPreviousSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'روشن: بدون توقف، بلافاصله به آهنگ قبلی بروید. خاموش: ابتدا آهنگ فعلی از اول پخش شود.'**
+  String get previousGoesToPreviousSubtitle;
 }
 
 class _AppLocalizationsDelegate

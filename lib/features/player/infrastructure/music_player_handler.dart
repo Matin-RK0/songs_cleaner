@@ -248,7 +248,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> previous() async {
     await _initialization;
     if (!_queue.isNotEmpty) return;
-    if (_player.position > const Duration(seconds: 3)) {
+    final goToPrevious = settings?.loadPreviousGoesToPrevious(false) ?? false;
+    if (!goToPrevious && _player.position > const Duration(seconds: 3)) {
       await _player.seek(Duration.zero);
       return;
     }

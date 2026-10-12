@@ -109,5 +109,8 @@
   "lockScreenPermissionAllow": "باز کردن تنظیمات",
   "lockScreenPermissionNotNow": "الان نه",
   "lockScreenEnabledToast": "کنترل صفحه قفل فعال شد",
-  "lockScreenDisabledToast": "کنترل صفحه قفل غیرفعال شد"
+  "lockScreenDisabledToast": "کنترل صفحه قفل غیرفعال شد",
+  "settingsPlaybackSection": "پخش",
+  "previousGoesToPreviousTitle": "دکمه آهنگ قبلی مستقیم به آهنگ قبلی برود",
+  "previousGoesToPreviousSubtitle": "روشن: بدون توقف، بلافاصله به آهنگ قبلی بروید. خاموش: ابتدا آهنگ فعلی از اول پخش شود."
 }

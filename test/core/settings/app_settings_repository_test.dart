@@ -87,4 +87,18 @@ void main() {
     await repository.saveLockScreenEnabled(false);
     expect(repository.loadLockScreenEnabled(true), isFalse);
   });
+
+  test('round-trips the previous-goes-to-previous toggle', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadPreviousGoesToPrevious(false), isFalse);
+
+    await repository.savePreviousGoesToPrevious(true);
+    expect(repository.loadPreviousGoesToPrevious(false), isTrue);
+
+    await repository.savePreviousGoesToPrevious(false);
+    expect(repository.loadPreviousGoesToPrevious(true), isFalse);
+  });
 }

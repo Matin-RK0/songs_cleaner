@@ -154,6 +154,8 @@ class AppSettingsRepository {
   static const String _sessionTracksKey = 'playback.session.tracks';
   static const String _sessionSnapshotKey = 'playback.session.snapshot.v2';
   static const String _lockScreenEnabledKey = 'lockscreen.enabled';
+  static const String _previousGoesToPreviousKey =
+      'player.previousGoesToPrevious';
 
   final SharedPreferences _prefs;
 
@@ -180,6 +182,14 @@ class AppSettingsRepository {
 
   Future<void> saveLockScreenEnabled(bool enabled) =>
       _prefs.setBool(_lockScreenEnabledKey, enabled);
+
+  // -- Player controls --------------------------------------------------------
+
+  bool loadPreviousGoesToPrevious(bool fallback) =>
+      _prefs.getBool(_previousGoesToPreviousKey) ?? fallback;
+
+  Future<void> savePreviousGoesToPrevious(bool value) =>
+      _prefs.setBool(_previousGoesToPreviousKey, value);
 
   // -- Playback session -------------------------------------------------------
 

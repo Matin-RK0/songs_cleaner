@@ -250,4 +250,15 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get lockScreenDisabledToast => 'کنترل صفحه قفل غیرفعال شد';
+
+  @override
+  String get settingsPlaybackSection => 'پخش';
+
+  @override
+  String get previousGoesToPreviousTitle =>
+      'دکمه آهنگ قبلی مستقیم به آهنگ قبلی برود';
+
+  @override
+  String get previousGoesToPreviousSubtitle =>
+      'روشن: بدون توقف، بلافاصله به آهنگ قبلی بروید. خاموش: ابتدا آهنگ فعلی از اول پخش شود.';
 }

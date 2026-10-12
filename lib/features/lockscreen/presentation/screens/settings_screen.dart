@@ -9,6 +9,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_state_views.dart';
+import '../../../player/application/providers/player_preferences_controller.dart';
 import '../../application/providers/lock_screen_controller.dart';
 
 /// App settings. Currently exposes the lock-screen music controls toggle.
@@ -148,47 +149,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final stateAsync = ref.watch(lockScreenControllerProvider);
+    final lockScreenState = ref.watch(lockScreenControllerProvider);
+    final previousGoesToPrevious = ref.watch(previousGoesToPreviousProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
-      body: stateAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => AppErrorState(title: l10n.errorLoadFailedTitle),
-        data: (state) => ListView(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          children: [
-            _SectionHeader(title: l10n.settingsLockScreenSection),
-            SwitchListTile(
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        children: [
+          _SectionHeader(title: l10n.settingsLockScreenSection),
+          lockScreenState.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (_, _) => AppErrorState(title: l10n.errorLoadFailedTitle),
+            data: (state) => _SettingSwitchTile(
               value: state.enabled,
               onChanged: state.supported
                   ? (value) => _onToggle(state, value)
                   : null,
-              title: Text(
-                l10n.lockScreenControlTitle,
-                style: const TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textHigh,
-                ),
-              ),
-              subtitle: Text(
-                _subtitle(l10n, state),
-                style: const TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 12.5,
-                  height: 1.4,
-                  color: AppColors.textMedium,
-                ),
-              ),
-              secondary: Icon(
-                Icons.music_note_rounded,
-                color: state.enabled ? AppColors.primary : AppColors.textLow,
-              ),
+              title: l10n.lockScreenControlTitle,
+              subtitle: _subtitle(l10n, state),
+              icon: Icons.music_note_rounded,
             ),
-          ],
-        ),
+          ),
+          _SectionHeader(title: l10n.settingsPlaybackSection),
+          _SettingSwitchTile(
+            value: previousGoesToPrevious,
+            onChanged: (value) => ref
+                .read(previousGoesToPreviousProvider.notifier)
+                .setEnabled(value),
+            title: l10n.previousGoesToPreviousTitle,
+            subtitle: l10n.previousGoesToPreviousSubtitle,
+            icon: Icons.skip_previous_rounded,
+          ),
+        ],
       ),
     );
   }
@@ -197,6 +193,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (!state.supported) return l10n.lockScreenUnsupportedSubtitle;
     if (!state.overlayGranted) return l10n.lockScreenPermissionNeeded;
     return l10n.lockScreenControlSubtitle;
+  }
+}
+
+class _SettingSwitchTile extends StatelessWidget {
+  const _SettingSwitchTile({
+    required this.value,
+    required this.onChanged,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      value: value,
+      onChanged: onChanged,
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontFamily: AppTypography.fontFamily,
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textHigh,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(
+          fontFamily: AppTypography.fontFamily,
+          fontSize: 12.5,
+          height: 1.4,
+          color: AppColors.textMedium,
+        ),
+      ),
+      secondary: Icon(
+        icon,
+        color: value ? AppColors.primary : AppColors.textLow,
+      ),
+    );
   }
 }
 

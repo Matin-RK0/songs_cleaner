@@ -74,5 +74,8 @@
   "lockScreenPermissionAllow": "Open settings",
   "lockScreenPermissionNotNow": "Not now",
   "lockScreenEnabledToast": "Lock screen controls enabled",
-  "lockScreenDisabledToast": "Lock screen controls disabled"
+  "lockScreenDisabledToast": "Lock screen controls disabled",
+  "settingsPlaybackSection": "Playback",
+  "previousGoesToPreviousTitle": "Previous button goes to previous song",
+  "previousGoesToPreviousSubtitle": "On: jump straight to the previous song. Off: restart the current song first."
 }
