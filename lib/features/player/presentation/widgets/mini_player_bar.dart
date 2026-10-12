@@ -34,108 +34,171 @@ class MiniPlayerBar extends ConsumerWidget {
     return SizedBox(
       width: double.infinity,
       height: height,
-      child: Material(
-        color: AppColors.surfaceHigh,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ArtworkImage(
-                songId: song.id,
-                size: 300,
-                expand: true,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(14),
+      child: _MiniPlayerGestures(
+        onPrevious: () => ref.read(playerProvider.notifier).previous(),
+        onNext: () => ref.read(playerProvider.notifier).next(),
+        onOpen: () => AppRouter.openPlayer(context),
+        child: Material(
+          color: AppColors.surfaceHigh,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ArtworkImage(
+                  songId: song.id,
+                  size: 300,
+                  expand: true,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(14),
+                  ),
                 ),
               ),
-            ),
-            const Positioned.fill(child: ColoredBox(color: Colors.black54)),
-            Stack(
-              children: [
-                ListTile(
-                  onTap: () =>
-                      AppRouter.openPlayer(context),
-                  contentPadding: const EdgeInsetsDirectional.fromSTEB(
-                    AppSpacing.md,
-                    0,
-                    AppSpacing.sm,
-                    0,
+              const Positioned.fill(child: ColoredBox(color: Colors.black54)),
+              Stack(
+                children: [
+                  ListTile(
+                    onTap: () => AppRouter.openPlayer(context),
+                    contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                      AppSpacing.md,
+                      0,
+                      AppSpacing.sm,
+                      0,
+                    ),
+                    splashColor: Colors.transparent,
+                    leading: DecoratedBox(
+                      decoration: ShapeDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.lg,
+                        ),
+                      ),
+                      child: ArtworkImage(
+                        songId: song.id,
+                        size: 45,
+                        borderRadius: AppRadius.lg,
+                      ),
+                    ),
+                    title: Text(
+                      song.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textHigh,
+                      ),
+                    ),
+                    subtitle: Text(
+                      song.artist.isEmpty ? l10n.unknownArtist : song.artist,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: AppColors.textMedium,
+                      ),
+                    ),
+                    trailing: SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: _PlayPauseProgress(
+                        progress: progress,
+                        playing: playing,
+                        onPressed: () =>
+                            ref.read(playerProvider.notifier).playPause(),
+                        tooltip: playing ? l10n.pauseTooltip : l10n.playTooltip,
+                      ),
+                    ),
                   ),
-                  splashColor: Colors.transparent,
-                  leading: DecoratedBox(
-                    decoration: ShapeDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.24),
-                      shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-                    ),
-                    child: ArtworkImage(
-                      songId: song.id,
-                      size: 45,
-                      borderRadius: AppRadius.lg,
-                    ),
-                  ),
-                  title: Text(
-                    song.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textHigh,
-                    ),
-                  ),
-                  subtitle: Text(
-                    song.artist.isEmpty ? l10n.unknownArtist : song.artist,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      color: AppColors.textMedium,
-                    ),
-                  ),
-                  trailing: SizedBox(
-                    width: 50,
-                    height: 50,
-                    child: _PlayPauseProgress(
-                      progress: progress,
-                      playing: playing,
-                      onPressed: () =>
-                          ref.read(playerProvider.notifier).playPause(),
-                      tooltip: playing ? l10n.pauseTooltip : l10n.playTooltip,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 60),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                    ),
-                    title: _MiniSongProgress(
-                      value: progress,
-                      onChanged: (value) => ref
-                          .read(playerProvider.notifier)
-                          .seek(
-                            Duration(
-                              milliseconds:
-                                  (value *
-                                          ref
-                                              .read(playerProvider)
-                                              .duration
-                                              .inMilliseconds)
-                                      .round(),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 60),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
+                      title: _MiniSongProgress(
+                        value: progress,
+                        onChanged: (value) => ref
+                            .read(playerProvider.notifier)
+                            .seek(
+                              Duration(
+                                milliseconds:
+                                    (value *
+                                            ref
+                                                .read(playerProvider)
+                                                .duration
+                                                .inMilliseconds)
+                                        .round(),
+                              ),
                             ),
-                          ),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// Adds track-change and open-player gestures to the docked mini player.
+///
+/// Horizontal flicks change the track; an upward flick opens the full player.
+/// The inner seek bar keeps its own horizontal drag handling and wins the
+/// gesture arena for flicks that start on it.
+class _MiniPlayerGestures extends StatefulWidget {
+  const _MiniPlayerGestures({
+    required this.onPrevious,
+    required this.onNext,
+    required this.onOpen,
+    required this.child,
+  });
+
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback onOpen;
+  final Widget child;
+
+  @override
+  State<_MiniPlayerGestures> createState() => _MiniPlayerGesturesState();
+}
+
+class _MiniPlayerGesturesState extends State<_MiniPlayerGestures> {
+  static const double _distanceThreshold = 56;
+  static const double _velocityThreshold = 420;
+
+  double _dx = 0;
+  double _dy = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragUpdate: (details) => _dx += details.delta.dx,
+      onHorizontalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        if (_dx <= -_distanceThreshold || velocity <= -_velocityThreshold) {
+          widget.onNext();
+        } else if (_dx >= _distanceThreshold ||
+            velocity >= _velocityThreshold) {
+          widget.onPrevious();
+        }
+        _dx = 0;
+      },
+      onVerticalDragUpdate: (details) => _dy += details.delta.dy,
+      onVerticalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        if (_dy <= -_distanceThreshold || velocity <= -_velocityThreshold) {
+          widget.onOpen();
+        }
+        _dy = 0;
+      },
+      child: widget.child,
     );
   }
 }
@@ -207,8 +270,10 @@ class _MiniSongProgressState extends State<_MiniSongProgress> {
         void update(Offset localPosition) {
           if (constraints.maxWidth <= 0) return;
           setState(() {
-            _dragValue =
-                (localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+            _dragValue = (localPosition.dx / constraints.maxWidth).clamp(
+              0.0,
+              1.0,
+            );
           });
         }
 

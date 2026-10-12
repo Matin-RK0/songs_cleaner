@@ -79,20 +79,25 @@ class _HeaderBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Row(
-      children: [
-        IconButton(
-          tooltip: l10n.backTooltip,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        const Spacer(),
-        IconButton(
-          tooltip: l10n.queueTitle,
-          icon: const Icon(Icons.queue_music_rounded),
-          onPressed: () => showQueueSheet(context),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: l10n.backTooltip,
+            iconSize: 30,
+            icon: const Icon(Icons.keyboard_arrow_down_rounded),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          const Spacer(),
+          IconButton(
+            tooltip: l10n.queueTitle,
+            iconSize: 30,
+            icon: const Icon(Icons.queue_music_rounded),
+            onPressed: () => showQueueSheet(context),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -102,9 +107,7 @@ class _TrackInfo extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final song = ref.watch(
-      playerProvider.select((state) => state.current),
-    );
+    final song = ref.watch(playerProvider.select((state) => state.current));
     if (song == null) return const SizedBox.shrink();
 
     final l10n = context.l10n;
@@ -129,10 +132,7 @@ class _TrackInfo extends ConsumerWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textMedium,
-            ),
+            style: const TextStyle(fontSize: 14, color: AppColors.textMedium),
           ),
         ],
       ),
@@ -146,12 +146,13 @@ class _ControlsRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final playing =
-        ref.watch(playerProvider.select((state) => state.playing));
-    final shuffled =
-        ref.watch(playerProvider.select((state) => state.shuffled));
-    final repeatMode =
-        ref.watch(playerProvider.select((state) => state.repeatMode));
+    final playing = ref.watch(playerProvider.select((state) => state.playing));
+    final shuffled = ref.watch(
+      playerProvider.select((state) => state.shuffled),
+    );
+    final repeatMode = ref.watch(
+      playerProvider.select((state) => state.repeatMode),
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -163,8 +164,7 @@ class _ControlsRow extends ConsumerWidget {
         children: [
           IconButton(
             tooltip: l10n.shuffleTooltip,
-            onPressed: () =>
-                ref.read(playerProvider.notifier).toggleShuffle(),
+            onPressed: () => ref.read(playerProvider.notifier).toggleShuffle(),
             icon: Icon(
               Icons.shuffle_rounded,
               size: 26,
@@ -173,8 +173,7 @@ class _ControlsRow extends ConsumerWidget {
           ),
           IconButton(
             tooltip: l10n.previousTooltip,
-            onPressed: () =>
-                ref.read(playerProvider.notifier).previous(),
+            onPressed: () => ref.read(playerProvider.notifier).previous(),
             icon: const Icon(
               Icons.skip_previous_rounded,
               size: 36,
@@ -188,14 +187,11 @@ class _ControlsRow extends ConsumerWidget {
             ),
             child: IconButton.filled(
               tooltip: playing ? l10n.pauseTooltip : l10n.playTooltip,
-              onPressed: () =>
-                  ref.read(playerProvider.notifier).playPause(),
+              onPressed: () => ref.read(playerProvider.notifier).playPause(),
               icon: AnimatedSwitcher(
                 duration: AppMotion.fast,
                 child: Icon(
-                  playing
-                      ? Icons.pause_rounded
-                      : Icons.play_arrow_rounded,
+                  playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   key: ValueKey(playing),
                   size: 34,
                   color: AppColors.onPrimary,
