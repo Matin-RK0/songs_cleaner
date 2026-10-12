@@ -106,22 +106,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: AppSpacing.md),
             Text(
               l10n.lockScreenPermissionTitle,
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
+              style: AppTypography.sheetTitleSmall.copyWith(
                 color: colors.textHigh,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               l10n.lockScreenPermissionMessage,
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 14,
-                height: 1.6,
-                color: colors.textMedium,
-              ),
+              style: AppTypography.body.copyWith(color: colors.textMedium),
             ),
             const SizedBox(height: AppSpacing.lg),
             Row(
@@ -160,9 +152,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Text(
                 l10n.themeModeTitle,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
+                style: AppTypography.sectionTitle.copyWith(
                   color: sheetContext.colors.textHigh,
                 ),
               ),
@@ -286,19 +276,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             leading: Icon(_themeModeIcon(themeMode), color: colors.primary),
             title: Text(
               l10n.themeModeTitle,
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
+              style: AppTypography.emphasisTitle.copyWith(
                 color: colors.textHigh,
               ),
             ),
             subtitle: Text(
               _themeModeLabel(l10n, themeMode),
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 12.5,
-                height: 1.4,
+              style: AppTypography.songSubtitle.copyWith(
                 color: colors.textMedium,
               ),
             ),
@@ -389,21 +373,11 @@ class _SettingSwitchTile extends StatelessWidget {
       onChanged: onChanged,
       title: Text(
         title,
-        style: TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          color: colors.textHigh,
-        ),
+        style: AppTypography.emphasisTitle.copyWith(color: colors.textHigh),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontSize: 12.5,
-          height: 1.4,
-          color: colors.textMedium,
-        ),
+        style: AppTypography.songSubtitle.copyWith(color: colors.textMedium),
       ),
       secondary: Icon(icon, color: value ? colors.primary : colors.textLow),
     );
@@ -426,11 +400,7 @@ class _SectionHeader extends StatelessWidget {
       ),
       child: Text(
         title,
-        style: TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.4,
+        style: AppTypography.sectionLabel.copyWith(
           color: context.colors.primary,
         ),
       ),

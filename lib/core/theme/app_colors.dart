@@ -29,6 +29,10 @@ class AppColorTokens extends ThemeExtension<AppColorTokens> {
     required this.artworkPlaceholder,
     required this.snackBarBackground,
     required this.snackBarContent,
+    required this.scrim,
+    required this.onScrim,
+    required this.onScrimMuted,
+    required this.scrimTrack,
   });
 
   final Color background;
@@ -55,6 +59,17 @@ class AppColorTokens extends ThemeExtension<AppColorTokens> {
   final Color snackBarBackground;
   final Color snackBarContent;
 
+  /// Always-dark overlay scrim (e.g. mini player over artwork) and the text /
+  /// track colors that sit on top of it. Independent of the active theme.
+  final Color scrim;
+  final Color onScrim;
+  final Color onScrimMuted;
+  final Color scrimTrack;
+
+  /// Neutral dark scrim for full-screen overlays and route barriers, where no
+  /// [BuildContext] is available to read the active theme.
+  static const Color scrimOverlay = Color(0x8A000000);
+
   static const AppColorTokens dark = AppColorTokens(
     background: Color(0xFF080808),
     surface: Color(0xFF121212),
@@ -74,6 +89,10 @@ class AppColorTokens extends ThemeExtension<AppColorTokens> {
     artworkPlaceholder: Color(0xFF2A2A2A),
     snackBarBackground: Color(0xFF2A2A2A),
     snackBarContent: Color(0xFFF5F5F5),
+    scrim: scrimOverlay,
+    onScrim: Color(0xFFFFFFFF),
+    onScrimMuted: Color(0xB3FFFFFF),
+    scrimTrack: Color(0x3DFFFFFF),
   );
 
   static const AppColorTokens light = AppColorTokens(
@@ -95,6 +114,10 @@ class AppColorTokens extends ThemeExtension<AppColorTokens> {
     artworkPlaceholder: Color(0xFFECEEF1),
     snackBarBackground: Color(0xFF2B3038),
     snackBarContent: Color(0xFFF5F5F5),
+    scrim: scrimOverlay,
+    onScrim: Color(0xFFFFFFFF),
+    onScrimMuted: Color(0xB3FFFFFF),
+    scrimTrack: Color(0x3DFFFFFF),
   );
 
   @override
@@ -117,6 +140,10 @@ class AppColorTokens extends ThemeExtension<AppColorTokens> {
     Color? artworkPlaceholder,
     Color? snackBarBackground,
     Color? snackBarContent,
+    Color? scrim,
+    Color? onScrim,
+    Color? onScrimMuted,
+    Color? scrimTrack,
   }) {
     return AppColorTokens(
       background: background ?? this.background,
@@ -137,6 +164,10 @@ class AppColorTokens extends ThemeExtension<AppColorTokens> {
       artworkPlaceholder: artworkPlaceholder ?? this.artworkPlaceholder,
       snackBarBackground: snackBarBackground ?? this.snackBarBackground,
       snackBarContent: snackBarContent ?? this.snackBarContent,
+      scrim: scrim ?? this.scrim,
+      onScrim: onScrim ?? this.onScrim,
+      onScrimMuted: onScrimMuted ?? this.onScrimMuted,
+      scrimTrack: scrimTrack ?? this.scrimTrack,
     );
   }
 
@@ -182,6 +213,10 @@ class AppColorTokens extends ThemeExtension<AppColorTokens> {
         other.snackBarContent,
         t,
       )!,
+      scrim: Color.lerp(scrim, other.scrim, t)!,
+      onScrim: Color.lerp(onScrim, other.onScrim, t)!,
+      onScrimMuted: Color.lerp(onScrimMuted, other.onScrimMuted, t)!,
+      scrimTrack: Color.lerp(scrimTrack, other.scrimTrack, t)!,
     );
   }
 }

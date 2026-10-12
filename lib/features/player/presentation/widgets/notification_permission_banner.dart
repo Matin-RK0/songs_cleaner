@@ -60,19 +60,14 @@ class NotificationPermissionBanner extends ConsumerWidget {
                   children: [
                     Text(
                       l10n.notifPermissionTitle,
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                      style: AppTypography.bannerTitle.copyWith(
                         color: colors.textHigh,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       l10n.notifPermissionMessage,
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 11.5,
+                      style: AppTypography.captionSmall.copyWith(
                         color: colors.textMedium,
                       ),
                     ),

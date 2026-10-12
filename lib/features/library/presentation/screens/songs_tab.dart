@@ -7,6 +7,7 @@ import '../../../../core/l10n/generated/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../application/providers/library_controller.dart';
@@ -113,9 +114,7 @@ Future<void> showSortSheet(BuildContext context, WidgetRef ref) async {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Text(
               l10n.sortLabel,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
+              style: AppTypography.sectionTitle.copyWith(
                 color: colors.textHigh,
               ),
             ),

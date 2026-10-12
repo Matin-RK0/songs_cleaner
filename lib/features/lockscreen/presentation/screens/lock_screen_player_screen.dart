@@ -70,9 +70,7 @@ class LockScreenPlayerScreen extends ConsumerWidget {
                                   textAlign: TextAlign.center,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontFamily: AppTypography.fontFamily,
-                                    fontSize: 16,
+                                  style: AppTypography.sectionTitle.copyWith(
                                     fontWeight: FontWeight.w700,
                                     color: context.colors.textHigh,
                                   ),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../application/providers/player_controller.dart';
 
@@ -33,15 +34,15 @@ class QueueSheetContent extends ConsumerWidget {
 
     if (songs.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(l10n.queueTitle),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             Text(
               l10n.queueEmpty,
-              style: TextStyle(color: colors.textMedium),
+              style: AppTypography.body.copyWith(color: colors.textMedium),
             ),
           ],
         ),
@@ -56,9 +57,7 @@ class QueueSheetContent extends ConsumerWidget {
             Expanded(
               child: Text(
                 l10n.queueTitle,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
+                style: AppTypography.playerTitle.copyWith(
                   color: colors.textHigh,
                 ),
               ),
@@ -91,17 +90,15 @@ class QueueSheetContent extends ConsumerWidget {
                       )
                     : Text(
                         '${index + 1}',
-                        style: TextStyle(
+                        style: AppTypography.caption.copyWith(
                           color: colors.textLow,
-                          fontSize: 12,
                         ),
                       ),
                 title: Text(
                   song.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: AppTypography.titleSmall.copyWith(
                     fontWeight:
                         isCurrent ? FontWeight.w800 : FontWeight.w500,
                     color: isCurrent
@@ -113,7 +110,9 @@ class QueueSheetContent extends ConsumerWidget {
                   '${song.artist.isEmpty ? l10n.unknownArtist : song.artist} · ${song.duration.mmss}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11.5),
+                  style: AppTypography.captionSmall.copyWith(
+                    color: colors.textMedium,
+                  ),
                 ),
                 trailing: IconButton(
                   tooltip: l10n.removeFromQueueTooltip,

@@ -32,9 +32,7 @@ class DeleteCurrentButton extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
             side: BorderSide(color: colors.danger.withValues(alpha: 0.45)),
-            textStyle: const TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 15,
+            textStyle: AppTypography.emphasisTitle.copyWith(
               fontWeight: FontWeight.w800,
             ),
           ),

@@ -30,7 +30,7 @@ Future<bool> showAppConfirmDialog({
             backgroundColor: destructive
                 ? dialogContext.colors.danger
                 : dialogContext.colors.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: dialogContext.colors.onPrimary,
           ),
           child: Text(confirmLabel),
         ),

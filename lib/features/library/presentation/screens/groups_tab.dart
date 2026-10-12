@@ -6,6 +6,7 @@ import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../application/providers/library_controller.dart';
 import '../../application/providers/library_providers.dart';
 import '../widgets/artwork_image.dart';
@@ -27,7 +28,7 @@ class GroupsTab extends ConsumerWidget {
       error: (error, _) => Center(
         child: Text(
           l10n.errorLoadFailedTitle,
-          style: TextStyle(color: colors.textMedium),
+          style: AppTypography.body.copyWith(color: colors.textMedium),
         ),
       ),
       data: (_) {
@@ -72,7 +73,7 @@ class GroupsTab extends ConsumerWidget {
                     name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: AppTypography.songTitle.copyWith(
                       fontWeight: FontWeight.w700,
                       color: colors.textHigh,
                     ),

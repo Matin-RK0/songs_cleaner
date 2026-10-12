@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../features/library/presentation/screens/group_songs_screen.dart';
 import '../../features/library/presentation/screens/home_shell.dart';
@@ -106,7 +107,7 @@ class PlayerRoute extends PageRouteBuilder<void> {
           // layered underneath, and a stray tap there would pop the player
           // and immediately re-push it.
           barrierDismissible: false,
-          barrierColor: Colors.black54,
+          barrierColor: AppColorTokens.scrimOverlay,
           pageBuilder: (_, _, _) => const PlayerScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final curved = CurvedAnimation(

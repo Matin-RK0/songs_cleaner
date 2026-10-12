@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../application/providers/player_controller.dart';
 
@@ -67,15 +68,13 @@ class _SeekBarState extends ConsumerState<SeekBar> {
               children: [
                 Text(
                   Duration(milliseconds: value.round()).mmss,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTypography.caption.copyWith(
                     color: colors.textMedium,
                   ),
                 ),
                 Text(
                   duration.mmss,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTypography.caption.copyWith(
                     color: colors.textLow,
                   ),
                 ),

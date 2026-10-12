@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../application/providers/player_controller.dart';
 
 /// Title + artist block for the currently playing song. Shared by the normal
@@ -27,9 +28,7 @@ class PlayerTrackInfo extends ConsumerWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+            style: AppTypography.playerTitle.copyWith(
               color: colors.textHigh,
             ),
           ),
@@ -39,7 +38,9 @@ class PlayerTrackInfo extends ConsumerWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 14, color: colors.textMedium),
+            style: AppTypography.playerArtist.copyWith(
+              color: colors.textMedium,
+            ),
           ),
         ],
       ),

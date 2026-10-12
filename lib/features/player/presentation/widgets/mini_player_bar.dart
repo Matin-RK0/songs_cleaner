@@ -6,6 +6,7 @@ import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../library/presentation/widgets/artwork_image.dart';
 import '../../application/providers/player_controller.dart';
 
@@ -18,6 +19,7 @@ class MiniPlayerBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final colors = context.colors;
     final song = ref.watch(playerProvider.select((state) => state.current));
     if (song == null) return const SizedBox.shrink();
 
@@ -39,7 +41,7 @@ class MiniPlayerBar extends ConsumerWidget {
         onNext: () => ref.read(playerProvider.notifier).next(),
         onOpen: () => AppRouter.openPlayer(context),
         child: Material(
-          color: context.colors.surfaceHigh,
+          color: colors.surfaceHigh,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
           ),
@@ -56,7 +58,7 @@ class MiniPlayerBar extends ConsumerWidget {
                   ),
                 ),
               ),
-              const Positioned.fill(child: ColoredBox(color: Colors.black54)),
+              Positioned.fill(child: ColoredBox(color: colors.scrim)),
               Stack(
                 children: [
                   ListTile(
@@ -70,7 +72,7 @@ class MiniPlayerBar extends ConsumerWidget {
                     splashColor: Colors.transparent,
                     leading: DecoratedBox(
                       decoration: ShapeDecoration(
-                        color: context.colors.primary.withValues(alpha: 0.24),
+                        color: colors.primary.withValues(alpha: 0.24),
                         shape: RoundedRectangleBorder(
                           borderRadius: AppRadius.lg,
                         ),
@@ -85,19 +87,16 @@ class MiniPlayerBar extends ConsumerWidget {
                       song.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                      style: AppTypography.emphasisTitle.copyWith(
+                        color: colors.onScrim,
                       ),
                     ),
                     subtitle: Text(
                       song.artist.isEmpty ? l10n.unknownArtist : song.artist,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        color: Colors.white70,
+                      style: AppTypography.songSubtitle.copyWith(
+                        color: colors.onScrimMuted,
                       ),
                     ),
                     trailing: SizedBox(
@@ -218,6 +217,7 @@ class _PlayPauseProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return IconButton(
       tooltip: tooltip,
       onPressed: onPressed,
@@ -232,12 +232,12 @@ class _PlayPauseProgress extends StatelessWidget {
               value: progress,
               strokeWidth: 3,
               strokeCap: StrokeCap.round,
-              backgroundColor: Colors.white24,
-              valueColor: const AlwaysStoppedAnimation(Colors.white),
+              backgroundColor: colors.scrimTrack,
+              valueColor: AlwaysStoppedAnimation(colors.onScrim),
             ),
             Icon(
               playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              color: Colors.white,
+              color: colors.onScrim,
               size: 30,
             ),
           ],
@@ -263,6 +263,7 @@ class _MiniSongProgressState extends State<_MiniSongProgress> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return LayoutBuilder(
       builder: (context, constraints) {
         final value = _dragValue ?? widget.value;
@@ -306,8 +307,8 @@ class _MiniSongProgressState extends State<_MiniSongProgress> {
                 borderRadius: BorderRadius.circular(16),
                 value: value,
                 minHeight: 4,
-                backgroundColor: Colors.white24,
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                backgroundColor: colors.scrimTrack,
+                valueColor: AlwaysStoppedAnimation<Color>(colors.onScrim),
               ),
             ),
           ),

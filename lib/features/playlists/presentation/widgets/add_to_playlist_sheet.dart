@@ -58,7 +58,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
           leading: Icon(Icons.add_rounded, color: colors.primary),
           title: Text(
             l10n.newPlaylist,
-            style: TextStyle(
+            style: AppTypography.listTitle.copyWith(
               fontWeight: FontWeight.w700,
               color: colors.primary,
             ),
@@ -109,8 +109,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
                     playlist.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
+                    style: AppTypography.listTitle.copyWith(
                       color: colors.textHigh,
                     ),
                   ),

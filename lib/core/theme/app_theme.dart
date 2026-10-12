@@ -40,10 +40,7 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontSize: 24,
-          fontWeight: FontWeight.w800,
+        titleTextStyle: AppTypography.appBarTitle.copyWith(
           color: tokens.textHigh,
         ),
       ),
@@ -56,16 +53,8 @@ abstract final class AppTheme {
         labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         splashFactory: NoSplash.splashFactory,
         dividerColor: Colors.transparent,
-        labelStyle: const TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontSize: 17,
-          fontWeight: FontWeight.w500,
-        ),
+        labelStyle: AppTypography.tabLabel,
+        unselectedLabelStyle: AppTypography.tabLabelUnselected,
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
@@ -79,16 +68,10 @@ abstract final class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: tokens.surface,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-        titleTextStyle: TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
+        titleTextStyle: AppTypography.sheetTitle.copyWith(
           color: tokens.textHigh,
         ),
-        contentTextStyle: TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontSize: 14.5,
-          height: 1.6,
+        contentTextStyle: AppTypography.dialogBody.copyWith(
           color: tokens.textMedium,
         ),
       ),
