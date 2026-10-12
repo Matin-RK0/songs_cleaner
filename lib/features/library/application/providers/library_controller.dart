@@ -139,6 +139,28 @@ class LibraryController extends AsyncNotifier<LibraryState> {
     state = AsyncData(current.copyWith(songs: remaining));
   }
 
+  /// Incrementally looks for songs added to the device since the last load and
+  /// merges only the new ones. Avoids a full re-query and file-existence pass,
+  /// so periodic checks stay cheap even on large libraries.
+  Future<void> syncNewSongs() async {
+    final current = state.value;
+    if (current == null) return;
+
+    final source = ref.read(deviceMusicDataSourceProvider);
+    final candidates = await source.fetchSongsNewerThan(
+      newestDateAddedSeconds(current.songs),
+    );
+    if (candidates.isEmpty) return;
+
+    // Re-read the state: a manual refresh may have replaced the list while the
+    // MediaStore query was in flight. mergeNewSongs de-duplicates by song id.
+    final latest = state.value;
+    if (latest == null) return;
+    final merged = mergeNewSongs(latest.songs, candidates);
+    if (identical(merged, latest.songs)) return;
+    state = AsyncData(latest.copyWith(songs: merged));
+  }
+
   Future<void> refresh() async {
     ref.invalidateSelf();
     await future;

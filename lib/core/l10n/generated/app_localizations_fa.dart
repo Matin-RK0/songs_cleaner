@@ -45,6 +45,12 @@ class AppLocalizationsFa extends AppLocalizations {
   String get sortByDuration => 'بر اساس مدت';
 
   @override
+  String get refreshLibraryTooltip => 'به‌روزرسانی کتابخانه';
+
+  @override
+  String get librarySyncedToast => 'کتابخانه به‌روزرسانی شد';
+
+  @override
   String get nowPlaying => 'در حال پخش';
 
   @override

@@ -10,6 +10,7 @@ import '../../../library/application/providers/library_controller.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../domain/playback_enums.dart';
 import '../../infrastructure/music_player_handler.dart';
+import '../../infrastructure/routine_playback_service.dart';
 import '../models/player_state.dart';
 import '../session_resume.dart';
 
@@ -24,6 +25,12 @@ final audioPlayerProvider = Provider<AudioPlayer>(
 final musicPlayerHandlerProvider = Provider<MusicPlayerHandler>(
   (ref) =>
       throw UnimplementedError('Override musicPlayerHandlerProvider in main'),
+);
+
+/// Playback Samsung Modes and Routines started natively while the app was
+/// closed. Injected from main() and consumed once during session restore.
+final routinePlaybackHandoffProvider = Provider<NativePlaybackHandoff?>(
+  (ref) => null,
 );
 
 /// Boots the Android media session before the app UI. The fallback preserves
@@ -172,10 +179,17 @@ class PlayerController extends Notifier<PlayerState> {
       return;
     }
 
+    // When a native routine session was playing the same track, resume at its
+    // live position and keep playing through the Flutter player so exactly one
+    // audio source owns the session.
+    final handoff = ref.read(routinePlaybackHandoffProvider);
+    final adopt = handoff != null && handoff.path == plan.current.path;
+    final resumePosition = adopt ? handoff.position : plan.position;
+
     final restored = await handler.restoreSession(
       songs: plan.queue,
       current: plan.current,
-      position: plan.position,
+      position: resumePosition,
       repeatMode: plan.repeatMode,
       shuffled: plan.shuffled,
     );
@@ -189,9 +203,13 @@ class PlayerController extends Notifier<PlayerState> {
       index: handler.currentIndex,
       repeatMode: handler.repeatMode,
       shuffled: handler.shuffled,
-      position: plan.position,
+      position: resumePosition,
       queueRevision: state.queueRevision + 1,
     );
+
+    if (adopt) {
+      await handler.play();
+    }
   }
 
   /// Copies the handler's current queue/modes into state (single source of

@@ -23,6 +23,29 @@ List<Song> filterAndSortSongs(
   return List.unmodifiable(result);
 }
 
+/// Returns the newest `dateAddedSeconds` in [songs], or 0 for an empty list.
+/// Used to bound an incremental scan to rows added after the last load.
+int newestDateAddedSeconds(List<Song> songs) {
+  var newest = 0;
+  for (final song in songs) {
+    if (song.dateAddedSeconds > newest) newest = song.dateAddedSeconds;
+  }
+  return newest;
+}
+
+/// Appends [candidates] that are not already in [existing], de-duplicated by
+/// song id. Returns [existing] untouched when there is nothing new, so the
+/// library state only changes (and rebuilds) when a song was actually added.
+List<Song> mergeNewSongs(List<Song> existing, List<Song> candidates) {
+  if (candidates.isEmpty) return existing;
+  final ids = existing.map((song) => song.id).toSet();
+  final additions = <Song>[];
+  for (final song in candidates) {
+    if (ids.add(song.id)) additions.add(song);
+  }
+  return additions.isEmpty ? existing : [...existing, ...additions];
+}
+
 class MusicGroup {
   const MusicGroup({
     required this.id,

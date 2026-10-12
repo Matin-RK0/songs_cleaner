@@ -16,6 +16,7 @@ import '../../../player/presentation/widgets/notification_permission_banner.dart
 import '../screens/groups_tab.dart';
 import '../screens/songs_tab.dart';
 import '../../application/providers/library_controller.dart';
+import '../../application/providers/library_sync_scheduler.dart';
 
 /// Home: tabs (songs / artists / albums), shuffle-all action and the mini
 /// player docked at the bottom.
@@ -65,6 +66,18 @@ class _HomeShellState extends ConsumerState<HomeShell>
         .saveHomeTabIndex(_tabController.index);
   }
 
+  Future<void> _refreshLibrary() async {
+    try {
+      await ref.read(libraryProvider.notifier).refresh();
+    } catch (_) {
+      if (!mounted) return;
+      showAppSnackBar(context, context.l10n.actionFailedGeneric, error: true);
+      return;
+    }
+    if (!mounted) return;
+    showAppSnackBar(context, context.l10n.librarySyncedToast);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -89,6 +102,8 @@ class _HomeShellState extends ConsumerState<HomeShell>
 
   @override
   Widget build(BuildContext context) {
+    // Keep the periodic new-song scan alive for the whole session.
+    ref.watch(librarySyncSchedulerProvider);
     final l10n = context.l10n;
     final hasCurrent = ref.watch(
       playerProvider.select((state) => state.hasCurrent),
@@ -98,6 +113,11 @@ class _HomeShellState extends ConsumerState<HomeShell>
       appBar: AppBar(
         title: Text(l10n.libraryTitle),
         actions: [
+          IconButton(
+            tooltip: l10n.refreshLibraryTooltip,
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _refreshLibrary,
+          ),
           IconButton(
             tooltip: l10n.searchHint,
             icon: const Icon(Icons.search_rounded),

@@ -1,13 +1,15 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
-import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 import '../../../core/settings/app_settings_repository.dart';
 import '../../library/domain/entities/song.dart';
+import '../../library/infrastructure/data_sources/device_music_data_source.dart';
 import '../domain/playback_enums.dart';
 import '../domain/playback_queue.dart';
+import 'routine_playback_service.dart';
 
 /// Glue between [AudioService] (notification, background, headset buttons)
 /// and [AudioPlayer]. Owns the play queue and repeat/shuffle rules so both
@@ -37,6 +39,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   RepeatMode _repeatMode = RepeatMode.off;
   int _consecutiveLoadFailures = 0;
   int _lastSavedPositionMs = -1;
+  bool _closing = false;
   Future<void> _sessionWrite = Future<void>.value();
 
   /// Emits the title of a song whose file failed to load.
@@ -207,8 +210,17 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   @override
   Future<void> play() async {
     await _initialization;
-    if (_queue.current == null) return;
+    if (_queue.current == null) {
+      final newestSong = await DeviceMusicDataSource(
+        OnAudioQuery(),
+      ).fetchNewestExistingSong();
+      if (newestSong == null) return;
+      _queue.load([newestSong]);
+      await _loadCurrent(playImmediately: true);
+      return;
+    }
     await _player.play();
+    unawaited(RoutinePlaybackService.disarm());
   }
 
   @override
@@ -378,6 +390,32 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   /// Writes the current session snapshot to settings immediately.
   Future<void> persistSession() => _persistSession();
 
+  /// Fully closes the app from the media notification's close control.
+  ///
+  /// The paused queue and position are persisted first so the next launch can
+  /// resume exactly where the user left off, then the media notification and
+  /// foreground services are torn down and the Android task is finished.
+  Future<void> closeApp() async {
+    if (_closing) return;
+    _closing = true;
+    await _player.pause();
+    await _persistSession();
+    await RoutinePlaybackService.disarm();
+    // Clearing the media item and publishing an idle state removes the media
+    // notification and releases the audio service, while leaving the persisted
+    // session (and the in-memory queue) untouched.
+    mediaItem.add(null);
+    queue.add(const []);
+    playbackState.add(
+      playbackState.value.copyWith(
+        processingState: AudioProcessingState.idle,
+        playing: false,
+        controls: const [],
+      ),
+    );
+    await RoutinePlaybackService.closeApp();
+  }
+
   @override
   Future<void> stop() => stopAndClearQueue();
 
@@ -404,15 +442,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
         cycleRepeatMode();
         return;
       case 'closePlayer':
-        await stopAndClearQueue();
-        // Close the foreground Activity as well as the media service. The
-        // idle state above removes the notification through audio_service.
-        try {
-          await SystemNavigator.pop();
-        } catch (_) {
-          // There may be no Flutter Activity when the service is running
-          // after the app was swiped away; stopping the service is sufficient.
-        }
+        await closeApp();
         return;
       default:
         break;
@@ -468,6 +498,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       await _persistSession();
       if (playImmediately || _player.playing) {
         await _player.play();
+        unawaited(RoutinePlaybackService.disarm());
       }
     } catch (error) {
       _consecutiveLoadFailures++;
@@ -505,6 +536,9 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   void _broadcastState(PlaybackEvent event) {
+    // Once the user closes the app, keep the state idle so no listener revives
+    // the notification during the shutdown sequence.
+    if (_closing) return;
     final playing = _player.playing;
     final hasActiveSong = _queue.current != null;
     final controls = hasActiveSong

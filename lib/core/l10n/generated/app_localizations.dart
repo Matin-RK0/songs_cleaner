@@ -170,6 +170,18 @@ abstract class AppLocalizations {
   /// **'بر اساس مدت'**
   String get sortByDuration;
 
+  /// No description provided for @refreshLibraryTooltip.
+  ///
+  /// In fa, this message translates to:
+  /// **'به‌روزرسانی کتابخانه'**
+  String get refreshLibraryTooltip;
+
+  /// No description provided for @librarySyncedToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'کتابخانه به‌روزرسانی شد'**
+  String get librarySyncedToast;
+
   /// No description provided for @nowPlaying.
   ///
   /// In fa, this message translates to:

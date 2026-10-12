@@ -12,6 +12,8 @@
   "sortByArtist": "بر اساس خواننده",
   "sortByDateAdded": "بر اساس تاریخ افزودن",
   "sortByDuration": "بر اساس مدت",
+  "refreshLibraryTooltip": "به‌روزرسانی کتابخانه",
+  "librarySyncedToast": "کتابخانه به‌روزرسانی شد",
   "nowPlaying": "در حال پخش",
   "unknownArtist": "هنرمند ناشناس",
   "unknownAlbum": "آلبوم ناشناس",

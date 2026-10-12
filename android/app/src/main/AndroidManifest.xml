@@ -56,6 +56,11 @@
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
+        <service
+            android:name=".RoutinePlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"
+            android:stopWithTask="false" />
         <receiver
             android:name=".ColdStartMediaButtonReceiver"
             android:exported="true"

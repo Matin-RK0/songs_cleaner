@@ -12,6 +12,8 @@
   "sortByArtist": "By artist",
   "sortByDateAdded": "By date added",
   "sortByDuration": "By duration",
+  "refreshLibraryTooltip": "Refresh library",
+  "librarySyncedToast": "Library updated",
   "nowPlaying": "Now playing",
   "unknownArtist": "Unknown artist",
   "unknownAlbum": "Unknown album",

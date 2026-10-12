@@ -45,6 +45,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortByDuration => 'By duration';
 
   @override
+  String get refreshLibraryTooltip => 'Refresh library';
+
+  @override
+  String get librarySyncedToast => 'Library updated';
+
+  @override
   String get nowPlaying => 'Now playing';
 
   @override

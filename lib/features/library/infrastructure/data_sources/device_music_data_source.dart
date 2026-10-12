@@ -18,6 +18,25 @@ class DeviceMusicDataSource {
         .toList(growable: false);
   }
 
+  /// Returns songs added to the device on or after [dateAddedSeconds], newest
+  /// first. The query is ordered by date added so the scan can stop as soon as
+  /// it reaches already-known entries; only the freshly added rows are mapped
+  /// and file-checked, keeping periodic syncs cheap.
+  Future<List<Song>> fetchSongsNewerThan(int dateAddedSeconds) async {
+    final models = await _query.querySongs(
+      sortType: SongSortType.DATE_ADDED,
+      orderType: OrderType.DESC_OR_GREATER,
+    );
+    final fresh = <Song>[];
+    for (final model in models) {
+      if ((model.dateAdded ?? 0) < dateAddedSeconds) break;
+      final song = _mapSong(model);
+      if (!song.hasFile) continue;
+      if (await File(song.path).exists()) fresh.add(song);
+    }
+    return fresh;
+  }
+
   /// Returns the newest usable MediaStore item. This is used by a cold-start
   /// media command before the library UI exists.
   Future<Song?> fetchNewestExistingSong() async {
