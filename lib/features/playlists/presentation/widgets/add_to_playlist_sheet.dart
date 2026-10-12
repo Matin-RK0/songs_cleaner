@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../application/providers/playlists_controller.dart';
@@ -47,9 +48,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
             alignment: AlignmentDirectional.centerStart,
             child: Text(
               l10n.addToPlaylist,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
+              style: AppTypography.sheetTitle.copyWith(
                 color: colors.textHigh,
               ),
             ),
@@ -92,7 +91,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
             child: Text(
               l10n.playlistsEmptyMessage,
               textAlign: TextAlign.center,
-              style: TextStyle(color: colors.textMedium, height: 1.6),
+              style: AppTypography.body.copyWith(color: colors.textMedium),
             ),
           )
         else

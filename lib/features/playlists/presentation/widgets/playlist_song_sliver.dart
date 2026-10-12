@@ -4,9 +4,12 @@ import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../../library/presentation/widgets/artwork_image.dart';
+
+const double _tileArtworkSize = 52;
 
 /// Sliver song list for a playlist. Custom playlists pass [onReorder] to enable
 /// drag handles; smart playlists omit it and stay read-only. Long-press exposes
@@ -118,15 +121,14 @@ class PlaylistSongTile extends StatelessWidget {
             minVerticalPadding: 0,
             leading: ArtworkImage(
               songId: song.id,
-              size: 52,
+              size: _tileArtworkSize,
               borderRadius: AppRadius.md,
             ),
             title: Text(
               song.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 15,
+              style: AppTypography.songTitle.copyWith(
                 fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
                 color: isCurrent ? colors.primary : colors.textHigh,
               ),
@@ -135,7 +137,9 @@ class PlaylistSongTile extends StatelessWidget {
               '${song.artist.isEmpty ? context.l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12.5, color: colors.textMedium),
+              style: AppTypography.songSubtitle.copyWith(
+                color: colors.textMedium,
+              ),
             ),
             trailing: dragIndex == null
                 ? null

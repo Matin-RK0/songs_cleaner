@@ -4,6 +4,7 @@ import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 
 /// Small bottom sheet that collects a playlist name for both create and rename.
 /// Returns the trimmed name, or null if dismissed.
@@ -83,11 +84,7 @@ class _PlaylistNameSheetState extends State<_PlaylistNameSheet> {
         children: [
           Text(
             widget.title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: colors.textHigh,
-            ),
+            style: AppTypography.sheetTitle.copyWith(color: colors.textHigh),
           ),
           const SizedBox(height: AppSpacing.md),
           TextField(

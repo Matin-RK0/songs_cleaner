@@ -512,6 +512,36 @@ abstract class AppLocalizations {
   /// **'تیره'**
   String get themeModeDark;
 
+  /// No description provided for @settingsLanguageSection.
+  ///
+  /// In fa, this message translates to:
+  /// **'زبان'**
+  String get settingsLanguageSection;
+
+  /// No description provided for @languageTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'زبان برنامه'**
+  String get languageTitle;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In fa, this message translates to:
+  /// **'سیستم'**
+  String get languageSystem;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In fa, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languagePersian.
+  ///
+  /// In fa, this message translates to:
+  /// **'فارسی'**
+  String get languagePersian;
+
   /// No description provided for @settingsLockScreenSection.
   ///
   /// In fa, this message translates to:

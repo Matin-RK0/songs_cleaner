@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../domain/entities/song.dart';
 import 'artwork_image.dart';
@@ -81,8 +82,7 @@ class SongTile extends ConsumerWidget {
               song.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 15,
+              style: AppTypography.songTitle.copyWith(
                 fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
                 color: isCurrent ? colors.primary : colors.textHigh,
               ),
@@ -91,8 +91,7 @@ class SongTile extends ConsumerWidget {
               '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12.5,
+              style: AppTypography.songSubtitle.copyWith(
                 color: colors.textMedium,
               ),
             ),

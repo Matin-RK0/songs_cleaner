@@ -5,6 +5,7 @@ import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../library/application/providers/library_providers.dart';
@@ -197,9 +198,7 @@ class _SectionHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
+              style: AppTypography.sectionTitle.copyWith(
                 color: context.colors.textHigh,
               ),
             ),

@@ -112,4 +112,15 @@ void main() {
     await repository.saveThemeMode('light');
     expect(repository.loadThemeMode('dark'), 'light');
   });
+
+  test('round-trips the app locale', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadLocale('system'), 'system');
+
+    await repository.saveLocale('fa');
+    expect(repository.loadLocale('system'), 'fa');
+  });
 }

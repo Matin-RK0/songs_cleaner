@@ -230,6 +230,21 @@ class AppLocalizationsFa extends AppLocalizations {
   String get themeModeDark => 'تیره';
 
   @override
+  String get settingsLanguageSection => 'زبان';
+
+  @override
+  String get languageTitle => 'زبان برنامه';
+
+  @override
+  String get languageSystem => 'سیستم';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languagePersian => 'فارسی';
+
+  @override
   String get settingsLockScreenSection => 'صفحه قفل';
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/l10n/generated/app_localizations.dart';
+import '../../../../core/l10n/locale_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -199,6 +200,73 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ThemeMode.dark => l10n.themeModeDark,
       };
 
+  Future<void> _showLanguageSheet() async {
+    final l10n = context.l10n;
+    final current = _languageChoice(ref.read(appLocaleProvider));
+
+    final selected = await showModalBottomSheet<_LanguageChoice>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Text(
+                l10n.languageTitle,
+                style: AppTypography.sectionTitle.copyWith(
+                  color: sheetContext.colors.textHigh,
+                ),
+              ),
+            ),
+            RadioGroup<_LanguageChoice>(
+              groupValue: current,
+              onChanged: (value) => Navigator.of(sheetContext).pop(value),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final choice in _LanguageChoice.values)
+                    RadioListTile<_LanguageChoice>(
+                      value: choice,
+                      activeColor: sheetContext.colors.primary,
+                      title: Text(_languageLabel(l10n, choice)),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+
+    if (selected != null) {
+      await ref
+          .read(appLocaleProvider.notifier)
+          .setLocale(_localeFor(selected));
+    }
+  }
+
+  _LanguageChoice _languageChoice(Locale? locale) => switch (locale?.languageCode) {
+    'en' => _LanguageChoice.english,
+    'fa' => _LanguageChoice.persian,
+    _ => _LanguageChoice.system,
+  };
+
+  Locale? _localeFor(_LanguageChoice choice) => switch (choice) {
+    _LanguageChoice.system => null,
+    _LanguageChoice.english => const Locale('en'),
+    _LanguageChoice.persian => const Locale('fa'),
+  };
+
+  String _languageLabel(AppLocalizations l10n, _LanguageChoice choice) =>
+      switch (choice) {
+        _LanguageChoice.system => l10n.languageSystem,
+        _LanguageChoice.english => l10n.languageEnglish,
+        _LanguageChoice.persian => l10n.languagePersian,
+      };
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -206,6 +274,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final lockScreenState = ref.watch(lockScreenControllerProvider);
     final previousGoesToPrevious = ref.watch(previousGoesToPreviousProvider);
     final themeMode = ref.watch(appThemeModeProvider);
+    final locale = ref.watch(appLocaleProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
@@ -235,6 +304,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             trailing: Icon(Icons.chevron_left_rounded, color: colors.textLow),
             onTap: _showThemeSheet,
+          ),
+          _SectionHeader(title: l10n.settingsLanguageSection),
+          ListTile(
+            leading: Icon(Icons.translate_rounded, color: colors.primary),
+            title: Text(
+              l10n.languageTitle,
+              style: AppTypography.listTitle.copyWith(color: colors.textHigh),
+            ),
+            subtitle: Text(
+              _languageLabel(l10n, _languageChoice(locale)),
+              style: AppTypography.songSubtitle.copyWith(
+                color: colors.textMedium,
+              ),
+            ),
+            trailing: Icon(Icons.chevron_left_rounded, color: colors.textLow),
+            onTap: _showLanguageSheet,
           ),
           _SectionHeader(title: l10n.settingsLockScreenSection),
           lockScreenState.when(
@@ -352,3 +437,6 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
+
+/// Language choices shown in Settings. `system` follows the device locale.
+enum _LanguageChoice { system, english, persian }

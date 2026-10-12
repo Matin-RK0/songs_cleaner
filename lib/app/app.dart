@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/l10n/generated/app_localizations.dart';
+import '../core/l10n/locale_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/theme_mode_controller.dart';
 import '../features/lockscreen/application/providers/lock_screen_controller.dart';
@@ -94,7 +95,7 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ref.watch(appThemeModeProvider),
-      locale: const Locale('en'),
+      locale: ref.watch(appLocaleProvider),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
         AppLocalizations.delegate,

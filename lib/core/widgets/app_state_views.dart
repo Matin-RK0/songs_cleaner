@@ -38,9 +38,7 @@ class AppEmptyState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
+              style: AppTypography.emptyStateTitle.copyWith(
                 color: colors.textHigh,
               ),
             ),
@@ -49,11 +47,7 @@ class AppEmptyState extends StatelessWidget {
               Text(
                 message!,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  height: 1.6,
-                  color: colors.textMedium,
-                ),
+                style: AppTypography.body.copyWith(color: colors.textMedium),
               ),
             ],
           ],
@@ -110,15 +104,11 @@ class PrimaryActionButton extends StatelessWidget {
       label: Text(label),
       style: FilledButton.styleFrom(
         backgroundColor: background,
-        foregroundColor: Colors.white,
+        foregroundColor: context.colors.onPrimary,
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
         elevation: 0,
-        textStyle: const TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontSize: 14.5,
-          fontWeight: FontWeight.w700,
-        ),
+        textStyle: AppTypography.buttonLabel,
       ),
     );
   }

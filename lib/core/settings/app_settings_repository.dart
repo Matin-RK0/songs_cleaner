@@ -157,6 +157,7 @@ class AppSettingsRepository {
   static const String _previousGoesToPreviousKey =
       'player.previousGoesToPrevious';
   static const String _themeModeKey = 'appearance.themeMode';
+  static const String _localeKey = 'appearance.locale';
 
   final SharedPreferences _prefs;
 
@@ -191,6 +192,14 @@ class AppSettingsRepository {
 
   Future<void> saveThemeMode(String value) =>
       _prefs.setString(_themeModeKey, value);
+
+  // -- Locale -----------------------------------------------------------------
+
+  String loadLocale(String fallback) =>
+      _prefs.getString(_localeKey) ?? fallback;
+
+  Future<void> saveLocale(String value) =>
+      _prefs.setString(_localeKey, value);
 
   // -- Player controls --------------------------------------------------------
 

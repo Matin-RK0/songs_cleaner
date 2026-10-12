@@ -6,6 +6,7 @@ import '../../../../core/l10n/generated/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_state_views.dart';
@@ -18,9 +19,11 @@ import '../../domain/entities/playlist.dart';
 import '../../domain/entities/smart_playlist.dart';
 import '../widgets/playlist_artwork.dart';
 import '../widgets/playlist_name_sheet.dart';
-import '../widgets/playlist_song_list.dart';
+import '../widgets/playlist_song_sliver.dart';
 
 enum _PlaylistAction { rename, delete }
+
+const double _artworkSize = 168;
 
 /// Detail view for a custom playlist or a smart playlist. Custom playlists
 /// support reordering and removal; smart playlists are read-only.
@@ -228,14 +231,14 @@ class _PlaylistHeader extends StatelessWidget {
         children: [
           PlaylistArtwork(
             songIds: songs.take(4).map((song) => song.id).toList(),
-            size: 168,
+            size: _artworkSize,
             borderRadius: AppRadius.xl,
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
             l10n.playlistMetaLabel(songs.length, total.mmss),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: colors.textMedium),
+            style: AppTypography.meta.copyWith(color: colors.textMedium),
           ),
           const SizedBox(height: AppSpacing.md),
           Row(
