@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../application/providers/player_controller.dart';
 
@@ -41,22 +42,25 @@ class _SeekBarState extends ConsumerState<SeekBar> {
               inactiveTrackColor: AppColors.outline,
               thumbColor: AppColors.primary,
             ),
-            child: Slider(
-              value: value,
-              max: maxMs <= 0 ? 1 : maxMs,
-              onChanged: maxMs <= 0
-                  ? null
-                  : (newValue) => setState(() => _dragValueMs = newValue),
-              onChangeEnd: (newValue) {
-                ref
-                    .read(playerProvider.notifier)
-                    .seek(Duration(milliseconds: newValue.round()));
-                setState(() => _dragValueMs = null);
-              },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Slider(
+                value: value,
+                max: maxMs <= 0 ? 1 : maxMs,
+                onChanged: maxMs <= 0
+                    ? null
+                    : (newValue) => setState(() => _dragValueMs = newValue),
+                onChangeEnd: (newValue) {
+                  ref
+                      .read(playerProvider.notifier)
+                      .seek(Duration(milliseconds: newValue.round()));
+                  setState(() => _dragValueMs = null);
+                },
+              ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

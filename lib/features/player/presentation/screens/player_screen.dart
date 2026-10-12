@@ -15,6 +15,7 @@ import '../../domain/playback_enums.dart';
 import '../widgets/player_state_views.dart';
 import '../widgets/queue_sheet.dart';
 import '../widgets/seek_bar.dart';
+import '../widgets/swipe_down_to_dismiss.dart';
 
 /// Full-screen now-playing view with the signature "clean this song" button.
 class PlayerScreen extends ConsumerWidget {
@@ -24,41 +25,43 @@ class PlayerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final song = ref.watch(playerProvider.select((state) => state.current));
 
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      body: ColoredBox(
-        color: AppColors.surface,
-        child: SafeArea(
-          child: song == null
-              ? const NothingPlayingView()
-              : Column(
-                  children: [
-                    const _HeaderBar(),
-                    Expanded(
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg,
-                          ),
-                          child: ArtworkImage(
-                            songId: song.id,
-                            size: _artworkSize(context),
-                            borderRadius: AppRadius.xl,
+    return SwipeDownToDismiss(
+      child: Scaffold(
+        backgroundColor: AppColors.surface,
+        body: ColoredBox(
+          color: AppColors.surface,
+          child: SafeArea(
+            child: song == null
+                ? const NothingPlayingView()
+                : Column(
+                    children: [
+                      const _HeaderBar(),
+                      Expanded(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                            ),
+                            child: ArtworkImage(
+                              songId: song.id,
+                              size: _artworkSize(context),
+                              borderRadius: AppRadius.xl,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    const _TrackInfo(),
-                    const SizedBox(height: AppSpacing.sm),
-                    const SeekBar(),
-                    const SizedBox(height: AppSpacing.md),
-                    const _ControlsRow(),
-                    const SizedBox(height: AppSpacing.lg),
-                    _DeleteCurrentButton(song: song),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-                ),
+                      const SizedBox(height: AppSpacing.md),
+                      const _TrackInfo(),
+                      const SizedBox(height: AppSpacing.sm),
+                      const SeekBar(),
+                      const SizedBox(height: AppSpacing.md),
+                      const _ControlsRow(),
+                      const SizedBox(height: AppSpacing.lg),
+                      _DeleteCurrentButton(song: song),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ),
+          ),
         ),
       ),
     );
