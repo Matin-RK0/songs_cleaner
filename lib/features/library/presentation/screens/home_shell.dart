@@ -11,6 +11,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../player/application/providers/notification_gate_controller.dart';
 import '../../../player/application/providers/player_controller.dart';
+import '../../../player/presentation/widgets/mini_player_bar.dart';
 import '../../../player/presentation/widgets/notification_permission_banner.dart';
 import '../../../playlists/application/providers/playlists_controller.dart';
 import '../../../playlists/presentation/screens/playlists_tab.dart';
@@ -20,7 +21,8 @@ import '../screens/songs_tab.dart';
 import '../../application/providers/library_controller.dart';
 import '../../application/providers/library_sync_scheduler.dart';
 
-/// Home: tabs (songs / artists / albums) and library actions.
+/// Home: tabs (songs / artists / albums), shuffle-all action and the mini
+/// player docked at the bottom.
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -123,6 +125,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
     // Keep the periodic new-song scan alive for the whole session.
     ref.watch(librarySyncSchedulerProvider);
     final l10n = context.l10n;
+    final hasCurrent = ref.watch(
+      playerProvider.select((state) => state.hasCurrent),
+    );
     final onPlaylistsTab = _tabController.index == 3;
 
     return Scaffold(
@@ -184,10 +189,17 @@ class _HomeShellState extends ConsumerState<HomeShell>
               ),
             ],
           ),
+          if (hasCurrent)
+            const Align(
+              alignment: Alignment.bottomCenter,
+              child: MiniPlayerBar(),
+            ),
           if (onPlaylistsTab)
             PositionedDirectional(
               end: AppSpacing.md,
-              bottom: AppSpacing.md,
+              bottom: hasCurrent
+                  ? MiniPlayerBar.height + AppSpacing.md
+                  : AppSpacing.md,
               child: FloatingActionButton(
                 heroTag: 'new-playlist',
                 tooltip: l10n.newPlaylist,
@@ -198,7 +210,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
           else ...[
             PositionedDirectional(
               end: AppSpacing.md,
-              bottom: AppSpacing.md,
+              bottom: hasCurrent
+                  ? MiniPlayerBar.height + AppSpacing.md
+                  : AppSpacing.md,
               child: FloatingActionButton(
                 heroTag: 'shuffle-all',
                 tooltip: l10n.shuffleAll,
@@ -216,7 +230,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
             ),
             PositionedDirectional(
               end: AppSpacing.md + 64,
-              bottom: AppSpacing.md,
+              bottom: hasCurrent
+                  ? MiniPlayerBar.height + AppSpacing.md
+                  : AppSpacing.md,
               child: FloatingActionButton.small(
                 heroTag: 'scroll-to-current',
                 tooltip: l10n.nowPlaying,

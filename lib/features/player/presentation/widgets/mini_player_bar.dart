@@ -39,7 +39,6 @@ class MiniPlayerBar extends ConsumerWidget {
       child: _MiniPlayerGestures(
         onPrevious: () => ref.read(playerProvider.notifier).previous(),
         onNext: () => ref.read(playerProvider.notifier).next(),
-        onOpen: () => AppRouter.openPlayer(context),
         child: Material(
           color: colors.surfaceHigh,
           shape: const RoundedRectangleBorder(
@@ -145,22 +144,20 @@ class MiniPlayerBar extends ConsumerWidget {
   }
 }
 
-/// Adds track-change and open-player gestures to the docked mini player.
+/// Adds track-change gestures to the docked mini player.
 ///
-/// Horizontal flicks change the track; an upward flick opens the full player.
+/// Horizontal flicks change the track.
 /// The inner seek bar keeps its own horizontal drag handling and wins the
 /// gesture arena for flicks that start on it.
 class _MiniPlayerGestures extends StatefulWidget {
   const _MiniPlayerGestures({
     required this.onPrevious,
     required this.onNext,
-    required this.onOpen,
     required this.child,
   });
 
   final VoidCallback onPrevious;
   final VoidCallback onNext;
-  final VoidCallback onOpen;
   final Widget child;
 
   @override
@@ -172,7 +169,6 @@ class _MiniPlayerGesturesState extends State<_MiniPlayerGestures> {
   static const double _velocityThreshold = 420;
 
   double _dx = 0;
-  double _dy = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -188,14 +184,6 @@ class _MiniPlayerGesturesState extends State<_MiniPlayerGestures> {
           widget.onPrevious();
         }
         _dx = 0;
-      },
-      onVerticalDragUpdate: (details) => _dy += details.delta.dy,
-      onVerticalDragEnd: (details) {
-        final velocity = details.primaryVelocity ?? 0;
-        if (_dy <= -_distanceThreshold || velocity <= -_velocityThreshold) {
-          widget.onOpen();
-        }
-        _dy = 0;
       },
       child: widget.child,
     );
