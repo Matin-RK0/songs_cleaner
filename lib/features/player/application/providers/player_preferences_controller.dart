@@ -24,3 +24,22 @@ class PreviousGoesToPreviousController extends Notifier<bool> {
         .savePreviousGoesToPrevious(value);
   }
 }
+
+/// Controls whether the destructive quick-delete action is hidden from the
+/// full-screen player. It is opt-in so existing users keep the button visible.
+final hideQuickDeleteProvider =
+    NotifierProvider<HideQuickDeleteController, bool>(
+      HideQuickDeleteController.new,
+    );
+
+class HideQuickDeleteController extends Notifier<bool> {
+  @override
+  bool build() => ref.watch(appSettingsRepositoryProvider).loadHideQuickDelete(
+    false,
+  );
+
+  Future<void> setEnabled(bool value) async {
+    state = value;
+    await ref.read(appSettingsRepositoryProvider).saveHideQuickDelete(value);
+  }
+}

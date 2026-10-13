@@ -102,6 +102,17 @@ void main() {
     expect(repository.loadPreviousGoesToPrevious(true), isFalse);
   });
 
+  test('quick delete remains visible by default and can be hidden', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadHideQuickDelete(false), isFalse);
+
+    await repository.saveHideQuickDelete(true);
+    expect(repository.loadHideQuickDelete(false), isTrue);
+  });
+
   test('round-trips the appearance theme mode', () async {
     SharedPreferences.setMockInitialValues({});
     final preferences = await SharedPreferences.getInstance();

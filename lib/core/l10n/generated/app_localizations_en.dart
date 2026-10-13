@@ -293,6 +293,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'On: jump straight to the previous song. Off: restart the current song first.';
 
   @override
+  String get hideQuickDeleteTitle => 'Hide quick delete button';
+
+  @override
+  String get hideQuickDeleteSubtitle =>
+      'When enabled, the delete button is hidden from the player screen.';
+
+  @override
   String get playlistsTab => 'Playlists';
 
   @override

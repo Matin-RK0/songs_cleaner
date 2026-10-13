@@ -123,6 +123,8 @@
   "settingsPlaybackSection": "پخش",
   "previousGoesToPreviousTitle": "دکمه آهنگ قبلی مستقیم به آهنگ قبلی برود",
   "previousGoesToPreviousSubtitle": "روشن: بدون توقف، بلافاصله به آهنگ قبلی بروید. خاموش: ابتدا آهنگ فعلی از اول پخش شود.",
+  "hideQuickDeleteTitle": "مخفی کردن دکمه حذف سریع",
+  "hideQuickDeleteSubtitle": "با روشن بودن، دکمه حذف آهنگ از صفحه پخش نمایش داده نمی‌شود.",
   "playlistsTab": "پلی‌لیست‌ها",
   "smartPlaylistsSection": "پلی‌لیست‌های هوشمند",
   "myPlaylistsSection": "پلی‌لیست‌های من",

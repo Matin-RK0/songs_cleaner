@@ -264,6 +264,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final colors = context.colors;
     final lockScreenState = ref.watch(lockScreenControllerProvider);
     final previousGoesToPrevious = ref.watch(previousGoesToPreviousProvider);
+    final hideQuickDelete = ref.watch(hideQuickDeleteProvider);
     final themeMode = ref.watch(appThemeModeProvider);
     final locale = ref.watch(appLocaleProvider);
 
@@ -332,6 +333,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: l10n.previousGoesToPreviousTitle,
             subtitle: l10n.previousGoesToPreviousSubtitle,
             icon: Icons.skip_previous_rounded,
+          ),
+          _SettingSwitchTile(
+            value: hideQuickDelete,
+            onChanged: (value) => ref
+                .read(hideQuickDeleteProvider.notifier)
+                .setEnabled(value),
+            title: l10n.hideQuickDeleteTitle,
+            subtitle: l10n.hideQuickDeleteSubtitle,
+            icon: Icons.delete_outline_rounded,
           ),
         ],
       ),

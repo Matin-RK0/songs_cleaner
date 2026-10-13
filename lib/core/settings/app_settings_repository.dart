@@ -156,6 +156,7 @@ class AppSettingsRepository {
   static const String _lockScreenEnabledKey = 'lockscreen.enabled';
   static const String _previousGoesToPreviousKey =
       'player.previousGoesToPrevious';
+  static const String _hideQuickDeleteKey = 'player.hideQuickDelete';
   static const String _themeModeKey = 'appearance.themeMode';
   static const String _localeKey = 'appearance.locale';
 
@@ -207,6 +208,14 @@ class AppSettingsRepository {
 
   Future<void> savePreviousGoesToPrevious(bool value) =>
       _prefs.setBool(_previousGoesToPreviousKey, value);
+
+  // -- Player actions ---------------------------------------------------------
+
+  bool loadHideQuickDelete(bool fallback) =>
+      _prefs.getBool(_hideQuickDeleteKey) ?? fallback;
+
+  Future<void> saveHideQuickDelete(bool value) =>
+      _prefs.setBool(_hideQuickDeleteKey, value);
 
   // -- Playback session -------------------------------------------------------
 

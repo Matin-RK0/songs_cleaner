@@ -293,6 +293,13 @@ class AppLocalizationsFa extends AppLocalizations {
       'روشن: بدون توقف، بلافاصله به آهنگ قبلی بروید. خاموش: ابتدا آهنگ فعلی از اول پخش شود.';
 
   @override
+  String get hideQuickDeleteTitle => 'مخفی کردن دکمه حذف سریع';
+
+  @override
+  String get hideQuickDeleteSubtitle =>
+      'با روشن بودن، دکمه حذف آهنگ از صفحه پخش نمایش داده نمی‌شود.';
+
+  @override
   String get playlistsTab => 'پلی‌لیست‌ها';
 
   @override

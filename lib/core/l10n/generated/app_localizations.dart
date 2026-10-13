@@ -626,6 +626,18 @@ abstract class AppLocalizations {
   /// **'روشن: بدون توقف، بلافاصله به آهنگ قبلی بروید. خاموش: ابتدا آهنگ فعلی از اول پخش شود.'**
   String get previousGoesToPreviousSubtitle;
 
+  /// No description provided for @hideQuickDeleteTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'مخفی کردن دکمه حذف سریع'**
+  String get hideQuickDeleteTitle;
+
+  /// No description provided for @hideQuickDeleteSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'با روشن بودن، دکمه حذف آهنگ از صفحه پخش نمایش داده نمی‌شود.'**
+  String get hideQuickDeleteSubtitle;
+
   /// No description provided for @playlistsTab.
   ///
   /// In fa, this message translates to:
