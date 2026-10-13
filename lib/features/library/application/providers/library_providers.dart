@@ -8,13 +8,13 @@ import 'library_controller.dart';
 
 /// Small thumbnails for list tiles; autoDispose keeps memory bounded while
 /// the LRU inside ArtworkCacheService smooths fast scrolling.
-final songArtworkProvider =
-    FutureProvider.autoDispose.family<Uint8List?, (int, int)>((ref, key) async {
-  final songId = key.$1;
-  final size = key.$2;
-  final cache = ref.watch(artworkCacheProvider);
-  return cache.artworkFor(songId, size: size);
-});
+final songArtworkProvider = FutureProvider.autoDispose
+    .family<Uint8List?, (int, int)>((ref, key) async {
+      final songId = key.$1;
+      final size = key.$2;
+      final cache = ref.watch(artworkCacheProvider);
+      return cache.artworkFor(songId, size: size);
+    });
 
 final visibleSongsProvider = Provider<List<Song>>(
   (ref) => ref.watch(libraryProvider).value?.visibleSongs ?? const [],

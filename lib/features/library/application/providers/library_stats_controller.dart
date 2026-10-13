@@ -13,8 +13,8 @@ final libraryStatsRepositoryProvider = Provider<LibraryStatsRepository>(
 /// state is always available without an async loading phase.
 final libraryStatsProvider =
     NotifierProvider<LibraryStatsController, LibraryStats>(
-  LibraryStatsController.new,
-);
+      LibraryStatsController.new,
+    );
 
 class LibraryStatsController extends Notifier<LibraryStats> {
   @override
@@ -24,17 +24,13 @@ class LibraryStatsController extends Notifier<LibraryStats> {
     final favorites = <int>{...state.favoriteIds};
     if (!favorites.remove(songId)) favorites.add(songId);
     state = state.copyWith(favoriteIds: favorites);
-    await ref
-        .read(libraryStatsRepositoryProvider)
-        .saveFavorites(favorites);
+    await ref.read(libraryStatsRepositoryProvider).saveFavorites(favorites);
   }
 
   Future<void> recordPlay(int songId) async {
     final counts = <int, int>{...state.playCounts};
     counts[songId] = (counts[songId] ?? 0) + 1;
     state = state.copyWith(playCounts: counts);
-    await ref
-        .read(libraryStatsRepositoryProvider)
-        .savePlayCounts(counts);
+    await ref.read(libraryStatsRepositoryProvider).savePlayCounts(counts);
   }
 }

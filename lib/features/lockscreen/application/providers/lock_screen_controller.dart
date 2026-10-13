@@ -42,8 +42,8 @@ class LockScreenState {
 
 final lockScreenControllerProvider =
     AsyncNotifierProvider<LockScreenController, LockScreenState>(
-  LockScreenController.new,
-);
+      LockScreenController.new,
+    );
 
 /// Resolves platform support and the overlay permission, and owns the user
 /// toggle. The stored preference is only honored while the permission is held,

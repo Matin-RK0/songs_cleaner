@@ -49,8 +49,7 @@ class SongListView extends ConsumerWidget {
           isCurrent: song.id == currentSongId,
           isFavorite: isFavorite,
           onTap: () => onSongTap?.call(songs, index),
-          onAddToPlaylist: (target) =>
-              showAddToPlaylistSheet(context, target),
+          onAddToPlaylist: (target) => showAddToPlaylistSheet(context, target),
           onToggleFavorite: () =>
               ref.read(libraryStatsProvider.notifier).toggleFavorite(song.id),
           onDeleteDevice: (target) => deleteSongFlow(context, ref, target),

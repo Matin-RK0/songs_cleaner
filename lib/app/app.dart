@@ -41,8 +41,12 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
     // the lock screen requested while the app was still booting.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final pending = await service.register();
-      if (!mounted || !pending) return;
-      _openLockScreen();
+      final pendingPlay = await service.consumePendingPlay();
+      if (!mounted) return;
+      if (pending) _openLockScreen();
+      if (pendingPlay) {
+        unawaited(_startPendingPlayback());
+      }
     });
   }
 
@@ -58,13 +62,29 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
         _openLockScreen();
       case LockScreenEvent.hidePlayer:
         _closeLockScreen();
+      case LockScreenEvent.playRequested:
+        unawaited(_startPendingPlayback());
     }
+  }
+
+  Future<void> _startPendingPlayback() async {
+    final service = ref.read(lockScreenServiceProvider);
+    await service.setPlaybackActive(true);
+    await ref.read(musicPlayerHandlerProvider).play();
+    await service.setPlaybackActive(true);
   }
 
   void _openLockScreen() {
     if (_lockScreenOpen) return;
     final navigator = _navigatorKey.currentState;
-    if (navigator == null) return;
+    if (navigator == null) {
+      // Cold audio-service startup can deliver the native request before the
+      // MaterialApp has attached its Navigator.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openLockScreen();
+      });
+      return;
+    }
     _lockScreenOpen = true;
     navigator.pushNamed(RouteNames.lockScreen).whenComplete(() {
       _lockScreenOpen = false;

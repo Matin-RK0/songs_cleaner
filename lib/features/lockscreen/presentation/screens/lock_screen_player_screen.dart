@@ -17,7 +17,8 @@ import '../../application/providers/lock_screen_controller.dart';
 
 /// Lock-screen player. Pushed by the lock-screen coordinator when the keyguard
 /// turns on during playback, so the controls cover the lock screen instead of
-/// the home screen. Back retreats to the keyguard via the native controller.
+/// the home screen. Back closes this presentation task while audio remains
+/// owned by the background handler.
 class LockScreenPlayerScreen extends ConsumerWidget {
   const LockScreenPlayerScreen({super.key});
 
@@ -57,8 +58,12 @@ class LockScreenPlayerScreen extends ConsumerWidget {
                                   icon: const Icon(
                                     Icons.keyboard_arrow_down_rounded,
                                   ),
-                                  onPressed: () =>
-                                      Navigator.of(context).maybePop(),
+                                  onPressed: () {
+                                    ref
+                                        .read(lockScreenServiceProvider)
+                                        .dismiss();
+                                    Navigator.of(context).maybePop();
+                                  },
                                 ),
                               ),
                               Padding(

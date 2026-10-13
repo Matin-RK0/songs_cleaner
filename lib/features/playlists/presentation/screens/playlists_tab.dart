@@ -28,8 +28,9 @@ class PlaylistsTab extends ConsumerWidget {
     final stats = ref.watch(libraryStatsProvider);
 
     final likedCount = songs.where((song) => stats.isFavorite(song.id)).length;
-    final mostPlayedCount =
-        songs.where((song) => stats.playCount(song.id) > 0).length;
+    final mostPlayedCount = songs
+        .where((song) => stats.playCount(song.id) > 0)
+        .length;
 
     return CustomScrollView(
       physics: const ClampingScrollPhysics(),
@@ -120,29 +121,27 @@ class PlaylistsTab extends ConsumerWidget {
               AppSpacing.xl + 72,
             ),
             sliver: SliverGrid(
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 mainAxisSpacing: AppSpacing.md,
                 crossAxisSpacing: AppSpacing.md,
                 childAspectRatio: 0.74,
               ),
-              delegate: SliverChildBuilderDelegate(
-                childCount: custom.length,
-                (context, index) {
-                  final playlist = custom[index];
-                  return PlaylistCard(
-                    title: playlist.name,
-                    subtitle: l10n.songCountLabel(playlist.songCount),
-                    cover: PlaylistArtwork(
-                      songIds: playlist.songIds,
-                      expand: true,
-                    ),
-                    onTap: () =>
-                        _openCustom(context, playlist.id),
-                  );
-                },
-              ),
+              delegate: SliverChildBuilderDelegate(childCount: custom.length, (
+                context,
+                index,
+              ) {
+                final playlist = custom[index];
+                return PlaylistCard(
+                  title: playlist.name,
+                  subtitle: l10n.songCountLabel(playlist.songCount),
+                  cover: PlaylistArtwork(
+                    songIds: playlist.songIds,
+                    expand: true,
+                  ),
+                  onTap: () => _openCustom(context, playlist.id),
+                );
+              }),
             ),
           ),
       ],
@@ -203,7 +202,8 @@ class _SectionHeader extends StatelessWidget {
               ),
             ),
           ),
-          ?trailing,        ],
+          ?trailing,
+        ],
       ),
     );
   }

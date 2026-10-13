@@ -48,9 +48,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
             alignment: AlignmentDirectional.centerStart,
             child: Text(
               l10n.addToPlaylist,
-              style: AppTypography.sheetTitle.copyWith(
-                color: colors.textHigh,
-              ),
+              style: AppTypography.sheetTitle.copyWith(color: colors.textHigh),
             ),
           ),
         ),
@@ -77,10 +75,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
                 .read(playlistsProvider.notifier)
                 .addSong(playlist.id, song.id);
             if (!context.mounted) return;
-            showAppSnackBar(
-              context,
-              l10n.addedToPlaylistToast(playlist.name),
-            );
+            showAppSnackBar(context, l10n.addedToPlaylistToast(playlist.name));
             Navigator.of(context).pop();
           },
         ),

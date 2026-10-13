@@ -74,20 +74,20 @@ List<MusicGroup> groupSongs(
   for (final song in songs) {
     buckets.putIfAbsent(idOf(song), () => []).add(song);
   }
-  final groups = buckets.entries.map((entry) {
-    final bucketSongs = entry.value
-      ..sort(SongSort.titleAsc.compare);
-    return MusicGroup(
-      id: entry.key,
-      name: nameOf(bucketSongs.first),
-      songCount: bucketSongs.length,
-      coverSongId: bucketSongs.first.id,
-      totalDuration: bucketSongs.fold<Duration>(
-        Duration.zero,
-        (sum, song) => sum + song.duration,
-      ),
-    );
-  }).toList()
-    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  final groups =
+      buckets.entries.map((entry) {
+          final bucketSongs = entry.value..sort(SongSort.titleAsc.compare);
+          return MusicGroup(
+            id: entry.key,
+            name: nameOf(bucketSongs.first),
+            songCount: bucketSongs.length,
+            coverSongId: bucketSongs.first.id,
+            totalDuration: bucketSongs.fold<Duration>(
+              Duration.zero,
+              (sum, song) => sum + song.duration,
+            ),
+          );
+        }).toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   return List.unmodifiable(groups);
 }

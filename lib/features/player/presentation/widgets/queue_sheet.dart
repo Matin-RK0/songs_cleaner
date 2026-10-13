@@ -29,8 +29,9 @@ class QueueSheetContent extends ConsumerWidget {
     final l10n = context.l10n;
     final colors = context.colors;
     final songs = ref.watch(playerProvider.select((state) => state.songs));
-    final currentIndex =
-        ref.watch(playerProvider.select((state) => state.index));
+    final currentIndex = ref.watch(
+      playerProvider.select((state) => state.index),
+    );
 
     if (songs.isEmpty) {
       return Padding(
@@ -81,13 +82,11 @@ class QueueSheetContent extends ConsumerWidget {
               final song = songs[index];
               final isCurrent = index == currentIndex;
               return ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                ),
                 leading: isCurrent
-                    ? Icon(
-                        Icons.graphic_eq_rounded,
-                        color: colors.primary,
-                      )
+                    ? Icon(Icons.graphic_eq_rounded, color: colors.primary)
                     : Text(
                         '${index + 1}',
                         style: AppTypography.caption.copyWith(
@@ -99,11 +98,8 @@ class QueueSheetContent extends ConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.titleSmall.copyWith(
-                    fontWeight:
-                        isCurrent ? FontWeight.w800 : FontWeight.w500,
-                    color: isCurrent
-                        ? colors.primary
-                        : colors.textHigh,
+                    fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500,
+                    color: isCurrent ? colors.primary : colors.textHigh,
                   ),
                 ),
                 subtitle: Text(
@@ -126,9 +122,7 @@ class QueueSheetContent extends ConsumerWidget {
                 ),
                 onTap: () {
                   Navigator.of(context).pop();
-                  ref
-                      .read(playerProvider.notifier)
-                      .jumpToQueueIndex(index);
+                  ref.read(playerProvider.notifier).jumpToQueueIndex(index);
                 },
               );
             },

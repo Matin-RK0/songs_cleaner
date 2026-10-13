@@ -9,7 +9,6 @@ import '../../library/domain/entities/song.dart';
 import '../../library/infrastructure/data_sources/device_music_data_source.dart';
 import '../domain/playback_enums.dart';
 import '../domain/playback_queue.dart';
-import 'routine_playback_service.dart';
 
 /// Glue between [AudioService] (notification, background, headset buttons)
 /// and [AudioPlayer]. Owns the play queue and repeat/shuffle rules so both
@@ -220,7 +219,6 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       return;
     }
     await _player.play();
-    unawaited(RoutinePlaybackService.disarm());
   }
 
   @override
@@ -401,7 +399,6 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     _closing = true;
     await _player.pause();
     await _persistSession();
-    await RoutinePlaybackService.disarm();
     // Clearing the media item and publishing an idle state removes the media
     // notification and releases the audio service, while leaving the persisted
     // session (and the in-memory queue) untouched.
@@ -414,7 +411,6 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
         controls: const [],
       ),
     );
-    await RoutinePlaybackService.closeApp();
   }
 
   @override
@@ -499,7 +495,6 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       await _persistSession();
       if (playImmediately || _player.playing) {
         await _player.play();
-        unawaited(RoutinePlaybackService.disarm());
       }
     } catch (error) {
       _consecutiveLoadFailures++;

@@ -28,9 +28,7 @@ class PlayerTrackInfo extends ConsumerWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.playerTitle.copyWith(
-              color: colors.textHigh,
-            ),
+            style: AppTypography.playerTitle.copyWith(color: colors.textHigh),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(

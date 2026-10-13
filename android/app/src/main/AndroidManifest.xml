@@ -52,7 +52,7 @@
             </intent-filter>
         </activity>
 
-        <!-- audio_service background playback + media button handling -->
+        <!-- One audio_service owner; the receiver only bootstraps Flutter for cold Routine play. -->
         <service
             android:name="com.ryanheise.audioservice.AudioService"
             android:foregroundServiceType="mediaPlayback"
@@ -63,13 +63,8 @@
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
-        <service
-            android:name=".RoutinePlaybackService"
-            android:exported="false"
-            android:foregroundServiceType="mediaPlayback"
-            android:stopWithTask="false" />
         <receiver
-            android:name=".ColdStartMediaButtonReceiver"
+            android:name=".LockScreenMediaButtonReceiver"
             android:exported="true"
             tools:ignore="Instantiatable">
             <intent-filter>

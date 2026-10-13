@@ -5,9 +5,10 @@ import '../settings/app_settings_repository.dart';
 
 /// Selected app theme. Defaults to dark so the app keeps its original look
 /// until the user picks another mode in Settings.
-final appThemeModeProvider = NotifierProvider<AppThemeModeController, ThemeMode>(
-  AppThemeModeController.new,
-);
+final appThemeModeProvider =
+    NotifierProvider<AppThemeModeController, ThemeMode>(
+      AppThemeModeController.new,
+    );
 
 class AppThemeModeController extends Notifier<ThemeMode> {
   static const ThemeMode _fallback = ThemeMode.dark;

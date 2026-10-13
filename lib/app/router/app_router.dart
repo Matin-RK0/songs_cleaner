@@ -48,10 +48,7 @@ abstract final class AppRouter {
       case RouteNames.groupSongs:
         final args = settings.arguments;
         if (args is GroupSongsArgs) {
-          return _fadeRoute(
-            settings,
-            GroupSongsScreen(args: args),
-          );
+          return _fadeRoute(settings, GroupSongsScreen(args: args));
         }
         return _fadeRoute(settings, const HomeShell());
       case RouteNames.playlistDetail:
@@ -65,7 +62,10 @@ abstract final class AppRouter {
     }
   }
 
-  static PageRouteBuilder<T> _fadeRoute<T>(RouteSettings settings, Widget child) {
+  static PageRouteBuilder<T> _fadeRoute<T>(
+    RouteSettings settings,
+    Widget child,
+  ) {
     return PageRouteBuilder<T>(
       settings: settings,
       transitionDuration: AppMotion.normal,
@@ -78,17 +78,20 @@ abstract final class AppRouter {
     );
   }
 
-  static PageRouteBuilder<T> _slideRoute<T>(RouteSettings settings, Widget child) {
+  static PageRouteBuilder<T> _slideRoute<T>(
+    RouteSettings settings,
+    Widget child,
+  ) {
     return PageRouteBuilder<T>(
       settings: settings,
       transitionDuration: AppMotion.normal,
       reverseTransitionDuration: AppMotion.fast,
       pageBuilder: (_, _, _) => child,
       transitionsBuilder: (_, animation, _, child) => SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(1, 0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: animation, curve: AppMotion.standard)),
+        position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+            .animate(
+              CurvedAnimation(parent: animation, curve: AppMotion.standard),
+            ),
         child: child,
       ),
     );
@@ -98,29 +101,29 @@ abstract final class AppRouter {
 /// Slide-up transition for the full player screen.
 class PlayerRoute extends PageRouteBuilder<void> {
   PlayerRoute({super.settings})
-      : super(
-          transitionDuration: AppMotion.normal,
-          reverseTransitionDuration: AppMotion.normal,
-          opaque: false,
-          // A tap outside the player must not dismiss it: the transparent
-          // player route leaves home (with the mini player / song tiles)
-          // layered underneath, and a stray tap there would pop the player
-          // and immediately re-push it.
-          barrierDismissible: false,
-          barrierColor: AppColorTokens.scrimOverlay,
-          pageBuilder: (_, _, _) => const PlayerScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final curved = CurvedAnimation(
-              parent: animation,
-              curve: AppMotion.standard,
-            );
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).animate(curved),
-              child: child,
-            );
-          },
-        );
+    : super(
+        transitionDuration: AppMotion.normal,
+        reverseTransitionDuration: AppMotion.normal,
+        opaque: false,
+        // A tap outside the player must not dismiss it: the transparent
+        // player route leaves home (with the mini player / song tiles)
+        // layered underneath, and a stray tap there would pop the player
+        // and immediately re-push it.
+        barrierDismissible: false,
+        barrierColor: AppColorTokens.scrimOverlay,
+        pageBuilder: (_, _, _) => const PlayerScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: AppMotion.standard,
+          );
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(curved),
+            child: child,
+          );
+        },
+      );
 }

@@ -11,20 +11,21 @@ abstract final class AppTheme {
   static ThemeData light() => _build(AppColorTokens.light, Brightness.light);
 
   static ThemeData _build(AppColorTokens tokens, Brightness brightness) {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: tokens.primary,
-      brightness: brightness,
-      primary: tokens.primary,
-      onPrimary: tokens.onPrimary,
-      secondary: tokens.accent,
-      error: tokens.danger,
-      surface: tokens.surface,
-    ).copyWith(
-      surfaceContainerHighest: tokens.surfaceHigh,
-      onSurface: tokens.textHigh,
-      onSurfaceVariant: tokens.textMedium,
-      outline: tokens.outline,
-    );
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: tokens.primary,
+          brightness: brightness,
+          primary: tokens.primary,
+          onPrimary: tokens.onPrimary,
+          secondary: tokens.accent,
+          error: tokens.danger,
+          surface: tokens.surface,
+        ).copyWith(
+          surfaceContainerHighest: tokens.surfaceHigh,
+          onSurface: tokens.textHigh,
+          onSurfaceVariant: tokens.textMedium,
+          outline: tokens.outline,
+        );
 
     return ThemeData(
       useMaterial3: true,
@@ -123,9 +124,7 @@ abstract final class AppTheme {
           color: tokens.textMedium,
         ),
       ),
-      progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: tokens.primary,
-      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: tokens.primary),
     );
   }
 }

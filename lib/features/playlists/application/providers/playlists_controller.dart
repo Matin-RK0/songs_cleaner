@@ -7,8 +7,7 @@ import 'playlist_providers.dart';
 
 /// Ordered list of user-created playlists. Local storage is synchronous, so
 /// the state is available immediately (no loading/error phase).
-final playlistsProvider =
-    NotifierProvider<PlaylistsController, List<Playlist>>(
+final playlistsProvider = NotifierProvider<PlaylistsController, List<Playlist>>(
   PlaylistsController.new,
 );
 
@@ -42,10 +41,8 @@ class PlaylistsController extends Notifier<List<Playlist>> {
   Future<void> rename(String id, String name) async {
     _update(
       id,
-      (playlist) => playlist.copyWith(
-        name: name.trim(),
-        updatedAt: DateTime.now(),
-      ),
+      (playlist) =>
+          playlist.copyWith(name: name.trim(), updatedAt: DateTime.now()),
     );
   }
 

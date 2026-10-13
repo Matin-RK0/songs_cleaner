@@ -16,10 +16,7 @@ class LibraryStats {
 
   int playCount(int songId) => playCounts[songId] ?? 0;
 
-  LibraryStats copyWith({
-    Set<int>? favoriteIds,
-    Map<int, int>? playCounts,
-  }) {
+  LibraryStats copyWith({Set<int>? favoriteIds, Map<int, int>? playCounts}) {
     return LibraryStats(
       favoriteIds: favoriteIds ?? this.favoriteIds,
       playCounts: playCounts ?? this.playCounts,

@@ -198,8 +198,7 @@ class AppSettingsRepository {
   String loadLocale(String fallback) =>
       _prefs.getString(_localeKey) ?? fallback;
 
-  Future<void> saveLocale(String value) =>
-      _prefs.setString(_localeKey, value);
+  Future<void> saveLocale(String value) => _prefs.setString(_localeKey, value);
 
   // -- Player controls --------------------------------------------------------
 

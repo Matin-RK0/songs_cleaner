@@ -32,9 +32,7 @@ class PlaylistArtwork extends ConsumerWidget {
       borderRadius: radius,
       child: DecoratedBox(
         decoration: BoxDecoration(color: colors.surfaceHigh),
-        child: covers.isEmpty
-            ? _placeholder(colors)
-            : _collage(colors, covers),
+        child: covers.isEmpty ? _placeholder(colors) : _collage(colors, covers),
       ),
     );
 

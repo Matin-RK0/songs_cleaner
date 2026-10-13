@@ -17,21 +17,20 @@ abstract final class SmartPlaylistBuilder {
             .toList(growable: false);
       case SmartPlaylistKind.recentlyAdded:
         final sorted = [...songs]
-          ..sort(
-            (a, b) => b.dateAddedSeconds.compareTo(a.dateAddedSeconds),
-          );
+          ..sort((a, b) => b.dateAddedSeconds.compareTo(a.dateAddedSeconds));
         return List.unmodifiable(sorted);
       case SmartPlaylistKind.mostPlayed:
-        final played = songs
-            .where((song) => stats.playCount(song.id) > 0)
-            .toList(growable: false)
-          ..sort((a, b) {
-            final byCount = stats
-                .playCount(b.id)
-                .compareTo(stats.playCount(a.id));
-            if (byCount != 0) return byCount;
-            return a.title.toLowerCase().compareTo(b.title.toLowerCase());
-          });
+        final played =
+            songs
+                .where((song) => stats.playCount(song.id) > 0)
+                .toList(growable: false)
+              ..sort((a, b) {
+                final byCount = stats
+                    .playCount(b.id)
+                    .compareTo(stats.playCount(a.id));
+                if (byCount != 0) return byCount;
+                return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+              });
         return played;
     }
   }

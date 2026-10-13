@@ -39,11 +39,7 @@ class LibraryState {
   final String query;
   final SongSort sort;
 
-  LibraryState copyWith({
-    List<Song>? songs,
-    String? query,
-    SongSort? sort,
-  }) {
+  LibraryState copyWith({List<Song>? songs, String? query, SongSort? sort}) {
     final nextSongs = songs ?? this.songs;
     final nextQuery = query ?? this.query;
     final nextSort = sort ?? this.sort;
@@ -60,8 +56,7 @@ class LibraryState {
   }
 }
 
-final libraryProvider =
-    AsyncNotifierProvider<LibraryController, LibraryState>(
+final libraryProvider = AsyncNotifierProvider<LibraryController, LibraryState>(
   LibraryController.new,
 );
 
@@ -80,11 +75,7 @@ class LibraryController extends AsyncNotifier<LibraryState> {
 
     return LibraryState(
       songs: List.unmodifiable(existing),
-      visibleSongs: filterAndSortSongs(
-        existing,
-        query: '',
-        sort: restoredSort,
-      ),
+      visibleSongs: filterAndSortSongs(existing, query: '', sort: restoredSort),
       sort: restoredSort,
     );
   }
@@ -134,8 +125,9 @@ class LibraryController extends AsyncNotifier<LibraryState> {
   void removeSongLocally(int songId) {
     final current = state.value;
     if (current == null) return;
-    final remaining =
-        current.songs.where((song) => song.id != songId).toList(growable: false);
+    final remaining = current.songs
+        .where((song) => song.id != songId)
+        .toList(growable: false);
     state = AsyncData(current.copyWith(songs: remaining));
   }
 

@@ -19,8 +19,9 @@ class GroupSongsScreen extends ConsumerWidget {
     final songs = args.isArtist
         ? ref.watch(songsByArtistProvider(args.id))
         : ref.watch(songsByAlbumProvider(args.id));
-    final currentId =
-        ref.watch(playerProvider.select((state) => state.current?.id));
+    final currentId = ref.watch(
+      playerProvider.select((state) => state.current?.id),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(args.title)),

@@ -62,8 +62,7 @@ class _SwipeDownToDismissState extends State<SwipeDownToDismiss>
         final extent = constraints.maxHeight;
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onVerticalDragUpdate: (details) =>
-              _handleDragUpdate(details, extent),
+          onVerticalDragUpdate: (details) => _handleDragUpdate(details, extent),
           onVerticalDragEnd: _handleDragEnd,
           child: AnimatedBuilder(
             animation: _controller,

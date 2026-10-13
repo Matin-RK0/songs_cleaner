@@ -115,12 +115,11 @@ class PlaybackQueue {
 
   Song? _removeAt(int orderIndex) {
     final removed = _order[orderIndex];
-    _order = List.unmodifiable(
-      [..._order.sublist(0, orderIndex), ..._order.sublist(orderIndex + 1)],
-    );
-    _original = List.unmodifiable(
-      _original.where((s) => s.id != removed.id),
-    );
+    _order = List.unmodifiable([
+      ..._order.sublist(0, orderIndex),
+      ..._order.sublist(orderIndex + 1),
+    ]);
+    _original = List.unmodifiable(_original.where((s) => s.id != removed.id));
     if (_order.isEmpty) {
       _index = -1;
     } else if (_index >= _order.length) {

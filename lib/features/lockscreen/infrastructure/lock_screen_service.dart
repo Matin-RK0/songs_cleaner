@@ -10,6 +10,9 @@ enum LockScreenEvent {
 
   /// The device was unlocked: leave the lock-screen player route.
   hidePlayer,
+
+  /// A Routine requested playback after the Flutter UI was already running.
+  playRequested,
 }
 
 /// Bridges the native [LockScreenController] over a [MethodChannel].
@@ -22,8 +25,9 @@ class LockScreenService {
     _channel.setMethodCallHandler(_onMethodCall);
   }
 
-  static const MethodChannel _channel =
-      MethodChannel('com.example.songs_cleaner/lock_screen');
+  static const MethodChannel _channel = MethodChannel(
+    'com.example.songs_cleaner/lock_screen',
+  );
 
   final StreamController<LockScreenEvent> _events =
       StreamController<LockScreenEvent>.broadcast();
@@ -39,6 +43,8 @@ class LockScreenService {
         _events.add(LockScreenEvent.showPlayer);
       case 'hidePlayer':
         _events.add(LockScreenEvent.hidePlayer);
+      case 'playRequested':
+        _events.add(LockScreenEvent.playRequested);
     }
   }
 
@@ -65,8 +71,7 @@ class LockScreenService {
   Future<void> requestOverlayPermission() =>
       _invoke<void>('requestOverlayPermission');
 
-  Future<void> setEnabled(bool enabled) =>
-      _invoke<void>('setEnabled', enabled);
+  Future<void> setEnabled(bool enabled) => _invoke<void>('setEnabled', enabled);
 
   /// Mirrors the live playback rule (`hasCurrent && playing`) so the native
   /// side only reacts to the lock screen while music is actually playing.
@@ -75,6 +80,11 @@ class LockScreenService {
 
   Future<bool> consumePendingShow() async {
     final pending = await _invoke<bool>('consumePendingShow');
+    return pending ?? false;
+  }
+
+  Future<bool> consumePendingPlay() async {
+    final pending = await _invoke<bool>('consumePendingPlay');
     return pending ?? false;
   }
 

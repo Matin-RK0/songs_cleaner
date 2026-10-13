@@ -32,16 +32,15 @@ final playlistSongsProvider = Provider.family<List<Song>, String>((
   if (playlist == null) return const <Song>[];
 
   final byId = ref.watch(songsByIdProvider);
-  return <Song>[
-    for (final songId in playlist.songIds) ?byId[songId],
-  ];
+  return <Song>[for (final songId in playlist.songIds) ?byId[songId]];
 });
 
 /// Songs behind each smart playlist, derived from the library and user signals.
-final smartPlaylistSongsProvider = Provider.family<List<Song>, SmartPlaylistKind>(
-  (ref, kind) => SmartPlaylistBuilder.build(
-    kind: kind,
-    songs: ref.watch(allSongsProvider),
-    stats: ref.watch(libraryStatsProvider),
-  ),
-);
+final smartPlaylistSongsProvider =
+    Provider.family<List<Song>, SmartPlaylistKind>(
+      (ref, kind) => SmartPlaylistBuilder.build(
+        kind: kind,
+        songs: ref.watch(allSongsProvider),
+        stats: ref.watch(libraryStatsProvider),
+      ),
+    );

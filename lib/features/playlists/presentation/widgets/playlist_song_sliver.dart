@@ -38,21 +38,14 @@ class PlaylistSongSliver extends StatelessWidget {
         itemCount: songs.length,
         onReorderItem: reorder,
         proxyDecorator: _proxyDecorator,
-        itemBuilder: (context, index) => _tile(
-          context,
-          index: index,
-          song: songs[index],
-          dragIndex: index,
-        ),
+        itemBuilder: (context, index) =>
+            _tile(context, index: index, song: songs[index], dragIndex: index),
       );
     }
     return SliverList.builder(
       itemCount: songs.length,
-      itemBuilder: (context, index) => _tile(
-        context,
-        index: index,
-        song: songs[index],
-      ),
+      itemBuilder: (context, index) =>
+          _tile(context, index: index, song: songs[index]),
     );
   }
 

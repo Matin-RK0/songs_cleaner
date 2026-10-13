@@ -208,11 +208,7 @@ class AppColorTokens extends ThemeExtension<AppColorTokens> {
         other.snackBarBackground,
         t,
       )!,
-      snackBarContent: Color.lerp(
-        snackBarContent,
-        other.snackBarContent,
-        t,
-      )!,
+      snackBarContent: Color.lerp(snackBarContent, other.snackBarContent, t)!,
       scrim: Color.lerp(scrim, other.scrim, t)!,
       onScrim: Color.lerp(onScrim, other.onScrim, t)!,
       onScrimMuted: Color.lerp(onScrimMuted, other.onScrimMuted, t)!,

@@ -22,11 +22,7 @@ class Playlist {
 
   bool contains(int songId) => songIds.contains(songId);
 
-  Playlist copyWith({
-    String? name,
-    List<int>? songIds,
-    DateTime? updatedAt,
-  }) {
+  Playlist copyWith({String? name, List<int>? songIds, DateTime? updatedAt}) {
     return Playlist(
       id: id,
       name: name ?? this.name,

@@ -24,11 +24,10 @@ enum NotificationGateStatus {
 /// when it is missing, the home screen offers a direct path to grant it.
 final notificationGateProvider =
     AsyncNotifierProvider<NotificationGateController, NotificationGateStatus>(
-  NotificationGateController.new,
-);
+      NotificationGateController.new,
+    );
 
-class NotificationGateController
-    extends AsyncNotifier<NotificationGateStatus> {
+class NotificationGateController extends AsyncNotifier<NotificationGateStatus> {
   @override
   Future<NotificationGateStatus> build() async {
     // The first request rides along with the audio-permission flow inside
@@ -44,8 +43,8 @@ class NotificationGateController
     if (await permissions.hasNotificationAccess()) {
       return NotificationGateStatus.granted;
     }
-    final permanentlyDenied =
-        await permissions.isNotificationPermanentlyDenied();
+    final permanentlyDenied = await permissions
+        .isNotificationPermanentlyDenied();
     return permanentlyDenied
         ? NotificationGateStatus.permanentlyDenied
         : NotificationGateStatus.denied;

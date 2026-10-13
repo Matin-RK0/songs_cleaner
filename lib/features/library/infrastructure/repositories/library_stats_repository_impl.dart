@@ -40,9 +40,7 @@ class LibraryStatsRepositoryImpl implements LibraryStatsRepository {
   Future<void> savePlayCounts(Map<int, int> playCounts) async {
     await _prefs.setString(
       _playCountsKey,
-      jsonEncode(
-        playCounts.map((id, count) => MapEntry(id.toString(), count)),
-      ),
+      jsonEncode(playCounts.map((id, count) => MapEntry(id.toString(), count))),
     );
   }
 

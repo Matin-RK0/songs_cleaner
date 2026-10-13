@@ -40,7 +40,11 @@ Future<bool> showAppConfirmDialog({
   return result ?? false;
 }
 
-void showAppSnackBar(BuildContext context, String message, {bool error = false}) {
+void showAppSnackBar(
+  BuildContext context,
+  String message, {
+  bool error = false,
+}) {
   final messenger = ScaffoldMessenger.maybeOf(context);
   if (messenger == null) return;
   final colors = context.colors;

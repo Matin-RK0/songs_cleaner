@@ -72,10 +72,6 @@ class ArtworkImage extends ConsumerWidget {
   }
 
   Widget _placeholder(Color color) {
-    return Icon(
-      Icons.music_note_rounded,
-      size: size * 0.5,
-      color: color,
-    );
+    return Icon(Icons.music_note_rounded, size: size * 0.5, color: color);
   }
 }

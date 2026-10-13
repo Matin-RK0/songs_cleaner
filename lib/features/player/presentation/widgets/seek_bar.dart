@@ -29,7 +29,8 @@ class _SeekBarState extends ConsumerState<SeekBar> {
     );
 
     final maxMs = duration.inMilliseconds.toDouble();
-    final value = _dragValueMs ??
+    final value =
+        _dragValueMs ??
         position.inMilliseconds.toDouble().clamp(0.0, maxMs == 0 ? 1 : maxMs);
     final colors = context.colors;
 
@@ -74,9 +75,7 @@ class _SeekBarState extends ConsumerState<SeekBar> {
                 ),
                 Text(
                   duration.mmss,
-                  style: AppTypography.caption.copyWith(
-                    color: colors.textLow,
-                  ),
+                  style: AppTypography.caption.copyWith(color: colors.textLow),
                 ),
               ],
             ),

@@ -19,9 +19,11 @@ class NotificationPermissionBanner extends ConsumerWidget {
     final l10n = context.l10n;
     final colors = context.colors;
     final status =
-        ref.watch(notificationGateProvider).value ?? NotificationGateStatus.checking;
+        ref.watch(notificationGateProvider).value ??
+        NotificationGateStatus.checking;
 
-    final needsAction = status == NotificationGateStatus.denied ||
+    final needsAction =
+        status == NotificationGateStatus.denied ||
         status == NotificationGateStatus.permanentlyDenied;
     if (!needsAction) return const SizedBox.shrink();
 

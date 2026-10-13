@@ -8,15 +8,14 @@ import '../../../../core/settings/app_settings_repository.dart';
 /// notification.
 final previousGoesToPreviousProvider =
     NotifierProvider<PreviousGoesToPreviousController, bool>(
-  PreviousGoesToPreviousController.new,
-);
+      PreviousGoesToPreviousController.new,
+    );
 
 class PreviousGoesToPreviousController extends Notifier<bool> {
   @override
-  bool build() =>
-      ref.watch(appSettingsRepositoryProvider).loadPreviousGoesToPrevious(
-        false,
-      );
+  bool build() => ref
+      .watch(appSettingsRepositoryProvider)
+      .loadPreviousGoesToPrevious(false);
 
   Future<void> setEnabled(bool value) async {
     state = value;

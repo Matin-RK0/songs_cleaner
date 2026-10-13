@@ -238,11 +238,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  _LanguageChoice _languageChoice(Locale? locale) => switch (locale?.languageCode) {
-    'en' => _LanguageChoice.english,
-    'fa' => _LanguageChoice.persian,
-    _ => _LanguageChoice.system,
-  };
+  _LanguageChoice _languageChoice(Locale? locale) =>
+      switch (locale?.languageCode) {
+        'en' => _LanguageChoice.english,
+        'fa' => _LanguageChoice.persian,
+        _ => _LanguageChoice.system,
+      };
 
   Locale? _localeFor(_LanguageChoice choice) => switch (choice) {
     _LanguageChoice.system => null,

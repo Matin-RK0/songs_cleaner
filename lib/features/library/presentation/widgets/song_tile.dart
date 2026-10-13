@@ -46,8 +46,8 @@ class SongTile extends ConsumerWidget {
     // Animate the equalizer only while playback is actually running; pausing
     // a song freezes the bars (they hold their last height) instead of
     // continuing to bob.
-    final playing = isCurrent &&
-        ref.watch(playerProvider.select((state) => state.playing));
+    final playing =
+        isCurrent && ref.watch(playerProvider.select((state) => state.playing));
     return Padding(
       padding: const EdgeInsetsDirectional.only(
         start: AppSpacing.sm,
@@ -137,9 +137,7 @@ class SongTile extends ConsumerWidget {
                 ),
                 iconColor: colors.danger,
                 title: Text(
-                  isFavorite
-                      ? l10n.removeFromFavorites
-                      : l10n.addToFavorites,
+                  isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
                 ),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
@@ -187,10 +185,7 @@ class _ArtworkLeading extends StatelessWidget {
         decoration: ShapeDecoration(
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.lg,
-            side: BorderSide(
-              color: context.colors.primary,
-              width: 3,
-            ),
+            side: BorderSide(color: context.colors.primary, width: 3),
           ),
         ),
         child: Padding(
@@ -289,9 +284,6 @@ class _FakeEqualizerState extends State<_FakeEqualizer>
   Widget _barWidget(double factor, Color color) => Container(
     width: 4,
     height: 20 * factor,
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: AppRadius.pill,
-    ),
+    decoration: BoxDecoration(color: color, borderRadius: AppRadius.pill),
   );
 }
