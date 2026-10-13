@@ -137,11 +137,24 @@ object LockScreenController {
     }
 
     private fun onScreenOn() {
-        if (!enabled || !playbackActive || playerShown) return
+        if (!enabled) return
         val context = appContext ?: return
-        if (!overlayGranted(context)) return
         val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         if (!keyguard.isKeyguardLocked) return
+
+        // Routine may have already opened the Flutter player before the
+        // screen was locked. Re-apply the window flags instead of returning
+        // early, otherwise Samsung leaves the route behind the keyguard.
+        if (playerShown) {
+            if (activity != null) {
+                activity?.let(::applyLockedFlags)
+            } else {
+                showOverLockScreen(context)
+            }
+            return
+        }
+
+        if (!playbackActive || !overlayGranted(context)) return
         showOverLockScreen(context)
     }
 
