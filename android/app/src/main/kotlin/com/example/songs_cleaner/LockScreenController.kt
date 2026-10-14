@@ -8,6 +8,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
@@ -40,6 +42,7 @@ object LockScreenController {
     private const val FLUTTER_PREFS = "FlutterSharedPreferences"
     private const val FLUTTER_ENABLED_KEY = "flutter.lockscreen.enabled"
     private const val PENDING_PLAY_KEY = "pending_play"
+    private const val SCREEN_WAKE_DURATION_MS = 5_000L
 
     @Volatile private var activity: Activity? = null
     @Volatile private var channel: MethodChannel? = null
@@ -63,6 +66,12 @@ object LockScreenController {
 
     /** True while the player is currently covering the keyguard. */
     @Volatile private var playerShown = false
+    private val screenWakeHandler = Handler(Looper.getMainLooper())
+    private val clearScreenWake = Runnable {
+        activity?.let { host ->
+            if (playerShown) clearTurnScreenOn(host)
+        }
+    }
 
     // -- Lifecycle --------------------------------------------------------------
 
@@ -225,21 +234,36 @@ object LockScreenController {
             @Suppress("DEPRECATION")
             host.window.addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON,
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON,
+            )
+        }
+
+        // TURN_SCREEN_ON is only needed to wake the display for the initial
+        // lock-screen presentation. Leaving it attached makes some Samsung
+        // builds bypass their normal lock-screen display timeout.
+        screenWakeHandler.removeCallbacks(clearScreenWake)
+        screenWakeHandler.postDelayed(clearScreenWake, SCREEN_WAKE_DURATION_MS)
+    }
+
+    private fun clearLockedFlags(host: Activity) {
+        clearTurnScreenOn(host)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            host.setShowWhenLocked(false)
+        } else {
+            @Suppress("DEPRECATION")
+            host.window.clearFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED,
             )
         }
     }
 
-    private fun clearLockedFlags(host: Activity) {
+    private fun clearTurnScreenOn(host: Activity) {
+        screenWakeHandler.removeCallbacks(clearScreenWake)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            host.setShowWhenLocked(false)
             host.setTurnScreenOn(false)
         } else {
             @Suppress("DEPRECATION")
-            host.window.clearFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON,
-            )
+            host.window.clearFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
         }
     }
 
