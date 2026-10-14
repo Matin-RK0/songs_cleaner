@@ -86,6 +86,11 @@ class PlayerController extends Notifier<PlayerState> {
         }),
       )
       ..add(
+        player.speedStream.listen((speed) {
+          state = state.copyWith(speed: speed);
+        }),
+      )
+      ..add(
         player.playerStateStream.listen((playerState) {
           state = state.copyWith(
             playing: playerState.playing,
@@ -99,6 +104,14 @@ class PlayerController extends Notifier<PlayerState> {
     // controller subscribed, and this listener covers every later change.
     subscriptions.add(
       handler.queueRevisions.listen((_) => _mirrorHandler(handler)),
+    );
+    subscriptions.add(
+      handler.sleepTimerChanges.listen((remaining) {
+        state = state.copyWith(
+          sleepTimerRemaining: remaining,
+          clearSleepTimer: remaining == null,
+        );
+      }),
     );
 
     ref.onDispose(() {
@@ -115,6 +128,8 @@ class PlayerController extends Notifier<PlayerState> {
       playing: false,
       repeatMode: handler.repeatMode,
       shuffled: handler.shuffled,
+      speed: player.speed,
+      sleepTimerRemaining: handler.sleepTimerRemaining,
       queueRevision: 0,
     );
   }
@@ -249,6 +264,16 @@ class PlayerController extends Notifier<PlayerState> {
   Future<void> seek(Duration position) async {
     final handler = await _handler();
     await handler.seek(position);
+  }
+
+  Future<void> setSpeed(double speed) async {
+    final handler = await _handler();
+    await handler.setSpeed(speed);
+  }
+
+  void setSleepTimer(Duration? duration) {
+    ref.read(musicPlayerHandlerProvider).setSleepTimer(duration);
+    state = state.copyWith(sleepTimerRemaining: duration);
   }
 
   Future<bool> removeFromQueue(int songId) async {

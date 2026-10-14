@@ -16,6 +16,7 @@ import '../widgets/delete_current_button.dart';
 import '../widgets/player_controls_row.dart';
 import '../widgets/player_state_views.dart';
 import '../widgets/player_track_info.dart';
+import '../widgets/playback_options_sheet.dart';
 import '../widgets/queue_sheet.dart';
 import '../widgets/seek_bar.dart';
 import '../widgets/swipe_down_to_dismiss.dart';
@@ -97,36 +98,49 @@ class _PlayerActions extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => ref
-                  .read(libraryStatsProvider.notifier)
-                  .toggleFavorite(song.id),
-              icon: Icon(
-                isFavorite
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                color: isFavorite ? colors.danger : null,
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => ref
+                      .read(libraryStatsProvider.notifier)
+                      .toggleFavorite(song.id),
+                  icon: Icon(
+                    isFavorite
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: isFavorite ? colors.danger : null,
+                  ),
+                  label: Text(
+                    isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
-              label: Text(
-                isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => showAddToPlaylistSheet(context, song),
+                  icon: const Icon(Icons.playlist_add_rounded),
+                  label: Text(
+                    l10n.addToPlaylist,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => showAddToPlaylistSheet(context, song),
-              icon: const Icon(Icons.playlist_add_rounded),
-              label: Text(
-                l10n.addToPlaylist,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: TextButton.icon(
+              onPressed: () => showPlaybackOptionsSheet(context, ref),
+              icon: const Icon(Icons.tune_rounded),
+              label: Text(context.l10n.playbackOptionsTitle),
             ),
           ),
         ],

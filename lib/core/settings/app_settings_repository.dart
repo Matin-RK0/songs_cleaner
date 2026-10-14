@@ -157,6 +157,7 @@ class AppSettingsRepository {
   static const String _previousGoesToPreviousKey =
       'player.previousGoesToPrevious';
   static const String _hideQuickDeleteKey = 'player.hideQuickDelete';
+  static const String _playbackSpeedKey = 'player.playbackSpeed';
   static const String _themeModeKey = 'appearance.themeMode';
   static const String _localeKey = 'appearance.locale';
 
@@ -216,6 +217,12 @@ class AppSettingsRepository {
 
   Future<void> saveHideQuickDelete(bool value) =>
       _prefs.setBool(_hideQuickDeleteKey, value);
+
+  double loadPlaybackSpeed(double fallback) =>
+      (_prefs.getDouble(_playbackSpeedKey) ?? fallback).clamp(0.5, 3.0);
+
+  Future<void> savePlaybackSpeed(double value) =>
+      _prefs.setDouble(_playbackSpeedKey, value.clamp(0.5, 3.0).toDouble());
 
   // -- Playback session -------------------------------------------------------
 

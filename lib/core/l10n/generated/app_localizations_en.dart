@@ -409,4 +409,29 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mostPlayedEmptyMessage =>
       'Songs you play often will show up here.';
+
+  @override
+  String get playbackOptionsTitle => 'Playback options';
+
+  @override
+  String get playbackSpeed => 'Playback speed';
+
+  @override
+  String get sleepTimer => 'Sleep timer';
+
+  @override
+  String get sleepTimerOff => 'Off';
+
+  @override
+  String get sleepTimerSongEnd => 'At the end of this song';
+
+  @override
+  String sleepTimerMinutes(Object minutes) {
+    return '$minutes minutes';
+  }
+
+  @override
+  String sleepTimerRemaining(Object time) {
+    return 'Sleep timer: $time';
+  }
 }

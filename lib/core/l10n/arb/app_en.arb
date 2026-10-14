@@ -121,5 +121,12 @@
   "likedEmptyTitle": "No liked songs",
   "likedEmptyMessage": "Long-press a song and add it to your favorites.",
   "mostPlayedEmptyTitle": "No play history yet",
-  "mostPlayedEmptyMessage": "Songs you play often will show up here."
+  "mostPlayedEmptyMessage": "Songs you play often will show up here.",
+  "playbackOptionsTitle": "Playback options",
+  "playbackSpeed": "Playback speed",
+  "sleepTimer": "Sleep timer",
+  "sleepTimerOff": "Off",
+  "sleepTimerSongEnd": "At the end of this song",
+  "sleepTimerMinutes": "{minutes} minutes",
+  "sleepTimerRemaining": "Sleep timer: {time}"
 }

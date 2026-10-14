@@ -829,6 +829,48 @@ abstract class AppLocalizations {
   /// In fa, this message translates to:
   /// **'آهنگ‌هایی که زیاد پخش می‌کنید اینجا نمایش داده می‌شوند.'**
   String get mostPlayedEmptyMessage;
+
+  /// No description provided for @playbackOptionsTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'گزینه‌های پخش'**
+  String get playbackOptionsTitle;
+
+  /// No description provided for @playbackSpeed.
+  ///
+  /// In fa, this message translates to:
+  /// **'سرعت پخش'**
+  String get playbackSpeed;
+
+  /// No description provided for @sleepTimer.
+  ///
+  /// In fa, this message translates to:
+  /// **'تایمر خواب'**
+  String get sleepTimer;
+
+  /// No description provided for @sleepTimerOff.
+  ///
+  /// In fa, this message translates to:
+  /// **'خاموش'**
+  String get sleepTimerOff;
+
+  /// No description provided for @sleepTimerSongEnd.
+  ///
+  /// In fa, this message translates to:
+  /// **'پایان این آهنگ'**
+  String get sleepTimerSongEnd;
+
+  /// No description provided for @sleepTimerMinutes.
+  ///
+  /// In fa, this message translates to:
+  /// **'{minutes} دقیقه'**
+  String sleepTimerMinutes(Object minutes);
+
+  /// No description provided for @sleepTimerRemaining.
+  ///
+  /// In fa, this message translates to:
+  /// **'تایمر خواب: {time}'**
+  String sleepTimerRemaining(Object time);
 }
 
 class _AppLocalizationsDelegate

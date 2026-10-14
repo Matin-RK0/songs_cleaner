@@ -9,6 +9,8 @@ class PlayerState {
     this.position = Duration.zero,
     this.bufferedPosition = Duration.zero,
     this.duration = Duration.zero,
+    this.speed = 1,
+    this.sleepTimerRemaining,
     this.repeatMode = RepeatMode.off,
     this.shuffled = false,
     this.processingState = PlayerProcessingState.idle,
@@ -21,6 +23,8 @@ class PlayerState {
   final Duration position;
   final Duration bufferedPosition;
   final Duration duration;
+  final double speed;
+  final Duration? sleepTimerRemaining;
   final RepeatMode repeatMode;
   final bool shuffled;
   final PlayerProcessingState processingState;
@@ -44,6 +48,9 @@ class PlayerState {
     Duration? position,
     Duration? bufferedPosition,
     Duration? duration,
+    double? speed,
+    Duration? sleepTimerRemaining,
+    bool clearSleepTimer = false,
     RepeatMode? repeatMode,
     bool? shuffled,
     PlayerProcessingState? processingState,
@@ -56,6 +63,10 @@ class PlayerState {
       position: position ?? this.position,
       bufferedPosition: bufferedPosition ?? this.bufferedPosition,
       duration: duration ?? this.duration,
+      speed: speed ?? this.speed,
+      sleepTimerRemaining: clearSleepTimer
+          ? null
+          : sleepTimerRemaining ?? this.sleepTimerRemaining,
       repeatMode: repeatMode ?? this.repeatMode,
       shuffled: shuffled ?? this.shuffled,
       processingState: processingState ?? this.processingState,

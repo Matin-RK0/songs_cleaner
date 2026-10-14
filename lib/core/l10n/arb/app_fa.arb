@@ -194,5 +194,12 @@
   "likedEmptyTitle": "آهنگ موردعلاقه‌ای نیست",
   "likedEmptyMessage": "روی یک آهنگ نگه دارید و آن را به موردعلاقه‌ها اضافه کنید.",
   "mostPlayedEmptyTitle": "هنوز سابقه‌ای نیست",
-  "mostPlayedEmptyMessage": "آهنگ‌هایی که زیاد پخش می‌کنید اینجا نمایش داده می‌شوند."
+  "mostPlayedEmptyMessage": "آهنگ‌هایی که زیاد پخش می‌کنید اینجا نمایش داده می‌شوند.",
+  "playbackOptionsTitle": "گزینه‌های پخش",
+  "playbackSpeed": "سرعت پخش",
+  "sleepTimer": "تایمر خواب",
+  "sleepTimerOff": "خاموش",
+  "sleepTimerSongEnd": "پایان این آهنگ",
+  "sleepTimerMinutes": "{minutes} دقیقه",
+  "sleepTimerRemaining": "تایمر خواب: {time}"
 }

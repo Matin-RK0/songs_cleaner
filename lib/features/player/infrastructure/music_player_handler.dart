@@ -23,6 +23,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     _player.playerStateStream.listen(_onPlayerStateChanged);
     _player.positionStream.listen(_onPositionChanged);
     _initialization = _restorePersistedQueue();
+    final savedSpeed = settings?.loadPlaybackSpeed(1) ?? 1;
+    _player.setSpeed(savedSpeed);
   }
 
   static const int _maxAutoSkipsOnError = 3;
@@ -39,6 +41,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   int _consecutiveLoadFailures = 0;
   int _lastSavedPositionMs = -1;
   bool _closing = false;
+  Timer? _sleepTimer;
+  DateTime? _sleepTimerEnd;
   Future<void> _sessionWrite = Future<void>.value();
 
   /// Emits the title of a song whose file failed to load.
@@ -51,9 +55,21 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       StreamController<int>.broadcast();
   int _revision = 0;
 
+  final StreamController<Duration?> _sleepTimerChanges =
+      StreamController<Duration?>.broadcast();
+
   Stream<String> get loadErrors => _loadErrors.stream;
 
   Stream<int> get queueRevisions => _queueRevisions.stream;
+
+  Stream<Duration?> get sleepTimerChanges => _sleepTimerChanges.stream;
+
+  Duration? get sleepTimerRemaining {
+    final end = _sleepTimerEnd;
+    if (end == null) return null;
+    final remaining = end.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
 
   RepeatMode get repeatMode => _repeatMode;
   bool get shuffled => _queue.shuffled;
@@ -233,6 +249,38 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     await _player.seek(position);
   }
 
+  @override
+  Future<void> setSpeed(double speed) async {
+    await _initialization;
+    final normalized = speed.clamp(0.5, 3.0).toDouble();
+    await _player.setSpeed(normalized);
+    await settings?.savePlaybackSpeed(normalized);
+    _broadcastState(_player.playbackEvent);
+  }
+
+  void setSleepTimer(Duration? duration) {
+    _sleepTimer?.cancel();
+    _sleepTimerEnd = duration == null ? null : DateTime.now().add(duration);
+    _sleepTimerChanges.add(duration);
+    if (duration == null) return;
+
+    _sleepTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      final remaining = sleepTimerRemaining;
+      if (remaining == null) {
+        timer.cancel();
+        return;
+      }
+      if (remaining <= Duration.zero) {
+        timer.cancel();
+        _sleepTimerEnd = null;
+        _sleepTimerChanges.add(null);
+        await pause();
+        return;
+      }
+      _sleepTimerChanges.add(remaining);
+    });
+  }
+
   Future<void> next({bool wrap = true}) async {
     await _initialization;
     if (!_queue.isNotEmpty) return;
@@ -397,6 +445,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> closeApp() async {
     if (_closing) return;
     _closing = true;
+    _sleepTimer?.cancel();
     await _player.pause();
     await _persistSession();
     // Clearing the media item and publishing an idle state removes the media
@@ -421,6 +470,10 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     // Android can remove the activity while the foreground media service is
     // still alive. Save the exact position so media controls remain usable.
     await _persistSession();
+  }
+
+  Future<void> onAudioFocusLost() async {
+    await pause();
   }
 
   @override

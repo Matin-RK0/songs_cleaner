@@ -409,4 +409,29 @@ class AppLocalizationsFa extends AppLocalizations {
   @override
   String get mostPlayedEmptyMessage =>
       'آهنگ‌هایی که زیاد پخش می‌کنید اینجا نمایش داده می‌شوند.';
+
+  @override
+  String get playbackOptionsTitle => 'گزینه‌های پخش';
+
+  @override
+  String get playbackSpeed => 'سرعت پخش';
+
+  @override
+  String get sleepTimer => 'تایمر خواب';
+
+  @override
+  String get sleepTimerOff => 'خاموش';
+
+  @override
+  String get sleepTimerSongEnd => 'پایان این آهنگ';
+
+  @override
+  String sleepTimerMinutes(Object minutes) {
+    return '$minutes دقیقه';
+  }
+
+  @override
+  String sleepTimerRemaining(Object time) {
+    return 'تایمر خواب: $time';
+  }
 }
