@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
+import 'package:audio_service/audio_service.dart';
 
 import '../../../../core/settings/app_settings_repository.dart';
 import '../../../library/application/providers/library_controller.dart';
@@ -32,6 +32,7 @@ final musicPlayerHandlerProvider = Provider<MusicPlayerHandler>(
 Future<MusicPlayerHandler> initializeMusicPlayerHandler({
   required AudioPlayer player,
   required AppSettingsRepository settings,
+  Future<List<MediaItem>> Function(String parentId)? mediaCatalog,
 }) async {
   try {
     final session = await AudioSession.instance;
@@ -41,7 +42,11 @@ Future<MusicPlayerHandler> initializeMusicPlayerHandler({
   }
 
   return AudioService.init<MusicPlayerHandler>(
-    builder: () => MusicPlayerHandler(player, settings: settings),
+    builder: () => MusicPlayerHandler(
+      player,
+      settings: settings,
+      mediaCatalog: mediaCatalog,
+    ),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.example.songs_cleaner.playback',
       androidNotificationChannelName: 'پخش موزیک',

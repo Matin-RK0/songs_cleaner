@@ -17,7 +17,7 @@ import '../domain/playback_queue.dart';
 /// in-app actions and notification actions behave identically. Also mirrors
 /// the session into [AppSettingsRepository] so it survives app restarts.
 class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
-  MusicPlayerHandler(this._player, {this.settings}) {
+  MusicPlayerHandler(this._player, {this.settings, this.mediaCatalog}) {
     _player.playbackEventStream.listen(
       _broadcastState,
       onError: (Object _, StackTrace _) {},
@@ -39,6 +39,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   /// Persists the session across restarts; null disables persistence (tests).
   final AppSettingsRepository? settings;
+  final Future<List<MediaItem>> Function(String parentId)? mediaCatalog;
   late final Future<void> _initialization;
   bool _hydratedFromStorage = false;
   final PlaybackQueue _queue = PlaybackQueue();
@@ -699,7 +700,13 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     final id = int.tryParse(mediaItem.id.replaceFirst('song_', ''));
     if (id == null) return;
     final index = _queue.songs.indexWhere((song) => song.id == id);
-    if (index < 0) return;
+    if (index < 0) {
+      final songs = await DeviceMusicDataSource(OnAudioQuery()).fetchSongs();
+      final songIndex = songs.indexWhere((song) => song.id == id);
+      if (songIndex < 0) return;
+      await loadAndPlay(songs, startIndex: songIndex);
+      return;
+    }
     await loadAndPlay(_queue.songs, startIndex: index);
   }
 
@@ -710,12 +717,16 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     String parentMediaId, [
     Map<String, dynamic>? options,
   ]) async {
+    if (parentMediaId == 'root' && mediaCatalog != null) {
+      return mediaCatalog!('root');
+    }
     if (parentMediaId == AudioService.recentRootId ||
-        parentMediaId == 'root' ||
         parentMediaId == 'queue') {
       return _queue.songs.map(_mediaItemFor).toList(growable: false);
     }
-    return const <MediaItem>[];
+    return mediaCatalog == null
+        ? const <MediaItem>[]
+        : mediaCatalog!(parentMediaId);
   }
 
   @override
