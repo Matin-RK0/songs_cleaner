@@ -9,6 +9,95 @@ class AppLocalizationsFa extends AppLocalizations {
   AppLocalizationsFa([String locale = 'fa']) : super(locale);
 
   @override
+  String get undoAction => 'بازگردانی';
+
+  @override
+  String get trashRestoreFailed => 'بازگردانی آهنگ انجام نشد.';
+
+  @override
+  String get trashTitle => 'زباله‌دان';
+
+  @override
+  String get trashSettingsSubtitle => 'بازگردانی یا حذف دائمی آهنگ‌ها';
+
+  @override
+  String get trashEmpty => 'زباله‌دان خالی است';
+
+  @override
+  String get restoreAction => 'بازگردانی';
+
+  @override
+  String get deletePermanentlyAction => 'حذف دائمی';
+
+  @override
+  String get trashRestoredToast => 'آهنگ بازگردانی شد';
+
+  @override
+  String get trashDeletedToast => 'آهنگ برای همیشه حذف شد';
+
+  @override
+  String get songDeleteFailedGeneric => 'عملیات روی فایل انجام نشد.';
+
+  @override
+  String get trashPermanentDeleteWarning =>
+      'این آهنگ برای همیشه حذف می‌شود و قابل بازگردانی نیست.';
+
+  @override
+  String get emptyTrashAction => 'خالی کردن زباله‌دان';
+
+  @override
+  String get trashEmptyWarning =>
+      'همه آهنگ‌های زباله‌دان برای همیشه حذف می‌شوند.';
+
+  @override
+  String get importPlaylists => 'درون‌ریزی پلی‌لیست‌ها';
+
+  @override
+  String get exportPlaylists => 'برون‌بری پلی‌لیست‌ها';
+
+  @override
+  String get playlistsExported => 'پلی‌لیست‌ها برون‌بری شدند';
+
+  @override
+  String playlistsImported(int count) {
+    return '$count پلی‌لیست درون‌ریزی شد';
+  }
+
+  @override
+  String get playlistFileInvalid => 'فایل پلی‌لیست معتبر نیست.';
+
+  @override
+  String get playlistTransferFailed => 'انتقال پلی‌لیست انجام نشد.';
+
+  @override
+  String get sharePlaylists => 'اشتراک‌گذاری پلی‌لیست‌ها';
+
+  @override
+  String get playlistsShared => 'پنجره اشتراک‌گذاری باز شد';
+
+  @override
+  String get shareSongAction => 'اشتراک‌گذاری آهنگ';
+
+  @override
+  String get songShareOpened => 'پنجره اشتراک‌گذاری باز شد';
+
+  @override
+  String get songShareFailed => 'اشتراک‌گذاری این آهنگ انجام نشد.';
+
+  @override
+  String get setAsRingtoneAction => 'تنظیم به‌عنوان زنگ تماس';
+
+  @override
+  String get ringtoneSetToast => 'زنگ تماس تغییر کرد';
+
+  @override
+  String get ringtonePermissionRequired =>
+      'مجوز تغییر تنظیمات سیستم را بدهید و دوباره تلاش کنید.';
+
+  @override
+  String get ringtoneSetFailed => 'تنظیم این آهنگ به‌عنوان زنگ تماس انجام نشد.';
+
+  @override
   String get appName => 'پاک‌کن آهنگ';
 
   @override
@@ -300,6 +389,18 @@ class AppLocalizationsFa extends AppLocalizations {
       'با روشن بودن، دکمه حذف آهنگ از صفحه پخش نمایش داده نمی‌شود.';
 
   @override
+  String get audioFocusTitle => 'رفتار هنگام وقفه صوتی';
+
+  @override
+  String get audioFocusPause => 'توقف و ادامه خودکار';
+
+  @override
+  String get audioFocusDuck => 'کاهش موقت صدا';
+
+  @override
+  String get audioFocusIgnore => 'ادامه پخش';
+
+  @override
   String get playlistsTab => 'پلی‌لیست‌ها';
 
   @override
@@ -433,5 +534,326 @@ class AppLocalizationsFa extends AppLocalizations {
   @override
   String sleepTimerRemaining(Object time) {
     return 'تایمر خواب: $time';
+  }
+
+  @override
+  String get equalizerTitle => 'اکولایزر';
+
+  @override
+  String get equalizerEnabled => 'فعال‌سازی اکولایزر';
+
+  @override
+  String get equalizerSubtitle => 'افکت صوتی اندروید برای پخش‌کننده فعلی';
+
+  @override
+  String get equalizerUnavailable => 'اکولایزر روی این دستگاه در دسترس نیست.';
+
+  @override
+  String get equalizerFlat => 'تخت';
+
+  @override
+  String get equalizerBassBoost => 'تقویت بیس';
+
+  @override
+  String equalizerRange(Object max, Object min) {
+    return 'محدوده: $min تا $max دسی‌بل';
+  }
+
+  @override
+  String get gaplessPlaybackTitle => 'پخش بدون فاصله';
+
+  @override
+  String get gaplessPlaybackSubtitle => 'حذف سکوت بین آهنگ‌های آلبوم';
+
+  @override
+  String get lyricsTitle => 'متن آهنگ';
+
+  @override
+  String get lyricsUnavailable => 'فایل متن .lrc کنار این آهنگ پیدا نشد.';
+
+  @override
+  String get historyTitle => 'تاریخچه پخش';
+
+  @override
+  String get historySettingsSubtitle =>
+      'آهنگ‌هایی را که اخیراً گوش داده‌اید ببینید';
+
+  @override
+  String get historyEmptyTitle => 'تاریخچه‌ای وجود ندارد';
+
+  @override
+  String get historyEmptyMessage =>
+      'پس از شروع پخش، آهنگ‌ها اینجا نمایش داده می‌شوند.';
+
+  @override
+  String get clearHistory => 'پاک‌کردن تاریخچه';
+
+  @override
+  String get clearHistoryTitle => 'تاریخچه پخش پاک شود؟';
+
+  @override
+  String get clearHistoryMessage =>
+      'فعالیت‌های اخیر حذف می‌شوند؛ تعداد پخش و علاقه‌مندی‌ها باقی می‌مانند.';
+
+  @override
+  String get clearAction => 'پاک‌کردن';
+
+  @override
+  String get today => 'امروز';
+
+  @override
+  String get yesterday => 'دیروز';
+
+  @override
+  String get playNext => 'پخش بعدی';
+
+  @override
+  String get addToQueue => 'افزودن به صف';
+
+  @override
+  String get reorderQueueTooltip => 'تغییر ترتیب صف';
+
+  @override
+  String get genresTab => 'سبک‌ها';
+
+  @override
+  String get foldersTab => 'پوشه‌ها';
+
+  @override
+  String get unknownGenre => 'سبک نامشخص';
+
+  @override
+  String get unknownFolder => 'پوشه نامشخص';
+
+  @override
+  String get sortByAlbum => 'بر اساس آلبوم';
+
+  @override
+  String get sortBySize => 'بر اساس حجم فایل';
+
+  @override
+  String get sortByTrack => 'بر اساس شماره ترک';
+
+  @override
+  String get filterTitle => 'فیلتر آهنگ‌ها';
+
+  @override
+  String get filterAll => 'همه آهنگ‌ها';
+
+  @override
+  String get filterMissingMetadata => 'اطلاعات ناقص';
+
+  @override
+  String get filterShortTracks => 'کوتاه‌تر از یک دقیقه';
+
+  @override
+  String get filterLongTracks => 'ده دقیقه یا بیشتر';
+
+  @override
+  String get filterLossless => 'صدای بدون افت کیفیت';
+
+  @override
+  String get moreActions => 'گزینه‌های بیشتر';
+
+  @override
+  String get songDetailsTitle => 'اطلاعات آهنگ';
+
+  @override
+  String get songNotFound => 'این آهنگ دیگر در کتابخانه وجود ندارد';
+
+  @override
+  String get artistLabel => 'خواننده';
+
+  @override
+  String get albumLabel => 'آلبوم';
+
+  @override
+  String get genreLabel => 'سبک';
+
+  @override
+  String get composerLabel => 'آهنگساز';
+
+  @override
+  String get trackNumberLabel => 'شماره ترک';
+
+  @override
+  String get durationLabel => 'مدت';
+
+  @override
+  String get fileFormatLabel => 'فرمت';
+
+  @override
+  String get fileSizeLabel => 'حجم';
+
+  @override
+  String get folderLabel => 'پوشه';
+
+  @override
+  String get filePathLabel => 'مسیر فایل';
+
+  @override
+  String get modifiedDateLabel => 'آخرین تغییر';
+
+  @override
+  String get unknownValue => 'نامشخص';
+
+  @override
+  String get editTagsTitle => 'ویرایش تگ‌ها';
+
+  @override
+  String get tagEditorTitle => 'ویرایش اطلاعات آهنگ';
+
+  @override
+  String get titleLabel => 'عنوان';
+
+  @override
+  String get lyricsEditorHint => 'متن زمان‌بندی‌شده را با فرمت .lrc وارد کنید';
+
+  @override
+  String get titleRequired => 'عنوان الزامی است';
+
+  @override
+  String get trackNumberInvalid => 'شماره ترک باید بین ۰ و ۹۹۹ باشد';
+
+  @override
+  String get tagsSavedToast => 'اطلاعات آهنگ ذخیره شد';
+
+  @override
+  String get tagsSaveFailed => 'ذخیره اطلاعات آهنگ انجام نشد';
+
+  @override
+  String get renameFileTitle => 'تغییر نام فایل';
+
+  @override
+  String get fileNameLabel => 'نام فایل';
+
+  @override
+  String get fileRenamedToast => 'نام فایل تغییر کرد';
+
+  @override
+  String get fileRenameFailed => 'تغییر نام فایل انجام نشد';
+
+  @override
+  String get fileNameRequired => 'نام فایل الزامی است';
+
+  @override
+  String get fileNameInvalid => 'نام فایل دارای نویسه نامعتبر است';
+
+  @override
+  String get fileExtensionCannotChange => 'تغییر پسوند فایل از اینجا مجاز نیست';
+
+  @override
+  String get fileAlreadyExists => 'فایلی با این نام از قبل وجود دارد';
+
+  @override
+  String get fileActionsTitle => 'عملیات فایل';
+
+  @override
+  String get copyFileAction => 'کپی به پوشه';
+
+  @override
+  String get moveFileAction => 'انتقال به پوشه';
+
+  @override
+  String get fileCopiedToast => 'فایل کپی شد';
+
+  @override
+  String get fileMovedToast => 'فایل منتقل شد';
+
+  @override
+  String get fileTransferFailed => 'عملیات فایل انجام نشد';
+
+  @override
+  String get chooseFolderTitle => 'انتخاب پوشه مقصد';
+
+  @override
+  String get chooseThisFolder => 'انتخاب این پوشه';
+
+  @override
+  String get parentFolder => 'پوشه والد';
+
+  @override
+  String selectedCount(Object count) {
+    return '$count مورد انتخاب‌شده';
+  }
+
+  @override
+  String get selectAll => 'انتخاب همه';
+
+  @override
+  String get noCollectionsMessage =>
+      'اطلاعات مرتبطی در فایل‌های موسیقی پیدا نشد.';
+
+  @override
+  String deleteSelectedTitle(Object count) {
+    return '$count آهنگ حذف شوند؟';
+  }
+
+  @override
+  String get deleteSelectedMessage =>
+      'فایل‌های انتخاب‌شده برای همیشه از دستگاه حذف می‌شوند.';
+
+  @override
+  String deletedSongsCount(Object count) {
+    return '$count آهنگ حذف شد';
+  }
+
+  @override
+  String get libraryInsightsTitle => 'تحلیل کتابخانه';
+
+  @override
+  String librarySummary(Object count, Object duration) {
+    return '$count آهنگ · $duration';
+  }
+
+  @override
+  String get missingMetadataMetric => 'اطلاعات ناقص';
+
+  @override
+  String get shortTracksMetric => 'فایل‌های کوتاه';
+
+  @override
+  String get losslessMetric => 'فایل‌های بدون افت';
+
+  @override
+  String get largeFilesMetric => 'فایل‌های بالای ۵۰ مگابایت';
+
+  @override
+  String get duplicatesTitle => 'نسخه‌های مشابه احتمالی';
+
+  @override
+  String potentialDuplicatesCount(Object count) {
+    return '$count نسخه قابل حذف پیدا شد';
+  }
+
+  @override
+  String recoverableSpace(Object size) {
+    return 'تا $size فضا قابل آزادسازی است';
+  }
+
+  @override
+  String get formatsTitle => 'فرمت‌های صوتی';
+
+  @override
+  String get duplicateScannerTitle => 'اسکن آهنگ‌های تکراری';
+
+  @override
+  String get noDuplicatesTitle => 'نسخه مشابهی پیدا نشد';
+
+  @override
+  String get noDuplicatesMessage =>
+      'آهنگی با عنوان، خواننده مشخص و مدت مشابه در کتابخانه وجود ندارد.';
+
+  @override
+  String duplicateGroupSummary(Object count, Object size) {
+    return '$count نسخه · $size قابل آزادسازی';
+  }
+
+  @override
+  String get recommendedToKeep => 'نسخه پیشنهادی برای نگهداری';
+
+  @override
+  String deleteDuplicateMessage(Object title) {
+    return '«$title» از دستگاه حذف شود؟ پیش از ادامه، فرمت، حجم و مسیر فایل را بررسی کنید.';
   }
 }

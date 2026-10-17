@@ -15,6 +15,7 @@ import '../../../../app/router/route_names.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../application/providers/playlist_providers.dart';
 import '../../application/providers/playlists_controller.dart';
+import '../../application/playlist_transfer_service.dart';
 import '../../domain/entities/playlist.dart';
 import '../../domain/entities/smart_playlist.dart';
 import '../widgets/playlist_artwork.dart';
@@ -78,6 +79,12 @@ class PlaylistDetailScreen extends ConsumerWidget {
               icon: const Icon(Icons.shuffle_rounded),
               onPressed: () =>
                   ref.read(playerProvider.notifier).playAllShuffled(songs),
+            ),
+          if (isCustom)
+            IconButton(
+              tooltip: l10n.sharePlaylists,
+              icon: const Icon(Icons.share_outlined),
+              onPressed: () => _sharePlaylist(context, playlist!, songs),
             ),
           if (isCustom)
             IconButton(
@@ -194,6 +201,29 @@ class PlaylistDetailScreen extends ConsumerWidget {
         if (!context.mounted) return;
         showAppSnackBar(context, l10n.playlistDeletedToast(playlist.name));
         Navigator.of(context).maybePop();
+    }
+  }
+
+  Future<void> _sharePlaylist(
+    BuildContext context,
+    Playlist playlist,
+    List<Song> songs,
+  ) async {
+    try {
+      final shared = await const PlaylistTransferService().sharePlaylists([
+        playlist,
+      ], songs);
+      if (shared && context.mounted) {
+        showAppSnackBar(context, context.l10n.playlistsShared);
+      }
+    } on Exception {
+      if (context.mounted) {
+        showAppSnackBar(
+          context,
+          context.l10n.playlistTransferFailed,
+          error: true,
+        );
+      }
     }
   }
 }

@@ -36,7 +36,7 @@ class DeleteCurrentButton extends ConsumerWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
-          onPressed: () => deleteSongFlow(context, ref, song),
+          onPressed: () => deleteSongFlow(context, ref, song, useTrash: false),
           icon: const Icon(Icons.delete_forever_rounded, size: 22),
           label: Text(l10n.deleteAction),
         ),

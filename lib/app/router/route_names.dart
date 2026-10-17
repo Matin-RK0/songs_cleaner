@@ -1,4 +1,5 @@
 import '../../features/playlists/domain/entities/smart_playlist.dart';
+import '../../features/library/domain/entities/song_collection.dart';
 
 abstract final class RouteNames {
   static const String home = '/';
@@ -8,6 +9,16 @@ abstract final class RouteNames {
   static const String playlistDetail = '/playlist-detail';
   static const String settings = '/settings';
   static const String lockScreen = '/lock-screen';
+  static const String history = '/history';
+  static const String collectionSongs = '/collection-songs';
+  static const String songDetails = '/song-details';
+  static const String libraryInsights = '/library-insights';
+  static const String duplicateScanner = '/duplicate-scanner';
+  static const String equalizer = '/equalizer';
+  static const String lyrics = '/lyrics';
+  static const String tagEditor = '/tag-editor';
+  static const String folderPicker = '/folder-picker';
+  static const String trash = '/trash';
 }
 
 /// Navigation payload for the playlist detail screen. Exactly one of
@@ -31,5 +42,17 @@ class GroupSongsArgs {
 
   final bool isArtist;
   final int id;
+  final String title;
+}
+
+class CollectionSongsArgs {
+  const CollectionSongsArgs({
+    required this.kind,
+    required this.key,
+    required this.title,
+  });
+
+  final SongCollectionKind kind;
+  final String key;
   final String title;
 }

@@ -67,3 +67,21 @@ void showAppSnackBar(
       ),
     );
 }
+
+void showAppUndoSnackBar(
+  BuildContext context,
+  String message, {
+  required String actionLabel,
+  required VoidCallback onUndo,
+}) {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  if (messenger == null) return;
+  messenger
+    ..clearSnackBars()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(label: actionLabel, onPressed: onUndo),
+      ),
+    );
+}

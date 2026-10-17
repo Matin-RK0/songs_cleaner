@@ -23,6 +23,10 @@ class SongTile extends ConsumerWidget {
     this.onAddToPlaylist,
     this.isFavorite = false,
     this.onToggleFavorite,
+    this.trailingLabel,
+    this.onShowInfo,
+    this.selected = false,
+    this.onSelectionLongPress,
   });
 
   final Song song;
@@ -33,11 +37,10 @@ class SongTile extends ConsumerWidget {
   final ValueChanged<Song>? onAddToPlaylist;
   final bool isFavorite;
   final VoidCallback? onToggleFavorite;
-
-  bool get _hasActions =>
-      onDeleteDevice != null ||
-      onAddToPlaylist != null ||
-      onToggleFavorite != null;
+  final String? trailingLabel;
+  final VoidCallback? onShowInfo;
+  final bool selected;
+  final VoidCallback? onSelectionLongPress;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -57,12 +60,12 @@ class SongTile extends ConsumerWidget {
       child: Material(
         // Keep the selected row's surface identical to every other row;
         // the active title and equalizer provide the playback indication.
-        color: Colors.transparent,
+        color: selected ? colors.surfaceHigh : Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          onLongPress: _hasActions ? () => _showActions(context) : null,
+          onLongPress: onSelectionLongPress ?? () => _showActions(context, ref),
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
           hoverColor: Colors.transparent,
@@ -95,14 +98,25 @@ class SongTile extends ConsumerWidget {
                 color: colors.textMedium,
               ),
             ),
-            trailing: isCurrent ? _FakeEqualizer(playing: playing) : null,
+            trailing: selected
+                ? Icon(Icons.check_circle_rounded, color: colors.primary)
+                : isCurrent
+                ? _FakeEqualizer(playing: playing)
+                : trailingLabel == null
+                ? null
+                : Text(
+                    trailingLabel!,
+                    style: AppTypography.captionSmall.copyWith(
+                      color: colors.textLow,
+                    ),
+                  ),
           ),
         ),
       ),
     );
   }
 
-  void _showActions(BuildContext context) {
+  void _showActions(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final colors = context.colors;
     showModalBottomSheet<void>(
@@ -117,6 +131,31 @@ class SongTile extends ConsumerWidget {
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 onTap();
+              },
+            ),
+            if (onShowInfo != null)
+              ListTile(
+                leading: const Icon(Icons.info_outline_rounded),
+                title: Text(l10n.songDetailsTitle),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  onShowInfo!();
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.playlist_play_rounded),
+              title: Text(l10n.playNext),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                ref.read(playerProvider.notifier).playNext(song);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.queue_music_rounded),
+              title: Text(l10n.addToQueue),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                ref.read(playerProvider.notifier).addToQueue(song);
               },
             ),
             if (onAddToPlaylist != null)

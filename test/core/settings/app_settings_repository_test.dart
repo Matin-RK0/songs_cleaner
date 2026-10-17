@@ -134,4 +134,64 @@ void main() {
     await repository.saveLocale('fa');
     expect(repository.loadLocale('system'), 'fa');
   });
+
+  test('round-trips and clamps playback speed', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadPlaybackSpeed(1), 1);
+
+    await repository.savePlaybackSpeed(1.5);
+    expect(repository.loadPlaybackSpeed(1), 1.5);
+
+    await repository.savePlaybackSpeed(9);
+    expect(repository.loadPlaybackSpeed(1), 3);
+  });
+
+  test('migrates the legacy playlists tab index to the new layout', () async {
+    SharedPreferences.setMockInitialValues({'home.tabIndex': 3});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadHomeTabIndex(0), 5);
+
+    await repository.saveHomeTabIndex(3);
+    expect(repository.loadHomeTabIndex(0), 3);
+  });
+
+  test('round-trips equalizer settings', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadEqualizerEnabled(false), isFalse);
+    expect(repository.loadEqualizerGains(), isEmpty);
+
+    await repository.saveEqualizerEnabled(true);
+    await repository.saveEqualizerGains([-3.5, 0, 4.25]);
+
+    expect(repository.loadEqualizerEnabled(false), isTrue);
+    expect(repository.loadEqualizerGains(), [-3.5, 0, 4.25]);
+  });
+
+  test('round-trips audio focus mode index', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadAudioFocusMode(0), 0);
+    await repository.saveAudioFocusMode(1);
+    expect(repository.loadAudioFocusMode(0), 1);
+  });
+
+  test('round-trips gapless playback preference', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadGaplessPlayback(false), isFalse);
+    await repository.saveGaplessPlayback(true);
+    expect(repository.loadGaplessPlayback(false), isTrue);
+  });
 }

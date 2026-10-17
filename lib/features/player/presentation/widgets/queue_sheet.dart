@@ -75,13 +75,18 @@ class QueueSheetContent extends ConsumerWidget {
         ),
         Divider(height: 1, color: colors.outline),
         Expanded(
-          child: ListView.builder(
+          child: ReorderableListView.builder(
             physics: const ClampingScrollPhysics(),
+            buildDefaultDragHandles: false,
             itemCount: songs.length,
+            onReorderItem: (oldIndex, newIndex) => ref
+                .read(playerProvider.notifier)
+                .reorderQueue(oldIndex, newIndex),
             itemBuilder: (context, index) {
               final song = songs[index];
               final isCurrent = index == currentIndex;
               return ListTile(
+                key: ValueKey(song.id),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
                 ),
@@ -110,15 +115,30 @@ class QueueSheetContent extends ConsumerWidget {
                     color: colors.textMedium,
                   ),
                 ),
-                trailing: IconButton(
-                  tooltip: l10n.removeFromQueueTooltip,
-                  icon: const Icon(
-                    Icons.remove_circle_outline_rounded,
-                    size: 20,
-                  ),
-                  onPressed: () => ref
-                      .read(playerProvider.notifier)
-                      .removeFromQueue(song.id),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: l10n.removeFromQueueTooltip,
+                      icon: const Icon(
+                        Icons.remove_circle_outline_rounded,
+                        size: 20,
+                      ),
+                      onPressed: () => ref
+                          .read(playerProvider.notifier)
+                          .removeFromQueue(song.id),
+                    ),
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Tooltip(
+                        message: l10n.reorderQueueTooltip,
+                        child: const Padding(
+                          padding: EdgeInsets.all(AppSpacing.sm),
+                          child: Icon(Icons.drag_handle_rounded),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 onTap: () {
                   Navigator.of(context).pop();

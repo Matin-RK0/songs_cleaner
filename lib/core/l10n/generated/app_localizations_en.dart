@@ -9,6 +9,95 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get undoAction => 'Undo';
+
+  @override
+  String get trashRestoreFailed => 'Could not restore the song.';
+
+  @override
+  String get trashTitle => 'Trash';
+
+  @override
+  String get trashSettingsSubtitle => 'Restore or permanently delete songs';
+
+  @override
+  String get trashEmpty => 'Trash is empty';
+
+  @override
+  String get restoreAction => 'Restore';
+
+  @override
+  String get deletePermanentlyAction => 'Delete permanently';
+
+  @override
+  String get trashRestoredToast => 'Song restored';
+
+  @override
+  String get trashDeletedToast => 'Song deleted permanently';
+
+  @override
+  String get songDeleteFailedGeneric => 'The file operation failed.';
+
+  @override
+  String get trashPermanentDeleteWarning =>
+      'This song will be deleted permanently and cannot be restored.';
+
+  @override
+  String get emptyTrashAction => 'Empty Trash';
+
+  @override
+  String get trashEmptyWarning =>
+      'All songs in Trash will be deleted permanently.';
+
+  @override
+  String get importPlaylists => 'Import playlists';
+
+  @override
+  String get exportPlaylists => 'Export playlists';
+
+  @override
+  String get playlistsExported => 'Playlists exported';
+
+  @override
+  String playlistsImported(int count) {
+    return 'Imported $count playlists';
+  }
+
+  @override
+  String get playlistFileInvalid => 'This playlist file is invalid.';
+
+  @override
+  String get playlistTransferFailed => 'Playlist transfer failed.';
+
+  @override
+  String get sharePlaylists => 'Share playlists';
+
+  @override
+  String get playlistsShared => 'Share sheet opened';
+
+  @override
+  String get shareSongAction => 'Share song';
+
+  @override
+  String get songShareOpened => 'Share sheet opened';
+
+  @override
+  String get songShareFailed => 'Could not share this song.';
+
+  @override
+  String get setAsRingtoneAction => 'Set as ringtone';
+
+  @override
+  String get ringtoneSetToast => 'Ringtone updated';
+
+  @override
+  String get ringtonePermissionRequired =>
+      'Allow system settings access, then try again.';
+
+  @override
+  String get ringtoneSetFailed => 'Could not set this song as ringtone.';
+
+  @override
   String get appName => 'Songs Cleaner';
 
   @override
@@ -300,6 +389,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'When enabled, the delete button is hidden from the player screen.';
 
   @override
+  String get audioFocusTitle => 'Audio interruptions';
+
+  @override
+  String get audioFocusPause => 'Pause and resume';
+
+  @override
+  String get audioFocusDuck => 'Lower volume temporarily';
+
+  @override
+  String get audioFocusIgnore => 'Keep playing';
+
+  @override
   String get playlistsTab => 'Playlists';
 
   @override
@@ -433,5 +534,329 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String sleepTimerRemaining(Object time) {
     return 'Sleep timer: $time';
+  }
+
+  @override
+  String get equalizerTitle => 'Equalizer';
+
+  @override
+  String get equalizerEnabled => 'Enable equalizer';
+
+  @override
+  String get equalizerSubtitle => 'Android audio effect for the current player';
+
+  @override
+  String get equalizerUnavailable =>
+      'The equalizer is not available on this device.';
+
+  @override
+  String get equalizerFlat => 'Flat';
+
+  @override
+  String get equalizerBassBoost => 'Bass boost';
+
+  @override
+  String equalizerRange(Object max, Object min) {
+    return 'Range: $min dB to $max dB';
+  }
+
+  @override
+  String get gaplessPlaybackTitle => 'Gapless playback';
+
+  @override
+  String get gaplessPlaybackSubtitle =>
+      'Keep album transitions free of silence';
+
+  @override
+  String get lyricsTitle => 'Lyrics';
+
+  @override
+  String get lyricsUnavailable =>
+      'No .lrc lyrics file was found next to this song.';
+
+  @override
+  String get historyTitle => 'Play history';
+
+  @override
+  String get historySettingsSubtitle => 'Review songs you listened to recently';
+
+  @override
+  String get historyEmptyTitle => 'No listening history';
+
+  @override
+  String get historyEmptyMessage =>
+      'Songs will appear here when you start playing them.';
+
+  @override
+  String get clearHistory => 'Clear history';
+
+  @override
+  String get clearHistoryTitle => 'Clear play history?';
+
+  @override
+  String get clearHistoryMessage =>
+      'This removes your recent listening activity. Play counts and favorites are kept.';
+
+  @override
+  String get clearAction => 'Clear';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get playNext => 'Play next';
+
+  @override
+  String get addToQueue => 'Add to queue';
+
+  @override
+  String get reorderQueueTooltip => 'Reorder queue';
+
+  @override
+  String get genresTab => 'Genres';
+
+  @override
+  String get foldersTab => 'Folders';
+
+  @override
+  String get unknownGenre => 'Unknown genre';
+
+  @override
+  String get unknownFolder => 'Unknown folder';
+
+  @override
+  String get sortByAlbum => 'By album';
+
+  @override
+  String get sortBySize => 'By file size';
+
+  @override
+  String get sortByTrack => 'By track number';
+
+  @override
+  String get filterTitle => 'Filter songs';
+
+  @override
+  String get filterAll => 'All songs';
+
+  @override
+  String get filterMissingMetadata => 'Missing metadata';
+
+  @override
+  String get filterShortTracks => 'Shorter than 1 minute';
+
+  @override
+  String get filterLongTracks => '10 minutes or longer';
+
+  @override
+  String get filterLossless => 'Lossless audio';
+
+  @override
+  String get moreActions => 'More actions';
+
+  @override
+  String get songDetailsTitle => 'Song information';
+
+  @override
+  String get songNotFound => 'This song is no longer in the library';
+
+  @override
+  String get artistLabel => 'Artist';
+
+  @override
+  String get albumLabel => 'Album';
+
+  @override
+  String get genreLabel => 'Genre';
+
+  @override
+  String get composerLabel => 'Composer';
+
+  @override
+  String get trackNumberLabel => 'Track';
+
+  @override
+  String get durationLabel => 'Duration';
+
+  @override
+  String get fileFormatLabel => 'Format';
+
+  @override
+  String get fileSizeLabel => 'Size';
+
+  @override
+  String get folderLabel => 'Folder';
+
+  @override
+  String get filePathLabel => 'File path';
+
+  @override
+  String get modifiedDateLabel => 'Modified';
+
+  @override
+  String get unknownValue => 'Unknown';
+
+  @override
+  String get editTagsTitle => 'Edit tags';
+
+  @override
+  String get tagEditorTitle => 'Edit song metadata';
+
+  @override
+  String get titleLabel => 'Title';
+
+  @override
+  String get lyricsEditorHint => 'Paste synchronized lyrics in .lrc format';
+
+  @override
+  String get titleRequired => 'Title is required';
+
+  @override
+  String get trackNumberInvalid => 'Track number must be between 0 and 999';
+
+  @override
+  String get tagsSavedToast => 'Song metadata saved';
+
+  @override
+  String get tagsSaveFailed => 'Could not save song metadata';
+
+  @override
+  String get renameFileTitle => 'Rename file';
+
+  @override
+  String get fileNameLabel => 'File name';
+
+  @override
+  String get fileRenamedToast => 'File renamed';
+
+  @override
+  String get fileRenameFailed => 'Could not rename this file';
+
+  @override
+  String get fileNameRequired => 'File name is required';
+
+  @override
+  String get fileNameInvalid => 'File name contains invalid characters';
+
+  @override
+  String get fileExtensionCannotChange =>
+      'The file extension cannot be changed here';
+
+  @override
+  String get fileAlreadyExists => 'A file with this name already exists';
+
+  @override
+  String get fileActionsTitle => 'File actions';
+
+  @override
+  String get copyFileAction => 'Copy to folder';
+
+  @override
+  String get moveFileAction => 'Move to folder';
+
+  @override
+  String get fileCopiedToast => 'File copied';
+
+  @override
+  String get fileMovedToast => 'File moved';
+
+  @override
+  String get fileTransferFailed => 'Could not complete the file operation';
+
+  @override
+  String get chooseFolderTitle => 'Choose destination folder';
+
+  @override
+  String get chooseThisFolder => 'Choose this folder';
+
+  @override
+  String get parentFolder => 'Parent folder';
+
+  @override
+  String selectedCount(Object count) {
+    return '$count selected';
+  }
+
+  @override
+  String get selectAll => 'Select all';
+
+  @override
+  String get noCollectionsMessage =>
+      'No matching metadata was found in your music files.';
+
+  @override
+  String deleteSelectedTitle(Object count) {
+    return 'Delete $count songs?';
+  }
+
+  @override
+  String get deleteSelectedMessage =>
+      'The selected files will be permanently removed from your device.';
+
+  @override
+  String deletedSongsCount(Object count) {
+    return '$count songs deleted';
+  }
+
+  @override
+  String get libraryInsightsTitle => 'Library insights';
+
+  @override
+  String librarySummary(Object count, Object duration) {
+    return '$count songs · $duration';
+  }
+
+  @override
+  String get missingMetadataMetric => 'Missing metadata';
+
+  @override
+  String get shortTracksMetric => 'Short tracks';
+
+  @override
+  String get losslessMetric => 'Lossless files';
+
+  @override
+  String get largeFilesMetric => 'Files over 50 MB';
+
+  @override
+  String get duplicatesTitle => 'Potential duplicates';
+
+  @override
+  String potentialDuplicatesCount(Object count) {
+    return '$count removable copies found';
+  }
+
+  @override
+  String recoverableSpace(Object size) {
+    return 'Up to $size can be recovered';
+  }
+
+  @override
+  String get formatsTitle => 'Audio formats';
+
+  @override
+  String get duplicateScannerTitle => 'Duplicate scanner';
+
+  @override
+  String get noDuplicatesTitle => 'No likely duplicates';
+
+  @override
+  String get noDuplicatesMessage =>
+      'Your library has no songs with matching title, known artist and duration.';
+
+  @override
+  String duplicateGroupSummary(Object count, Object size) {
+    return '$count versions · $size recoverable';
+  }
+
+  @override
+  String get recommendedToKeep => 'Recommended version to keep';
+
+  @override
+  String deleteDuplicateMessage(Object title) {
+    return 'Delete \"$title\" from the device? Review its format, size and path before continuing.';
   }
 }

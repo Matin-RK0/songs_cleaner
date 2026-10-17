@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/playlist.dart';
+import '../../../library/domain/entities/song.dart';
+import '../playlist_transfer_service.dart';
 import 'playlist_providers.dart';
 
 /// Ordered list of user-created playlists. Local storage is synchronous, so
@@ -50,11 +52,66 @@ class PlaylistsController extends Notifier<List<Playlist>> {
     _commit(state.where((playlist) => playlist.id != id).toList());
   }
 
+  Future<int> importPlaylists(
+    List<ImportedPlaylist> imported,
+    List<Song> songs,
+  ) async {
+    final songsByPath = {for (final song in songs) song.path: song.id};
+    var added = 0;
+    final next = [...state];
+    for (final item in imported) {
+      final ids = item.songPaths
+          .map((path) => songsByPath[path])
+          .whereType<int>()
+          .toSet()
+          .toList();
+      final now = DateTime.now();
+      next.add(
+        Playlist(
+          id: '${now.microsecondsSinceEpoch}_${added++}',
+          name: item.name.trim().isEmpty
+              ? 'Imported playlist'
+              : item.name.trim(),
+          songIds: List.unmodifiable(ids),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    }
+    if (added > 0) _commit(next);
+    return added;
+  }
+
   Future<void> addSong(String id, int songId) async {
     _update(id, (playlist) {
       if (playlist.contains(songId)) return playlist;
       return playlist.copyWith(
         songIds: List.unmodifiable([...playlist.songIds, songId]),
+        updatedAt: DateTime.now(),
+      );
+    });
+  }
+
+  Future<void> addSongs(String id, Iterable<int> songIds) async {
+    _update(id, (playlist) {
+      final merged = <int>{...playlist.songIds, ...songIds}.toList();
+      if (merged.length == playlist.songIds.length) return playlist;
+      return playlist.copyWith(
+        songIds: List.unmodifiable(merged),
+        updatedAt: DateTime.now(),
+      );
+    });
+  }
+
+  Future<void> removeSongs(String id, Iterable<int> songIds) async {
+    final removed = songIds.toSet();
+    _update(id, (playlist) {
+      final remaining = playlist.songIds
+          .where((songId) => !removed.contains(songId))
+          .toList(growable: false);
+      if (remaining.length == playlist.songIds.length) return playlist;
+      return playlist.copyWith(
+        songIds: List.unmodifiable(remaining),
         updatedAt: DateTime.now(),
       );
     });

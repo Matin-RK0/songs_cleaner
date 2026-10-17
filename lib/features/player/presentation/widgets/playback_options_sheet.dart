@@ -8,6 +8,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
+import '../../../../app/router/route_names.dart';
 import '../../application/providers/player_controller.dart';
 
 Future<void> showPlaybackOptionsSheet(
@@ -46,6 +47,7 @@ class _PlaybackOptionsSheet extends ConsumerWidget {
     final timer = ref.watch(
       playerProvider.select((state) => state.sleepTimerRemaining),
     );
+    final gapless = ref.watch(playerProvider.select((state) => state.gapless));
 
     return SafeArea(
       child: ListView(
@@ -62,6 +64,24 @@ class _PlaybackOptionsSheet extends ConsumerWidget {
             style: AppTypography.sheetTitleSmall.copyWith(
               color: colors.textHigh,
             ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.equalizer_rounded),
+            title: Text(l10n.equalizerTitle),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed(RouteNames.equalizer);
+            },
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: gapless,
+            title: Text(l10n.gaplessPlaybackTitle),
+            subtitle: Text(l10n.gaplessPlaybackSubtitle),
+            onChanged: (value) =>
+                ref.read(playerProvider.notifier).setGaplessPlayback(value),
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(

@@ -11,7 +11,10 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_state_views.dart';
+import '../../../../app/router/route_names.dart';
 import '../../../player/application/providers/player_preferences_controller.dart';
+import '../../../player/application/providers/audio_focus_controller.dart';
+import '../../../player/domain/audio_focus_mode.dart';
 import '../../application/providers/lock_screen_controller.dart';
 
 /// App settings. Exposes appearance, lock-screen and playback toggles.
@@ -251,6 +254,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _LanguageChoice.persian => const Locale('fa'),
   };
 
+  Future<void> _showAudioFocusSheet() async {
+    final current = ref.read(audioFocusModeProvider);
+    final selected = await showModalBottomSheet<AudioFocusMode>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: RadioGroup<AudioFocusMode>(
+          groupValue: current,
+          onChanged: (value) => Navigator.of(sheetContext).pop(value),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  context.l10n.audioFocusTitle,
+                  style: AppTypography.sectionTitle.copyWith(
+                    color: context.colors.textHigh,
+                  ),
+                ),
+              ),
+              for (final mode in AudioFocusMode.values)
+                RadioListTile<AudioFocusMode>(
+                  value: mode,
+                  title: Text(_audioFocusLabel(context.l10n, mode)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected != null) {
+      await ref.read(audioFocusModeProvider.notifier).setMode(selected);
+    }
+  }
+
   String _languageLabel(AppLocalizations l10n, _LanguageChoice choice) =>
       switch (choice) {
         _LanguageChoice.system => l10n.languageSystem,
@@ -267,6 +306,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final hideQuickDelete = ref.watch(hideQuickDeleteProvider);
     final themeMode = ref.watch(appThemeModeProvider);
     final locale = ref.watch(appLocaleProvider);
+    final audioFocusMode = ref.watch(audioFocusModeProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
@@ -325,6 +365,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           _SectionHeader(title: l10n.settingsPlaybackSection),
+          ListTile(
+            leading: Icon(Icons.hearing_rounded, color: colors.primary),
+            title: Text(
+              l10n.audioFocusTitle,
+              style: AppTypography.emphasisTitle.copyWith(
+                color: colors.textHigh,
+              ),
+            ),
+            subtitle: Text(
+              _audioFocusLabel(l10n, audioFocusMode),
+              style: AppTypography.songSubtitle.copyWith(
+                color: colors.textMedium,
+              ),
+            ),
+            trailing: Icon(Icons.chevron_left_rounded, color: colors.textLow),
+            onTap: _showAudioFocusSheet,
+          ),
+          ListTile(
+            leading: Icon(Icons.history_rounded, color: colors.primary),
+            title: Text(
+              l10n.historyTitle,
+              style: AppTypography.emphasisTitle.copyWith(
+                color: colors.textHigh,
+              ),
+            ),
+            subtitle: Text(
+              l10n.historySettingsSubtitle,
+              style: AppTypography.songSubtitle.copyWith(
+                color: colors.textMedium,
+              ),
+            ),
+            trailing: Icon(Icons.chevron_left_rounded, color: colors.textLow),
+            onTap: () => Navigator.of(context).pushNamed(RouteNames.history),
+          ),
+          ListTile(
+            leading: Icon(Icons.delete_sweep_outlined, color: colors.primary),
+            title: Text(l10n.trashTitle),
+            subtitle: Text(l10n.trashSettingsSubtitle),
+            trailing: Icon(Icons.chevron_left_rounded, color: colors.textLow),
+            onTap: () => Navigator.of(context).pushNamed(RouteNames.trash),
+          ),
           _SettingSwitchTile(
             value: previousGoesToPrevious,
             onChanged: (value) => ref
@@ -336,9 +417,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           _SettingSwitchTile(
             value: hideQuickDelete,
-            onChanged: (value) => ref
-                .read(hideQuickDeleteProvider.notifier)
-                .setEnabled(value),
+            onChanged: (value) =>
+                ref.read(hideQuickDeleteProvider.notifier).setEnabled(value),
             title: l10n.hideQuickDeleteTitle,
             subtitle: l10n.hideQuickDeleteSubtitle,
             icon: Icons.delete_outline_rounded,
@@ -353,6 +433,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ThemeMode.light => Icons.light_mode_rounded,
     ThemeMode.dark => Icons.dark_mode_rounded,
   };
+
+  String _audioFocusLabel(AppLocalizations l10n, AudioFocusMode mode) =>
+      switch (mode) {
+        AudioFocusMode.pause => l10n.audioFocusPause,
+        AudioFocusMode.duck => l10n.audioFocusDuck,
+        AudioFocusMode.ignore => l10n.audioFocusIgnore,
+      };
 
   String _subtitle(AppLocalizations l10n, LockScreenState state) {
     if (!state.supported) return l10n.lockScreenUnsupportedSubtitle;

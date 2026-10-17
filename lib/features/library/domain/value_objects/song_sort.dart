@@ -1,13 +1,24 @@
 import '../entities/song.dart';
 
-enum SongSort { titleAsc, artistAsc, dateAddedDesc, durationDesc }
+enum SongSort {
+  titleAsc,
+  artistAsc,
+  dateAddedDesc,
+  durationDesc,
+  albumAsc,
+  sizeDesc,
+  trackAsc,
+}
 
 extension SongSortX on SongSort {
   int compare(Song a, Song b) => switch (this) {
     SongSort.titleAsc => _compareText(a.title, b.title),
     SongSort.artistAsc => _compareText(a.artist, b.artist),
+    SongSort.albumAsc => _compareText(a.album, b.album),
     SongSort.dateAddedDesc => b.dateAddedSeconds.compareTo(a.dateAddedSeconds),
     SongSort.durationDesc => b.duration.compareTo(a.duration),
+    SongSort.sizeDesc => b.sizeBytes.compareTo(a.sizeBytes),
+    SongSort.trackAsc => a.trackNumber.compareTo(b.trackNumber),
   };
 
   static int _compareText(String a, String b) {

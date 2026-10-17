@@ -3,11 +3,22 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../features/library/presentation/screens/group_songs_screen.dart';
+import '../../features/library/presentation/screens/collection_songs_screen.dart';
+import '../../features/history/presentation/screens/play_history_screen.dart';
 import '../../features/library/presentation/screens/home_shell.dart';
 import '../../features/library/presentation/screens/search_screen.dart';
+import '../../features/library/presentation/screens/song_details_screen.dart';
 import '../../features/lockscreen/presentation/screens/lock_screen_player_screen.dart';
 import '../../features/lockscreen/presentation/screens/settings_screen.dart';
 import '../../features/player/presentation/screens/player_screen.dart';
+import '../../features/insights/presentation/screens/duplicate_scanner_screen.dart';
+import '../../features/insights/presentation/screens/library_insights_screen.dart';
+import '../../features/player/presentation/screens/equalizer_screen.dart';
+import '../../features/lyrics/presentation/screens/lyrics_screen.dart';
+import '../../features/metadata/presentation/screens/tag_editor_screen.dart';
+import '../../features/file_manager/presentation/screens/folder_picker_screen.dart';
+import '../../features/trash/presentation/screens/trash_screen.dart';
+import '../../features/library/domain/entities/song.dart';
 import '../../features/playlists/presentation/screens/playlist_detail_screen.dart';
 import 'route_names.dart';
 
@@ -43,6 +54,8 @@ abstract final class AppRouter {
         return _slideRoute(settings, const SearchScreen());
       case RouteNames.settings:
         return _slideRoute(settings, const SettingsScreen());
+      case RouteNames.history:
+        return _slideRoute(settings, const PlayHistoryScreen());
       case RouteNames.lockScreen:
         return _fadeRoute(settings, const LockScreenPlayerScreen());
       case RouteNames.groupSongs:
@@ -51,6 +64,44 @@ abstract final class AppRouter {
           return _fadeRoute(settings, GroupSongsScreen(args: args));
         }
         return _fadeRoute(settings, const HomeShell());
+      case RouteNames.collectionSongs:
+        final args = settings.arguments;
+        if (args is CollectionSongsArgs) {
+          return _slideRoute(settings, CollectionSongsScreen(args: args));
+        }
+        return _fadeRoute(settings, const HomeShell());
+      case RouteNames.songDetails:
+        final songId = settings.arguments;
+        if (songId is int) {
+          return _slideRoute(settings, SongDetailsScreen(songId: songId));
+        }
+        return _fadeRoute(settings, const HomeShell());
+      case RouteNames.libraryInsights:
+        return _slideRoute(settings, const LibraryInsightsScreen());
+      case RouteNames.duplicateScanner:
+        return _slideRoute(settings, const DuplicateScannerScreen());
+      case RouteNames.equalizer:
+        return _slideRoute(settings, const EqualizerScreen());
+      case RouteNames.lyrics:
+        final song = settings.arguments;
+        if (song is Song) {
+          return _slideRoute(settings, LyricsScreen(song: song));
+        }
+        return _fadeRoute(settings, const HomeShell());
+      case RouteNames.tagEditor:
+        final songId = settings.arguments;
+        if (songId is int) {
+          return _slideRoute(settings, TagEditorScreen(songId: songId));
+        }
+        return _fadeRoute(settings, const HomeShell());
+      case RouteNames.folderPicker:
+        final path = settings.arguments;
+        if (path is String) {
+          return _slideRoute(settings, FolderPickerScreen(initialPath: path));
+        }
+        return _fadeRoute(settings, const HomeShell());
+      case RouteNames.trash:
+        return _slideRoute(settings, const TrashScreen());
       case RouteNames.playlistDetail:
         final args = settings.arguments;
         if (args is PlaylistDetailArgs) {

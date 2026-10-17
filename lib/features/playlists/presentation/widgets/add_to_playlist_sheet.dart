@@ -12,6 +12,14 @@ import 'playlist_name_sheet.dart';
 
 /// Bottom sheet for adding or removing a song across the user's playlists.
 Future<void> showAddToPlaylistSheet(BuildContext context, Song song) {
+  return showAddSongsToPlaylistSheet(context, [song]);
+}
+
+Future<void> showAddSongsToPlaylistSheet(
+  BuildContext context,
+  List<Song> songs,
+) {
+  if (songs.isEmpty) return Future<void>.value();
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -19,14 +27,14 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Song song) {
     constraints: BoxConstraints(
       maxHeight: MediaQuery.of(context).size.height * 0.6,
     ),
-    builder: (_) => _AddToPlaylistSheet(song: song),
+    builder: (_) => _AddToPlaylistSheet(songs: songs),
   );
 }
 
 class _AddToPlaylistSheet extends ConsumerWidget {
-  const _AddToPlaylistSheet({required this.song});
+  const _AddToPlaylistSheet({required this.songs});
 
-  final Song song;
+  final List<Song> songs;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -73,7 +81,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
                 .create(name);
             await ref
                 .read(playlistsProvider.notifier)
-                .addSong(playlist.id, song.id);
+                .addSongs(playlist.id, songs.map((song) => song.id));
             if (!context.mounted) return;
             showAppSnackBar(context, l10n.addedToPlaylistToast(playlist.name));
             Navigator.of(context).pop();
@@ -98,7 +106,8 @@ class _AddToPlaylistSheet extends ConsumerWidget {
               itemCount: playlists.length,
               itemBuilder: (context, index) {
                 final playlist = playlists[index];
-                final contains = playlist.contains(song.id);
+                final songIds = songs.map((song) => song.id).toSet();
+                final contains = songIds.every(playlist.contains);
                 return ListTile(
                   title: Text(
                     playlist.name,
@@ -118,9 +127,9 @@ class _AddToPlaylistSheet extends ConsumerWidget {
                   onTap: () {
                     final controller = ref.read(playlistsProvider.notifier);
                     if (contains) {
-                      controller.removeSong(playlist.id, song.id);
+                      controller.removeSongs(playlist.id, songIds);
                     } else {
-                      controller.addSong(playlist.id, song.id);
+                      controller.addSongs(playlist.id, songIds);
                     }
                   },
                 );

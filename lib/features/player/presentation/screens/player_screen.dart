@@ -17,6 +17,7 @@ import '../widgets/player_controls_row.dart';
 import '../widgets/player_state_views.dart';
 import '../widgets/player_track_info.dart';
 import '../widgets/playback_options_sheet.dart';
+import '../../../../app/router/route_names.dart';
 import '../widgets/queue_sheet.dart';
 import '../widgets/seek_bar.dart';
 import '../widgets/swipe_down_to_dismiss.dart';
@@ -142,6 +143,13 @@ class _PlayerActions extends ConsumerWidget {
               icon: const Icon(Icons.tune_rounded),
               label: Text(context.l10n.playbackOptionsTitle),
             ),
+          ),
+          TextButton.icon(
+            onPressed: () => Navigator.of(
+              context,
+            ).pushNamed(RouteNames.lyrics, arguments: song),
+            icon: const Icon(Icons.lyrics_outlined),
+            label: Text(context.l10n.lyricsTitle),
           ),
         ],
       ),

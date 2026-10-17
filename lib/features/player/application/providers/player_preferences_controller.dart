@@ -34,9 +34,8 @@ final hideQuickDeleteProvider =
 
 class HideQuickDeleteController extends Notifier<bool> {
   @override
-  bool build() => ref.watch(appSettingsRepositoryProvider).loadHideQuickDelete(
-    false,
-  );
+  bool build() =>
+      ref.watch(appSettingsRepositoryProvider).loadHideQuickDelete(false);
 
   Future<void> setEnabled(bool value) async {
     state = value;

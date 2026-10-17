@@ -128,33 +128,59 @@ class _HomeShellState extends ConsumerState<HomeShell>
     final hasCurrent = ref.watch(
       playerProvider.select((state) => state.hasCurrent),
     );
-    final onPlaylistsTab = _tabController.index == 3;
+    final onPlaylistsTab = _tabController.index == 5;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.libraryTitle),
         actions: [
           IconButton(
-            tooltip: l10n.refreshLibraryTooltip,
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _refreshLibrary,
-          ),
-          IconButton(
             tooltip: l10n.searchHint,
             icon: const Icon(Icons.search_rounded),
             onPressed: () => Navigator.of(context).pushNamed(RouteNames.search),
           ),
-          if (!onPlaylistsTab)
-            IconButton(
-              tooltip: l10n.sortLabel,
-              icon: const Icon(Icons.sort_rounded),
-              onPressed: () => showSortSheet(context, ref),
-            ),
-          IconButton(
-            tooltip: l10n.settingsTitle,
-            icon: const Icon(Icons.settings_rounded),
-            onPressed: () =>
-                Navigator.of(context).pushNamed(RouteNames.settings),
+          PopupMenuButton<_HomeAction>(
+            tooltip: l10n.moreActions,
+            onSelected: (action) => _runHomeAction(action, onPlaylistsTab),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: _HomeAction.refresh,
+                child: ListTile(
+                  leading: const Icon(Icons.refresh_rounded),
+                  title: Text(l10n.refreshLibraryTooltip),
+                ),
+              ),
+              if (!onPlaylistsTab) ...[
+                PopupMenuItem(
+                  value: _HomeAction.filter,
+                  child: ListTile(
+                    leading: const Icon(Icons.filter_alt_outlined),
+                    title: Text(l10n.filterTitle),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _HomeAction.sort,
+                  child: ListTile(
+                    leading: const Icon(Icons.sort_rounded),
+                    title: Text(l10n.sortLabel),
+                  ),
+                ),
+              ],
+              PopupMenuItem(
+                value: _HomeAction.insights,
+                child: ListTile(
+                  leading: const Icon(Icons.analytics_outlined),
+                  title: Text(l10n.libraryInsightsTitle),
+                ),
+              ),
+              PopupMenuItem(
+                value: _HomeAction.settings,
+                child: ListTile(
+                  leading: const Icon(Icons.settings_rounded),
+                  title: Text(l10n.settingsTitle),
+                ),
+              ),
+            ],
           ),
         ],
         bottom: TabBar(
@@ -268,4 +294,26 @@ class _HomeShellState extends ConsumerState<HomeShell>
       );
     });
   }
+
+  void _runHomeAction(_HomeAction action, bool onPlaylistsTab) {
+    switch (action) {
+      case _HomeAction.refresh:
+        _refreshLibrary();
+        return;
+      case _HomeAction.filter:
+        if (!onPlaylistsTab) showFilterSheet(context, ref);
+        return;
+      case _HomeAction.sort:
+        if (!onPlaylistsTab) showSortSheet(context, ref);
+        return;
+      case _HomeAction.settings:
+        Navigator.of(context).pushNamed(RouteNames.settings);
+        return;
+      case _HomeAction.insights:
+        Navigator.of(context).pushNamed(RouteNames.libraryInsights);
+        return;
+    }
+  }
 }
+
+enum _HomeAction { refresh, filter, sort, insights, settings }

@@ -64,6 +64,13 @@ class DeviceMusicDataSource {
       path: model.data.trim(),
       sizeBytes: model.size,
       dateAddedSeconds: model.dateAdded ?? 0,
+      genre: _cleanUnknown(model.genre),
+      genreId: model.genreId ?? -1,
+      composer: _cleanUnknown(model.composer),
+      trackNumber: model.track ?? 0,
+      dateModifiedSeconds: model.dateModified ?? 0,
+      fileExtension: _fileExtension(model.data),
+      folderPath: _folderPath(model.data),
     );
   }
 
@@ -77,5 +84,18 @@ class DeviceMusicDataSource {
     final name = path.split(Platform.pathSeparator).last;
     final dot = name.lastIndexOf('.');
     return dot > 0 ? name.substring(0, dot) : name;
+  }
+
+  static String _folderPath(String path) {
+    final separator = Platform.pathSeparator;
+    final lastSeparator = path.lastIndexOf(separator);
+    return lastSeparator > 0 ? path.substring(0, lastSeparator) : '';
+  }
+
+  static String _fileExtension(String path) {
+    final dot = path.lastIndexOf('.');
+    return dot >= 0 && dot < path.length - 1
+        ? path.substring(dot + 1).toLowerCase()
+        : '';
   }
 }

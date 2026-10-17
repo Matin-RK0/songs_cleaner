@@ -146,6 +146,7 @@ class AppSettingsRepository {
 
   static const String _librarySortKey = 'library.sortIndex';
   static const String _homeTabIndexKey = 'home.tabIndex';
+  static const String _homeTabLayoutVersionKey = 'home.tabLayoutVersion';
   static const String _sessionQueueKey = 'playback.session.queueIds';
   static const String _sessionCurrentKey = 'playback.session.currentId';
   static const String _sessionPositionKey = 'playback.session.positionMs';
@@ -158,6 +159,10 @@ class AppSettingsRepository {
       'player.previousGoesToPrevious';
   static const String _hideQuickDeleteKey = 'player.hideQuickDelete';
   static const String _playbackSpeedKey = 'player.playbackSpeed';
+  static const String _equalizerEnabledKey = 'audio.equalizer.enabled';
+  static const String _equalizerGainsKey = 'audio.equalizer.gains';
+  static const String _audioFocusModeKey = 'audio.focusMode';
+  static const String _gaplessPlaybackKey = 'audio.gaplessPlayback';
   static const String _themeModeKey = 'appearance.themeMode';
   static const String _localeKey = 'appearance.locale';
 
@@ -173,11 +178,19 @@ class AppSettingsRepository {
 
   // -- Home tab ---------------------------------------------------------------
 
-  int loadHomeTabIndex(int fallback) =>
-      _prefs.getInt(_homeTabIndexKey) ?? fallback;
+  int loadHomeTabIndex(int fallback) {
+    final stored = _prefs.getInt(_homeTabIndexKey);
+    if (stored == null) return fallback;
+    final layoutVersion = _prefs.getInt(_homeTabLayoutVersionKey) ?? 1;
+    return layoutVersion < 2 && stored == 3 ? 5 : stored;
+  }
 
-  Future<void> saveHomeTabIndex(int index) =>
-      _prefs.setInt(_homeTabIndexKey, index);
+  Future<void> saveHomeTabIndex(int index) async {
+    await Future.wait([
+      _prefs.setInt(_homeTabIndexKey, index),
+      _prefs.setInt(_homeTabLayoutVersionKey, 2),
+    ]);
+  }
 
   // -- Lock screen ------------------------------------------------------------
 
@@ -223,6 +236,34 @@ class AppSettingsRepository {
 
   Future<void> savePlaybackSpeed(double value) =>
       _prefs.setDouble(_playbackSpeedKey, value.clamp(0.5, 3.0).toDouble());
+
+  bool loadEqualizerEnabled(bool fallback) =>
+      _prefs.getBool(_equalizerEnabledKey) ?? fallback;
+
+  Future<void> saveEqualizerEnabled(bool enabled) =>
+      _prefs.setBool(_equalizerEnabledKey, enabled);
+
+  List<double> loadEqualizerGains() => (_prefs.getStringList(_equalizerGainsKey) ?? const [])
+      .map(double.tryParse)
+      .whereType<double>()
+      .toList(growable: false);
+
+  Future<void> saveEqualizerGains(List<double> gains) => _prefs.setStringList(
+    _equalizerGainsKey,
+    gains.map((gain) => gain.toString()).toList(growable: false),
+  );
+
+  int loadAudioFocusMode(int fallback) =>
+      _prefs.getInt(_audioFocusModeKey) ?? fallback;
+
+  Future<void> saveAudioFocusMode(int index) =>
+      _prefs.setInt(_audioFocusModeKey, index);
+
+  bool loadGaplessPlayback(bool fallback) =>
+      _prefs.getBool(_gaplessPlaybackKey) ?? fallback;
+
+  Future<void> saveGaplessPlayback(bool enabled) =>
+      _prefs.setBool(_gaplessPlaybackKey, enabled);
 
   // -- Playback session -------------------------------------------------------
 

@@ -106,6 +106,51 @@ class PlaybackQueue {
     return _removeAt(orderIndex);
   }
 
+  bool addToEnd(Song song) {
+    if (_indexOfId(_order, song.id) >= 0) return false;
+    _order = List.unmodifiable([..._order, song]);
+    _original = List.unmodifiable([..._original, song]);
+    if (_index < 0) _index = 0;
+    return true;
+  }
+
+  bool playNext(Song song) {
+    if (_order.isEmpty) {
+      load([song]);
+      return true;
+    }
+    if (current?.id == song.id) return false;
+
+    final currentId = current!.id;
+    final order = [..._order]..removeWhere((item) => item.id == song.id);
+    final insertionIndex = _indexOfId(order, currentId) + 1;
+    order.insert(insertionIndex, song);
+    _order = List.unmodifiable(order);
+    _index = _indexOfId(_order, currentId);
+
+    final original = [..._original]..removeWhere((item) => item.id == song.id);
+    final originalCurrent = _indexOfId(original, currentId);
+    original.insert(originalCurrent + 1, song);
+    _original = List.unmodifiable(original);
+    return true;
+  }
+
+  bool reorder(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= _order.length) return false;
+    if (newIndex < 0 || newIndex >= _order.length) return false;
+    if (oldIndex == newIndex) return false;
+
+    final currentId = current?.id;
+    final reordered = [..._order];
+    final moved = reordered.removeAt(oldIndex);
+    reordered.insert(newIndex, moved);
+    _order = List.unmodifiable(reordered);
+    _original = _order;
+    _shuffled = false;
+    _index = currentId == null ? -1 : _indexOfId(_order, currentId);
+    return true;
+  }
+
   void clear() {
     _original = const [];
     _order = const [];

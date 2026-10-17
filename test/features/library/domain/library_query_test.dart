@@ -1,20 +1,22 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songs_cleaner/features/library/domain/entities/song.dart';
 import 'package:songs_cleaner/features/library/domain/services/library_query.dart';
+import 'package:songs_cleaner/features/library/domain/value_objects/song_filter.dart';
+import 'package:songs_cleaner/features/library/domain/value_objects/song_sort.dart';
 
 void main() {
   Song song(int id, {int dateAddedSeconds = 0}) => Song(
-        id: id,
-        title: 'Song $id',
-        artist: '',
-        album: '',
-        albumId: 0,
-        artistId: 0,
-        duration: Duration.zero,
-        path: '/music/$id.mp3',
-        sizeBytes: 0,
-        dateAddedSeconds: dateAddedSeconds,
-      );
+    id: id,
+    title: 'Song $id',
+    artist: '',
+    album: '',
+    albumId: 0,
+    artistId: 0,
+    duration: Duration.zero,
+    path: '/music/$id.mp3',
+    sizeBytes: 0,
+    dateAddedSeconds: dateAddedSeconds,
+  );
 
   group('newestDateAddedSeconds', () {
     test('returns zero for an empty library', () {
@@ -23,10 +25,85 @@ void main() {
 
     test('returns the greatest date-added value', () {
       expect(
-        newestDateAddedSeconds([song(1, dateAddedSeconds: 10), song(2, dateAddedSeconds: 40)]),
+        newestDateAddedSeconds([
+          song(1, dateAddedSeconds: 10),
+          song(2, dateAddedSeconds: 40),
+        ]),
         40,
       );
     });
+  });
+
+  group('filterAndSortSongs', () {
+    test('filters missing metadata and searches genre and folder', () {
+      final songs = [
+        song(1),
+        Song(
+          id: 2,
+          title: 'Track',
+          artist: 'Artist',
+          album: 'Album',
+          albumId: 1,
+          artistId: 1,
+          duration: const Duration(minutes: 3),
+          path: '/music/rock/track.flac',
+          sizeBytes: 1,
+          dateAddedSeconds: 0,
+          genre: 'Rock',
+          folderPath: '/music/rock',
+          fileExtension: 'flac',
+        ),
+      ];
+
+      expect(
+        filterAndSortSongs(
+          songs,
+          query: '',
+          sort: SongSort.titleAsc,
+          filter: SongFilter.missingMetadata,
+        ).map((item) => item.id),
+        [1],
+      );
+      expect(
+        filterAndSortSongs(
+          songs,
+          query: 'rock',
+          sort: SongSort.titleAsc,
+        ).map((item) => item.id),
+        [2],
+      );
+    });
+
+    test('recognizes common lossless extensions', () {
+      final flac = Song(
+        id: 7,
+        title: 'Lossless',
+        artist: 'Artist',
+        album: 'Album',
+        albumId: 1,
+        artistId: 1,
+        duration: const Duration(minutes: 3),
+        path: '/music/lossless.flac',
+        sizeBytes: 1,
+        dateAddedSeconds: 0,
+        fileExtension: 'flac',
+      );
+
+      expect(SongFilter.lossless.matches(flac), isTrue);
+      expect(SongFilter.shortTracks.matches(flac), isFalse);
+    });
+  });
+
+  test('groups string collections and sorts their songs', () {
+    final songs = [song(2), song(1), song(3)];
+    final groups = groupSongCollections(
+      songs,
+      keyOf: (item) => item.id == 3 ? 'b' : 'a',
+      nameOf: (item) => item.id == 3 ? 'B' : 'A',
+    );
+
+    expect(groups.map((group) => group.key), ['a', 'b']);
+    expect(groups.first.songs.map((item) => item.id), [1, 2]);
   });
 
   group('mergeNewSongs', () {

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/song.dart';
+import '../../domain/entities/song_collection.dart';
 import '../../domain/services/library_query.dart';
 import 'library_controller.dart';
 
@@ -46,6 +47,36 @@ final albumGroupsProvider = Provider<List<MusicGroup>>(
     idOf: (song) => song.albumId,
     nameOf: (song) => song.album,
   ),
+);
+
+final genreCollectionsProvider = Provider<List<SongCollection>>(
+  (ref) => groupSongCollections(
+    ref.watch(allSongsProvider),
+    keyOf: (song) => song.genre.toLowerCase(),
+    nameOf: (song) => song.genre,
+  ),
+);
+
+final folderCollectionsProvider = Provider<List<SongCollection>>(
+  (ref) => groupSongCollections(
+    ref.watch(allSongsProvider),
+    keyOf: (song) => song.folderPath.toLowerCase(),
+    nameOf: (song) => song.folderName,
+  ),
+);
+
+final songsByGenreProvider = Provider.family<List<Song>, String>(
+  (ref, key) => ref
+      .watch(allSongsProvider)
+      .where((song) => song.genre.toLowerCase() == key)
+      .toList(growable: false),
+);
+
+final songsByFolderProvider = Provider.family<List<Song>, String>(
+  (ref, key) => ref
+      .watch(allSongsProvider)
+      .where((song) => song.folderPath.toLowerCase() == key)
+      .toList(growable: false),
 );
 
 final songsByArtistProvider = Provider.family<List<Song>, int>(

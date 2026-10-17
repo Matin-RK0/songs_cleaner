@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../library/application/providers/library_stats_controller.dart';
+import '../../../history/application/providers/play_history_controller.dart';
 import 'player_controller.dart';
 
 /// Records a play whenever a track starts or changes while playing, feeding the
@@ -16,5 +17,6 @@ final playbackStatsRecorderProvider = Provider<void>((ref) {
         (previous?.playing ?? false) && previous?.current?.id == songId;
     if (sameTrackStillPlaying) return;
     ref.read(libraryStatsProvider.notifier).recordPlay(songId);
+    ref.read(playHistoryProvider.notifier).record(songId);
   });
 });

@@ -8,6 +8,7 @@ import '../../../../core/settings/app_settings_repository.dart';
 import '../../domain/entities/song.dart';
 import '../../domain/services/library_query.dart';
 import '../../domain/value_objects/song_sort.dart';
+import '../../domain/value_objects/song_filter.dart';
 import '../../infrastructure/artwork_cache_service.dart';
 import '../../infrastructure/data_sources/device_music_data_source.dart';
 import '../../infrastructure/media_permissions_service.dart';
@@ -32,26 +33,36 @@ class LibraryState {
     required this.visibleSongs,
     this.query = '',
     this.sort = SongSort.titleAsc,
+    this.filter = SongFilter.all,
   });
 
   final List<Song> songs;
   final List<Song> visibleSongs;
   final String query;
   final SongSort sort;
+  final SongFilter filter;
 
-  LibraryState copyWith({List<Song>? songs, String? query, SongSort? sort}) {
+  LibraryState copyWith({
+    List<Song>? songs,
+    String? query,
+    SongSort? sort,
+    SongFilter? filter,
+  }) {
     final nextSongs = songs ?? this.songs;
     final nextQuery = query ?? this.query;
     final nextSort = sort ?? this.sort;
+    final nextFilter = filter ?? this.filter;
     return LibraryState(
       songs: nextSongs,
       visibleSongs: filterAndSortSongs(
         nextSongs,
         query: nextQuery,
         sort: nextSort,
+        filter: nextFilter,
       ),
       query: nextQuery,
       sort: nextSort,
+      filter: nextFilter,
     );
   }
 }
@@ -119,6 +130,12 @@ class LibraryController extends AsyncNotifier<LibraryState> {
     if (current == null) return;
     ref.read(appSettingsRepositoryProvider).saveLibrarySortIndex(sort.index);
     state = AsyncData(current.copyWith(sort: sort));
+  }
+
+  void setFilter(SongFilter filter) {
+    final current = state.value;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(filter: filter));
   }
 
   /// Removes a song from the in-memory library after its file was deleted.

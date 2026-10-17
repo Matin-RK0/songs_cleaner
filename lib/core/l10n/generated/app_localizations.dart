@@ -98,6 +98,174 @@ abstract class AppLocalizations {
     Locale('fa'),
   ];
 
+  /// No description provided for @undoAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'بازگردانی'**
+  String get undoAction;
+
+  /// No description provided for @trashRestoreFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'بازگردانی آهنگ انجام نشد.'**
+  String get trashRestoreFailed;
+
+  /// No description provided for @trashTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'زباله‌دان'**
+  String get trashTitle;
+
+  /// No description provided for @trashSettingsSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'بازگردانی یا حذف دائمی آهنگ‌ها'**
+  String get trashSettingsSubtitle;
+
+  /// No description provided for @trashEmpty.
+  ///
+  /// In fa, this message translates to:
+  /// **'زباله‌دان خالی است'**
+  String get trashEmpty;
+
+  /// No description provided for @restoreAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'بازگردانی'**
+  String get restoreAction;
+
+  /// No description provided for @deletePermanentlyAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'حذف دائمی'**
+  String get deletePermanentlyAction;
+
+  /// No description provided for @trashRestoredToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگ بازگردانی شد'**
+  String get trashRestoredToast;
+
+  /// No description provided for @trashDeletedToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگ برای همیشه حذف شد'**
+  String get trashDeletedToast;
+
+  /// No description provided for @songDeleteFailedGeneric.
+  ///
+  /// In fa, this message translates to:
+  /// **'عملیات روی فایل انجام نشد.'**
+  String get songDeleteFailedGeneric;
+
+  /// No description provided for @trashPermanentDeleteWarning.
+  ///
+  /// In fa, this message translates to:
+  /// **'این آهنگ برای همیشه حذف می‌شود و قابل بازگردانی نیست.'**
+  String get trashPermanentDeleteWarning;
+
+  /// No description provided for @emptyTrashAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'خالی کردن زباله‌دان'**
+  String get emptyTrashAction;
+
+  /// No description provided for @trashEmptyWarning.
+  ///
+  /// In fa, this message translates to:
+  /// **'همه آهنگ‌های زباله‌دان برای همیشه حذف می‌شوند.'**
+  String get trashEmptyWarning;
+
+  /// No description provided for @importPlaylists.
+  ///
+  /// In fa, this message translates to:
+  /// **'درون‌ریزی پلی‌لیست‌ها'**
+  String get importPlaylists;
+
+  /// No description provided for @exportPlaylists.
+  ///
+  /// In fa, this message translates to:
+  /// **'برون‌بری پلی‌لیست‌ها'**
+  String get exportPlaylists;
+
+  /// No description provided for @playlistsExported.
+  ///
+  /// In fa, this message translates to:
+  /// **'پلی‌لیست‌ها برون‌بری شدند'**
+  String get playlistsExported;
+
+  /// No description provided for @playlistsImported.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} پلی‌لیست درون‌ریزی شد'**
+  String playlistsImported(int count);
+
+  /// No description provided for @playlistFileInvalid.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل پلی‌لیست معتبر نیست.'**
+  String get playlistFileInvalid;
+
+  /// No description provided for @playlistTransferFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'انتقال پلی‌لیست انجام نشد.'**
+  String get playlistTransferFailed;
+
+  /// No description provided for @sharePlaylists.
+  ///
+  /// In fa, this message translates to:
+  /// **'اشتراک‌گذاری پلی‌لیست‌ها'**
+  String get sharePlaylists;
+
+  /// No description provided for @playlistsShared.
+  ///
+  /// In fa, this message translates to:
+  /// **'پنجره اشتراک‌گذاری باز شد'**
+  String get playlistsShared;
+
+  /// No description provided for @shareSongAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'اشتراک‌گذاری آهنگ'**
+  String get shareSongAction;
+
+  /// No description provided for @songShareOpened.
+  ///
+  /// In fa, this message translates to:
+  /// **'پنجره اشتراک‌گذاری باز شد'**
+  String get songShareOpened;
+
+  /// No description provided for @songShareFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'اشتراک‌گذاری این آهنگ انجام نشد.'**
+  String get songShareFailed;
+
+  /// No description provided for @setAsRingtoneAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'تنظیم به‌عنوان زنگ تماس'**
+  String get setAsRingtoneAction;
+
+  /// No description provided for @ringtoneSetToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'زنگ تماس تغییر کرد'**
+  String get ringtoneSetToast;
+
+  /// No description provided for @ringtonePermissionRequired.
+  ///
+  /// In fa, this message translates to:
+  /// **'مجوز تغییر تنظیمات سیستم را بدهید و دوباره تلاش کنید.'**
+  String get ringtonePermissionRequired;
+
+  /// No description provided for @ringtoneSetFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'تنظیم این آهنگ به‌عنوان زنگ تماس انجام نشد.'**
+  String get ringtoneSetFailed;
+
   /// No description provided for @appName.
   ///
   /// In fa, this message translates to:
@@ -638,6 +806,30 @@ abstract class AppLocalizations {
   /// **'با روشن بودن، دکمه حذف آهنگ از صفحه پخش نمایش داده نمی‌شود.'**
   String get hideQuickDeleteSubtitle;
 
+  /// No description provided for @audioFocusTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'رفتار هنگام وقفه صوتی'**
+  String get audioFocusTitle;
+
+  /// No description provided for @audioFocusPause.
+  ///
+  /// In fa, this message translates to:
+  /// **'توقف و ادامه خودکار'**
+  String get audioFocusPause;
+
+  /// No description provided for @audioFocusDuck.
+  ///
+  /// In fa, this message translates to:
+  /// **'کاهش موقت صدا'**
+  String get audioFocusDuck;
+
+  /// No description provided for @audioFocusIgnore.
+  ///
+  /// In fa, this message translates to:
+  /// **'ادامه پخش'**
+  String get audioFocusIgnore;
+
   /// No description provided for @playlistsTab.
   ///
   /// In fa, this message translates to:
@@ -871,6 +1063,600 @@ abstract class AppLocalizations {
   /// In fa, this message translates to:
   /// **'تایمر خواب: {time}'**
   String sleepTimerRemaining(Object time);
+
+  /// No description provided for @equalizerTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'اکولایزر'**
+  String get equalizerTitle;
+
+  /// No description provided for @equalizerEnabled.
+  ///
+  /// In fa, this message translates to:
+  /// **'فعال‌سازی اکولایزر'**
+  String get equalizerEnabled;
+
+  /// No description provided for @equalizerSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'افکت صوتی اندروید برای پخش‌کننده فعلی'**
+  String get equalizerSubtitle;
+
+  /// No description provided for @equalizerUnavailable.
+  ///
+  /// In fa, this message translates to:
+  /// **'اکولایزر روی این دستگاه در دسترس نیست.'**
+  String get equalizerUnavailable;
+
+  /// No description provided for @equalizerFlat.
+  ///
+  /// In fa, this message translates to:
+  /// **'تخت'**
+  String get equalizerFlat;
+
+  /// No description provided for @equalizerBassBoost.
+  ///
+  /// In fa, this message translates to:
+  /// **'تقویت بیس'**
+  String get equalizerBassBoost;
+
+  /// No description provided for @equalizerRange.
+  ///
+  /// In fa, this message translates to:
+  /// **'محدوده: {min} تا {max} دسی‌بل'**
+  String equalizerRange(Object max, Object min);
+
+  /// No description provided for @gaplessPlaybackTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'پخش بدون فاصله'**
+  String get gaplessPlaybackTitle;
+
+  /// No description provided for @gaplessPlaybackSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'حذف سکوت بین آهنگ‌های آلبوم'**
+  String get gaplessPlaybackSubtitle;
+
+  /// No description provided for @lyricsTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'متن آهنگ'**
+  String get lyricsTitle;
+
+  /// No description provided for @lyricsUnavailable.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل متن .lrc کنار این آهنگ پیدا نشد.'**
+  String get lyricsUnavailable;
+
+  /// No description provided for @historyTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تاریخچه پخش'**
+  String get historyTitle;
+
+  /// No description provided for @historySettingsSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگ‌هایی را که اخیراً گوش داده‌اید ببینید'**
+  String get historySettingsSubtitle;
+
+  /// No description provided for @historyEmptyTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تاریخچه‌ای وجود ندارد'**
+  String get historyEmptyTitle;
+
+  /// No description provided for @historyEmptyMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'پس از شروع پخش، آهنگ‌ها اینجا نمایش داده می‌شوند.'**
+  String get historyEmptyMessage;
+
+  /// No description provided for @clearHistory.
+  ///
+  /// In fa, this message translates to:
+  /// **'پاک‌کردن تاریخچه'**
+  String get clearHistory;
+
+  /// No description provided for @clearHistoryTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تاریخچه پخش پاک شود؟'**
+  String get clearHistoryTitle;
+
+  /// No description provided for @clearHistoryMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'فعالیت‌های اخیر حذف می‌شوند؛ تعداد پخش و علاقه‌مندی‌ها باقی می‌مانند.'**
+  String get clearHistoryMessage;
+
+  /// No description provided for @clearAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'پاک‌کردن'**
+  String get clearAction;
+
+  /// No description provided for @today.
+  ///
+  /// In fa, this message translates to:
+  /// **'امروز'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In fa, this message translates to:
+  /// **'دیروز'**
+  String get yesterday;
+
+  /// No description provided for @playNext.
+  ///
+  /// In fa, this message translates to:
+  /// **'پخش بعدی'**
+  String get playNext;
+
+  /// No description provided for @addToQueue.
+  ///
+  /// In fa, this message translates to:
+  /// **'افزودن به صف'**
+  String get addToQueue;
+
+  /// No description provided for @reorderQueueTooltip.
+  ///
+  /// In fa, this message translates to:
+  /// **'تغییر ترتیب صف'**
+  String get reorderQueueTooltip;
+
+  /// No description provided for @genresTab.
+  ///
+  /// In fa, this message translates to:
+  /// **'سبک‌ها'**
+  String get genresTab;
+
+  /// No description provided for @foldersTab.
+  ///
+  /// In fa, this message translates to:
+  /// **'پوشه‌ها'**
+  String get foldersTab;
+
+  /// No description provided for @unknownGenre.
+  ///
+  /// In fa, this message translates to:
+  /// **'سبک نامشخص'**
+  String get unknownGenre;
+
+  /// No description provided for @unknownFolder.
+  ///
+  /// In fa, this message translates to:
+  /// **'پوشه نامشخص'**
+  String get unknownFolder;
+
+  /// No description provided for @sortByAlbum.
+  ///
+  /// In fa, this message translates to:
+  /// **'بر اساس آلبوم'**
+  String get sortByAlbum;
+
+  /// No description provided for @sortBySize.
+  ///
+  /// In fa, this message translates to:
+  /// **'بر اساس حجم فایل'**
+  String get sortBySize;
+
+  /// No description provided for @sortByTrack.
+  ///
+  /// In fa, this message translates to:
+  /// **'بر اساس شماره ترک'**
+  String get sortByTrack;
+
+  /// No description provided for @filterTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'فیلتر آهنگ‌ها'**
+  String get filterTitle;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In fa, this message translates to:
+  /// **'همه آهنگ‌ها'**
+  String get filterAll;
+
+  /// No description provided for @filterMissingMetadata.
+  ///
+  /// In fa, this message translates to:
+  /// **'اطلاعات ناقص'**
+  String get filterMissingMetadata;
+
+  /// No description provided for @filterShortTracks.
+  ///
+  /// In fa, this message translates to:
+  /// **'کوتاه‌تر از یک دقیقه'**
+  String get filterShortTracks;
+
+  /// No description provided for @filterLongTracks.
+  ///
+  /// In fa, this message translates to:
+  /// **'ده دقیقه یا بیشتر'**
+  String get filterLongTracks;
+
+  /// No description provided for @filterLossless.
+  ///
+  /// In fa, this message translates to:
+  /// **'صدای بدون افت کیفیت'**
+  String get filterLossless;
+
+  /// No description provided for @moreActions.
+  ///
+  /// In fa, this message translates to:
+  /// **'گزینه‌های بیشتر'**
+  String get moreActions;
+
+  /// No description provided for @songDetailsTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'اطلاعات آهنگ'**
+  String get songDetailsTitle;
+
+  /// No description provided for @songNotFound.
+  ///
+  /// In fa, this message translates to:
+  /// **'این آهنگ دیگر در کتابخانه وجود ندارد'**
+  String get songNotFound;
+
+  /// No description provided for @artistLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'خواننده'**
+  String get artistLabel;
+
+  /// No description provided for @albumLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'آلبوم'**
+  String get albumLabel;
+
+  /// No description provided for @genreLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'سبک'**
+  String get genreLabel;
+
+  /// No description provided for @composerLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگساز'**
+  String get composerLabel;
+
+  /// No description provided for @trackNumberLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'شماره ترک'**
+  String get trackNumberLabel;
+
+  /// No description provided for @durationLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'مدت'**
+  String get durationLabel;
+
+  /// No description provided for @fileFormatLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'فرمت'**
+  String get fileFormatLabel;
+
+  /// No description provided for @fileSizeLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'حجم'**
+  String get fileSizeLabel;
+
+  /// No description provided for @folderLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'پوشه'**
+  String get folderLabel;
+
+  /// No description provided for @filePathLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'مسیر فایل'**
+  String get filePathLabel;
+
+  /// No description provided for @modifiedDateLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'آخرین تغییر'**
+  String get modifiedDateLabel;
+
+  /// No description provided for @unknownValue.
+  ///
+  /// In fa, this message translates to:
+  /// **'نامشخص'**
+  String get unknownValue;
+
+  /// No description provided for @editTagsTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'ویرایش تگ‌ها'**
+  String get editTagsTitle;
+
+  /// No description provided for @tagEditorTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'ویرایش اطلاعات آهنگ'**
+  String get tagEditorTitle;
+
+  /// No description provided for @titleLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'عنوان'**
+  String get titleLabel;
+
+  /// No description provided for @lyricsEditorHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'متن زمان‌بندی‌شده را با فرمت .lrc وارد کنید'**
+  String get lyricsEditorHint;
+
+  /// No description provided for @titleRequired.
+  ///
+  /// In fa, this message translates to:
+  /// **'عنوان الزامی است'**
+  String get titleRequired;
+
+  /// No description provided for @trackNumberInvalid.
+  ///
+  /// In fa, this message translates to:
+  /// **'شماره ترک باید بین ۰ و ۹۹۹ باشد'**
+  String get trackNumberInvalid;
+
+  /// No description provided for @tagsSavedToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'اطلاعات آهنگ ذخیره شد'**
+  String get tagsSavedToast;
+
+  /// No description provided for @tagsSaveFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'ذخیره اطلاعات آهنگ انجام نشد'**
+  String get tagsSaveFailed;
+
+  /// No description provided for @renameFileTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تغییر نام فایل'**
+  String get renameFileTitle;
+
+  /// No description provided for @fileNameLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'نام فایل'**
+  String get fileNameLabel;
+
+  /// No description provided for @fileRenamedToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'نام فایل تغییر کرد'**
+  String get fileRenamedToast;
+
+  /// No description provided for @fileRenameFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'تغییر نام فایل انجام نشد'**
+  String get fileRenameFailed;
+
+  /// No description provided for @fileNameRequired.
+  ///
+  /// In fa, this message translates to:
+  /// **'نام فایل الزامی است'**
+  String get fileNameRequired;
+
+  /// No description provided for @fileNameInvalid.
+  ///
+  /// In fa, this message translates to:
+  /// **'نام فایل دارای نویسه نامعتبر است'**
+  String get fileNameInvalid;
+
+  /// No description provided for @fileExtensionCannotChange.
+  ///
+  /// In fa, this message translates to:
+  /// **'تغییر پسوند فایل از اینجا مجاز نیست'**
+  String get fileExtensionCannotChange;
+
+  /// No description provided for @fileAlreadyExists.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایلی با این نام از قبل وجود دارد'**
+  String get fileAlreadyExists;
+
+  /// No description provided for @fileActionsTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'عملیات فایل'**
+  String get fileActionsTitle;
+
+  /// No description provided for @copyFileAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'کپی به پوشه'**
+  String get copyFileAction;
+
+  /// No description provided for @moveFileAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'انتقال به پوشه'**
+  String get moveFileAction;
+
+  /// No description provided for @fileCopiedToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل کپی شد'**
+  String get fileCopiedToast;
+
+  /// No description provided for @fileMovedToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل منتقل شد'**
+  String get fileMovedToast;
+
+  /// No description provided for @fileTransferFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'عملیات فایل انجام نشد'**
+  String get fileTransferFailed;
+
+  /// No description provided for @chooseFolderTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'انتخاب پوشه مقصد'**
+  String get chooseFolderTitle;
+
+  /// No description provided for @chooseThisFolder.
+  ///
+  /// In fa, this message translates to:
+  /// **'انتخاب این پوشه'**
+  String get chooseThisFolder;
+
+  /// No description provided for @parentFolder.
+  ///
+  /// In fa, this message translates to:
+  /// **'پوشه والد'**
+  String get parentFolder;
+
+  /// No description provided for @selectedCount.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} مورد انتخاب‌شده'**
+  String selectedCount(Object count);
+
+  /// No description provided for @selectAll.
+  ///
+  /// In fa, this message translates to:
+  /// **'انتخاب همه'**
+  String get selectAll;
+
+  /// No description provided for @noCollectionsMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'اطلاعات مرتبطی در فایل‌های موسیقی پیدا نشد.'**
+  String get noCollectionsMessage;
+
+  /// No description provided for @deleteSelectedTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} آهنگ حذف شوند؟'**
+  String deleteSelectedTitle(Object count);
+
+  /// No description provided for @deleteSelectedMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل‌های انتخاب‌شده برای همیشه از دستگاه حذف می‌شوند.'**
+  String get deleteSelectedMessage;
+
+  /// No description provided for @deletedSongsCount.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} آهنگ حذف شد'**
+  String deletedSongsCount(Object count);
+
+  /// No description provided for @libraryInsightsTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تحلیل کتابخانه'**
+  String get libraryInsightsTitle;
+
+  /// No description provided for @librarySummary.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} آهنگ · {duration}'**
+  String librarySummary(Object count, Object duration);
+
+  /// No description provided for @missingMetadataMetric.
+  ///
+  /// In fa, this message translates to:
+  /// **'اطلاعات ناقص'**
+  String get missingMetadataMetric;
+
+  /// No description provided for @shortTracksMetric.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل‌های کوتاه'**
+  String get shortTracksMetric;
+
+  /// No description provided for @losslessMetric.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل‌های بدون افت'**
+  String get losslessMetric;
+
+  /// No description provided for @largeFilesMetric.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل‌های بالای ۵۰ مگابایت'**
+  String get largeFilesMetric;
+
+  /// No description provided for @duplicatesTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'نسخه‌های مشابه احتمالی'**
+  String get duplicatesTitle;
+
+  /// No description provided for @potentialDuplicatesCount.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} نسخه قابل حذف پیدا شد'**
+  String potentialDuplicatesCount(Object count);
+
+  /// No description provided for @recoverableSpace.
+  ///
+  /// In fa, this message translates to:
+  /// **'تا {size} فضا قابل آزادسازی است'**
+  String recoverableSpace(Object size);
+
+  /// No description provided for @formatsTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'فرمت‌های صوتی'**
+  String get formatsTitle;
+
+  /// No description provided for @duplicateScannerTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'اسکن آهنگ‌های تکراری'**
+  String get duplicateScannerTitle;
+
+  /// No description provided for @noDuplicatesTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'نسخه مشابهی پیدا نشد'**
+  String get noDuplicatesTitle;
+
+  /// No description provided for @noDuplicatesMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگی با عنوان، خواننده مشخص و مدت مشابه در کتابخانه وجود ندارد.'**
+  String get noDuplicatesMessage;
+
+  /// No description provided for @duplicateGroupSummary.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} نسخه · {size} قابل آزادسازی'**
+  String duplicateGroupSummary(Object count, Object size);
+
+  /// No description provided for @recommendedToKeep.
+  ///
+  /// In fa, this message translates to:
+  /// **'نسخه پیشنهادی برای نگهداری'**
+  String get recommendedToKeep;
+
+  /// No description provided for @deleteDuplicateMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'«{title}» از دستگاه حذف شود؟ پیش از ادامه، فرمت، حجم و مسیر فایل را بررسی کنید.'**
+  String deleteDuplicateMessage(Object title);
 }
 
 class _AppLocalizationsDelegate

@@ -27,6 +27,12 @@ class LibraryStatsController extends Notifier<LibraryStats> {
     await ref.read(libraryStatsRepositoryProvider).saveFavorites(favorites);
   }
 
+  Future<void> addFavorites(Iterable<int> songIds) async {
+    final favorites = <int>{...state.favoriteIds, ...songIds};
+    state = state.copyWith(favoriteIds: favorites);
+    await ref.read(libraryStatsRepositoryProvider).saveFavorites(favorites);
+  }
+
   Future<void> recordPlay(int songId) async {
     final counts = <int, int>{...state.playCounts};
     counts[songId] = (counts[songId] ?? 0) + 1;

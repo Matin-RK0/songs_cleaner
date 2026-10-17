@@ -7,12 +7,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app/app.dart';
 import 'core/settings/app_settings_repository.dart';
 import 'features/player/application/providers/player_controller.dart';
+import 'features/player/application/providers/equalizer_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  final player = AudioPlayer();
+  final equalizer = AndroidEqualizer();
+  final player = AudioPlayer(
+    handleInterruptions: false,
+    audioPipeline: AudioPipeline(androidAudioEffects: [equalizer]),
+  );
   final prefs = await SharedPreferences.getInstance();
   final settings = AppSettingsRepository(prefs);
   final handler = await initializeMusicPlayerHandler(
@@ -28,6 +33,7 @@ Future<void> main() async {
         audioPlayerProvider.overrideWithValue(player),
         sharedPreferencesProvider.overrideWithValue(prefs),
         musicPlayerHandlerProvider.overrideWithValue(handler),
+        androidEqualizerProvider.overrideWithValue(equalizer),
       ],
       child: const SongsCleanerApp(),
     ),

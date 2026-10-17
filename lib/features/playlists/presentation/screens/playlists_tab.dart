@@ -10,8 +10,11 @@ import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../library/application/providers/library_providers.dart';
 import '../../../library/application/providers/library_stats_controller.dart';
+import '../../../library/domain/entities/song.dart';
 import '../../application/providers/playlists_controller.dart';
+import '../../application/playlist_transfer_service.dart';
 import '../../domain/entities/smart_playlist.dart';
+import '../../domain/entities/playlist.dart';
 import '../widgets/playlist_artwork.dart';
 import '../widgets/playlist_card.dart';
 import '../widgets/playlist_name_sheet.dart';
@@ -81,10 +84,34 @@ class PlaylistsTab extends ConsumerWidget {
         SliverToBoxAdapter(
           child: _SectionHeader(
             title: l10n.myPlaylistsSection,
-            trailing: IconButton(
-              tooltip: l10n.newPlaylist,
-              icon: const Icon(Icons.add_rounded),
-              onPressed: () => _createPlaylist(context, ref),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: l10n.importPlaylists,
+                  icon: const Icon(Icons.file_upload_outlined),
+                  onPressed: () => _importPlaylists(context, ref, songs),
+                ),
+                IconButton(
+                  tooltip: l10n.exportPlaylists,
+                  icon: const Icon(Icons.file_download_outlined),
+                  onPressed: custom.isEmpty
+                      ? null
+                      : () => _exportPlaylists(context, custom, songs),
+                ),
+                IconButton(
+                  tooltip: l10n.sharePlaylists,
+                  icon: const Icon(Icons.share_outlined),
+                  onPressed: custom.isEmpty
+                      ? null
+                      : () => _sharePlaylists(context, custom, songs),
+                ),
+                IconButton(
+                  tooltip: l10n.newPlaylist,
+                  icon: const Icon(Icons.add_rounded),
+                  onPressed: () => _createPlaylist(context, ref),
+                ),
+              ],
             ),
           ),
         ),
@@ -173,6 +200,83 @@ class PlaylistsTab extends ConsumerWidget {
     final playlist = await ref.read(playlistsProvider.notifier).create(name);
     if (!context.mounted) return;
     showAppSnackBar(context, l10n.playlistCreatedToast(playlist.name));
+  }
+
+  Future<void> _exportPlaylists(
+    BuildContext context,
+    List<Playlist> playlists,
+    List<Song> songs,
+  ) async {
+    try {
+      final exported = await const PlaylistTransferService().exportToFile(
+        playlists,
+        songs,
+      );
+      if (exported && context.mounted) {
+        showAppSnackBar(context, context.l10n.playlistsExported);
+      }
+    } on Exception {
+      if (context.mounted) {
+        showAppSnackBar(
+          context,
+          context.l10n.playlistTransferFailed,
+          error: true,
+        );
+      }
+    }
+  }
+
+  Future<void> _importPlaylists(
+    BuildContext context,
+    WidgetRef ref,
+    List<Song> songs,
+  ) async {
+    try {
+      final imported = await const PlaylistTransferService().importFromFile();
+      if (imported == null) return;
+      final count = await ref
+          .read(playlistsProvider.notifier)
+          .importPlaylists(imported, songs);
+      if (context.mounted) {
+        showAppSnackBar(context, context.l10n.playlistsImported(count));
+      }
+    } on FormatException {
+      if (context.mounted) {
+        showAppSnackBar(context, context.l10n.playlistFileInvalid, error: true);
+      }
+    } on Exception {
+      if (context.mounted) {
+        showAppSnackBar(
+          context,
+          context.l10n.playlistTransferFailed,
+          error: true,
+        );
+      }
+    }
+  }
+
+  Future<void> _sharePlaylists(
+    BuildContext context,
+    List<Playlist> playlists,
+    List<Song> songs,
+  ) async {
+    try {
+      final shared = await const PlaylistTransferService().sharePlaylists(
+        playlists,
+        songs,
+      );
+      if (shared && context.mounted) {
+        showAppSnackBar(context, context.l10n.playlistsShared);
+      }
+    } on Exception {
+      if (context.mounted) {
+        showAppSnackBar(
+          context,
+          context.l10n.playlistTransferFailed,
+          error: true,
+        );
+      }
+    }
   }
 }
 

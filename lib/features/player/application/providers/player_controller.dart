@@ -10,6 +10,7 @@ import '../../../library/application/providers/library_controller.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../domain/playback_enums.dart';
 import '../../infrastructure/music_player_handler.dart';
+import '../../infrastructure/now_playing_widget_service.dart';
 import '../models/player_state.dart';
 import '../session_resume.dart';
 
@@ -128,6 +129,7 @@ class PlayerController extends Notifier<PlayerState> {
       playing: false,
       repeatMode: handler.repeatMode,
       shuffled: handler.shuffled,
+      gapless: handler.gapless,
       speed: player.speed,
       sleepTimerRemaining: handler.sleepTimerRemaining,
       queueRevision: 0,
@@ -197,6 +199,7 @@ class PlayerController extends Notifier<PlayerState> {
       index: handler.currentIndex,
       repeatMode: handler.repeatMode,
       shuffled: handler.shuffled,
+      gapless: handler.gapless,
       position: plan.position,
       queueRevision: state.queueRevision + 1,
     );
@@ -211,6 +214,13 @@ class PlayerController extends Notifier<PlayerState> {
       repeatMode: handler.repeatMode,
       shuffled: handler.shuffled,
       queueRevision: state.queueRevision + 1,
+    );
+    final current = handler.currentSong;
+    unawaited(
+      const NowPlayingWidgetService().update(
+        title: current?.title,
+        artist: current?.artist,
+      ),
     );
   }
 
@@ -276,9 +286,30 @@ class PlayerController extends Notifier<PlayerState> {
     state = state.copyWith(sleepTimerRemaining: duration);
   }
 
+  Future<void> setGaplessPlayback(bool enabled) async {
+    final handler = await _handler();
+    await handler.setGaplessPlayback(enabled);
+    state = state.copyWith(gapless: enabled);
+  }
+
   Future<bool> removeFromQueue(int songId) async {
     final handler = await _handler();
     return handler.removeSong(songId);
+  }
+
+  Future<bool> addToQueue(Song song) async {
+    final handler = await _handler();
+    return handler.addToQueue(song);
+  }
+
+  Future<bool> playNext(Song song) async {
+    final handler = await _handler();
+    return handler.playNextSong(song);
+  }
+
+  Future<bool> reorderQueue(int oldIndex, int newIndex) async {
+    final handler = await _handler();
+    return handler.reorderQueue(oldIndex, newIndex);
   }
 
   /// Stops playback and empties the queue (used by the queue sheet).
