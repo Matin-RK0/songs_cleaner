@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../library/application/providers/library_controller.dart';
 import '../../../library/application/providers/library_providers.dart';
@@ -106,24 +110,60 @@ class _TagEditorScreenState extends ConsumerState<TagEditorScreen> {
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              context.l10n.lyricsTitle,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextFormField(
-              controller: _lyrics,
-              minLines: 8,
-              maxLines: 18,
-              decoration: InputDecoration(
-                hintText: context.l10n.lyricsEditorHint,
-                alignLabelWithHint: true,
+            DecoratedBox(
+              decoration: ShapeDecoration(
+                color: context.colors.surfaceHigh,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lyrics_outlined,
+                          color: context.colors.primary,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          context.l10n.lyricsTitle,
+                          style: AppTypography.sectionTitle.copyWith(
+                            color: context.colors.textHigh,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextFormField(
+                      controller: _lyrics,
+                      minLines: 8,
+                      maxLines: 18,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
+                      decoration: InputDecoration(
+                        hintText: context.l10n.lyricsEditorHint,
+                        alignLabelWithHint: true,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
             FilledButton.icon(
               onPressed: _saving ? null : () => _save(song),
-              icon: const Icon(Icons.save_rounded),
+              icon: AnimatedSwitcher(
+                duration: AppMotion.fast,
+                child: _saving
+                    ? const SizedBox.square(
+                        key: ValueKey('saving'),
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save_rounded, key: ValueKey('save')),
+              ),
               label: Text(context.l10n.saveAction),
             ),
           ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/app_motion.dart';
@@ -118,13 +119,39 @@ class _LyricLineTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-    child: Text(
-      line.text.isEmpty ? '…' : line.text,
-      textAlign: TextAlign.center,
-      style: (active ? AppTypography.playerTitle : AppTypography.body).copyWith(
-        color: active ? context.colors.primary : context.colors.textMedium,
-        fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+    child: AnimatedContainer(
+      duration: AppMotion.fast,
+      curve: AppMotion.standard,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: ShapeDecoration(
+        color: active
+            ? context.colors.primary.withValues(alpha: 0.10)
+            : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.lg,
+          side: BorderSide(
+            color: active
+                ? context.colors.primary.withValues(alpha: 0.24)
+                : Colors.transparent,
+          ),
+        ),
+      ),
+      child: AnimatedDefaultTextStyle(
+        duration: AppMotion.fast,
+        curve: AppMotion.standard,
+        textAlign: TextAlign.center,
+        style: (active ? AppTypography.playerTitle : AppTypography.body)
+            .copyWith(
+              color: active
+                  ? context.colors.primary
+                  : context.colors.textMedium,
+              fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+            ),
+        child: Text(line.text.isEmpty ? '…' : line.text),
       ),
     ),
   );

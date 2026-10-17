@@ -66,6 +66,42 @@ abstract final class AppTheme {
         ),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
       ),
+      cardTheme: CardThemeData(
+        color: tokens.surfaceHigh,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: tokens.primary,
+          foregroundColor: tokens.onPrimary,
+          elevation: 0,
+          padding: AppSpacing.hMdVSm,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
+          textStyle: AppTypography.buttonLabel,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: tokens.primary,
+          side: BorderSide(color: tokens.outline),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
+          textStyle: AppTypography.buttonLabel,
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: tokens.surfaceHigh,
+        selectedColor: tokens.primary.withValues(alpha: 0.16),
+        side: BorderSide(color: tokens.outline),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.pill),
+        labelStyle: AppTypography.caption.copyWith(color: tokens.textHigh),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: tokens.surfaceHigh,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
+        elevation: 3,
+      ),
       dialogTheme: DialogThemeData(
         backgroundColor: tokens.surface,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
@@ -123,6 +159,18 @@ abstract final class AppTheme {
         subtitleTextStyle: AppTypography.songSubtitle.copyWith(
           color: tokens.textMedium,
         ),
+        minVerticalPadding: AppSpacing.xs,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
+      ),
+      dividerTheme: DividerThemeData(
+        color: tokens.outline.withValues(alpha: 0.65),
+        thickness: 1,
+        space: 1,
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: tokens.primary,
+        selectionColor: tokens.primary.withValues(alpha: 0.24),
+        selectionHandleColor: tokens.primary,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: tokens.primary),
     );

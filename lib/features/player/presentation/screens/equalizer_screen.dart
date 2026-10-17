@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -46,6 +47,12 @@ class _EqualizerBody extends ConsumerWidget {
             shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
           ),
           child: SwitchListTile(
+            secondary: Icon(
+              Icons.equalizer_rounded,
+              color: state.enabled
+                  ? context.colors.primary
+                  : context.colors.textLow,
+            ),
             value: state.enabled,
             onChanged: controller.setEnabled,
             title: Text(context.l10n.equalizerEnabled),
@@ -72,28 +79,38 @@ class _EqualizerBody extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
-        DecoratedBox(
-          decoration: ShapeDecoration(
-            color: context.colors.surfaceHigh,
-            shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: SizedBox(
-              height: 250,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (var index = 0; index < state.bands.length; index++)
-                    Expanded(
-                      child: _BandSlider(
-                        band: state.bands[index],
-                        minGain: state.minGain,
-                        maxGain: state.maxGain,
-                        onChanged: (gain) => controller.setGain(index, gain),
-                      ),
+        AnimatedOpacity(
+          duration: AppMotion.fast,
+          opacity: state.enabled ? 1 : 0.48,
+          child: IgnorePointer(
+            ignoring: !state.enabled,
+            child: DecoratedBox(
+              decoration: ShapeDecoration(
+                color: context.colors.surfaceHigh,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: SizedBox(
+                  height: 250,
+                  child: RepaintBoundary(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (var index = 0; index < state.bands.length; index++)
+                          Expanded(
+                            child: _BandSlider(
+                              band: state.bands[index],
+                              minGain: state.minGain,
+                              maxGain: state.maxGain,
+                              onChanged: (gain) =>
+                                  controller.setGain(index, gain),
+                            ),
+                          ),
+                      ],
                     ),
-                ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -131,11 +148,21 @@ class _BandSlider extends StatelessWidget {
       Expanded(
         child: RotatedBox(
           quarterTurns: 3,
-          child: Slider(
-            value: band.gain.clamp(minGain, maxGain),
-            min: minGain,
-            max: maxGain,
-            onChanged: onChanged,
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: context.colors.primary,
+              inactiveTrackColor: context.colors.outline,
+              thumbColor: context.colors.primary,
+              overlayColor: context.colors.primary.withValues(alpha: 0.14),
+            ),
+            child: Slider(
+              value: band.gain.clamp(minGain, maxGain),
+              min: minGain,
+              max: maxGain,
+              semanticFormatterCallback: (value) =>
+                  '${_frequencyLabel(band.frequency)} ${value.toStringAsFixed(1)} dB',
+              onChanged: onChanged,
+            ),
           ),
         ),
       ),

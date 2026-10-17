@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
@@ -50,31 +51,49 @@ class _DuplicateGroupTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ExpansionTile(
-      initiallyExpanded: index == 0,
-      leading: ArtworkImage(songId: group.recommendedSong.id, size: 48),
-      title: Text(
-        group.recommendedSong.title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppTypography.emphasisTitle.copyWith(
-          color: context.colors.textHigh,
-        ),
+    return Card(
+      margin: const EdgeInsetsDirectional.fromSTEB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        AppSpacing.xs,
       ),
-      subtitle: Text(
-        context.l10n.duplicateGroupSummary(
-          group.songs.length,
-          group.recoverableBytes.readableFileSize,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        initiallyExpanded: index == 0,
+        tilePadding: const EdgeInsetsDirectional.symmetric(
+          horizontal: AppSpacing.md,
         ),
-      ),
-      children: [
-        for (final song in group.songs)
-          _DuplicateSongTile(
-            song: song,
-            recommended: song.id == group.recommendedSong.id,
-            onDelete: () => _delete(context, ref, song),
+        childrenPadding: const EdgeInsetsDirectional.only(
+          bottom: AppSpacing.xs,
+        ),
+        leading: RepaintBoundary(
+          child: ArtworkImage(songId: group.recommendedSong.id, size: 48),
+        ),
+        title: Text(
+          group.recommendedSong.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTypography.emphasisTitle.copyWith(
+            color: context.colors.textHigh,
           ),
-      ],
+        ),
+        subtitle: Text(
+          context.l10n.duplicateGroupSummary(
+            group.songs.length,
+            group.recoverableBytes.readableFileSize,
+          ),
+        ),
+        children: [
+          for (final song in group.songs)
+            _DuplicateSongTile(
+              song: song,
+              recommended: song.id == group.recommendedSong.id,
+              onDelete: () => _delete(context, ref, song),
+            ),
+        ],
+      ),
     );
   }
 
