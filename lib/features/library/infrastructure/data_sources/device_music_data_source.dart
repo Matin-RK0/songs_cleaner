@@ -65,7 +65,11 @@ class DeviceMusicDataSource {
       sizeBytes: model.size,
       dateAddedSeconds: model.dateAdded ?? 0,
       genre: _cleanUnknown(model.genre),
-      genreId: model.genreId ?? -1,
+      // Some Samsung MediaStore rows expose genre_id as text. The current
+      // on_audio_query model casts it to int and throws before returning the
+      // song, while the app does not need the numeric genre id for display or
+      // filtering.
+      genreId: -1,
       composer: _cleanUnknown(model.composer),
       trackNumber: model.track ?? 0,
       dateModifiedSeconds: model.dateModified ?? 0,

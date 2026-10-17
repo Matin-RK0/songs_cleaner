@@ -7,10 +7,11 @@ class NowPlayingWidgetService {
     'com.example.songs_cleaner/now_playing_widget',
   );
 
-  Future<void> update({String? title, String? artist}) async {
+  Future<void> update({String? title, String? artist, int? songId}) async {
     await _channel.invokeMethod<void>('update', {
       'title': title ?? 'Songs Cleaner',
       'artist': artist ?? 'No song playing',
+      'songId': songId,
     });
   }
 }

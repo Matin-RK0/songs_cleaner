@@ -225,6 +225,7 @@ class PlayerController extends Notifier<PlayerState> {
       const NowPlayingWidgetService().update(
         title: current?.title,
         artist: current?.artist,
+        songId: current?.id,
       ),
     );
   }
