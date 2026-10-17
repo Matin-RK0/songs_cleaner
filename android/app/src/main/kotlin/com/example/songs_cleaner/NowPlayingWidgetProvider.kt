@@ -43,6 +43,7 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
         const val TITLE = "title"
         const val ARTIST = "artist"
         const val SONG_ID = "song_id"
+        const val PLAYING = "playing"
 
         fun updateAll(context: Context, manager: AppWidgetManager = AppWidgetManager.getInstance(context)) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -56,6 +57,14 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 } else {
                     setImageViewResource(R.id.widget_artwork, R.drawable.ic_notif_applogo)
                 }
+                setImageViewResource(
+                    R.id.widget_play_pause,
+                    if (prefs.getBoolean(PLAYING, false)) {
+                        R.drawable.ic_widget_pause
+                    } else {
+                        R.drawable.ic_widget_play
+                    },
+                )
                 val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
                 if (launch != null) {
                     setOnClickPendingIntent(
@@ -77,6 +86,10 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     songId.toLong(),
                 )
+                val directArtwork = runCatching {
+                    context.contentResolver.loadThumbnail(songUri, Size(160, 160), null)
+                }.getOrNull()
+                if (directArtwork != null) return directArtwork
                 val albumId = context.contentResolver.query(
                     songUri,
                     arrayOf(MediaStore.Audio.Media.ALBUM_ID),

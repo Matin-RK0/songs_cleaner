@@ -31,14 +31,13 @@ class PlayerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final song = ref.watch(playerProvider.select((state) => state.current));
-    final playing = ref.watch(playerProvider.select((state) => state.playing));
     final hideQuickDelete = ref.watch(hideQuickDeleteProvider);
     return SwipeDownToDismiss(
       child: Scaffold(
         backgroundColor: context.colors.background,
         body: ArtworkAmbientBackground(
           songId: song?.id,
-          visible: song != null && playing,
+          visible: song != null,
           child: SafeArea(
             child: song == null
                 ? const NothingPlayingView()
@@ -46,53 +45,58 @@ class PlayerScreen extends ConsumerWidget {
                     children: [
                       const _HeaderBar(),
                       Expanded(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.lg,
-                            ),
-                            child: RepaintBoundary(
-                              child: AnimatedSwitcher(
-                                duration: AppMotion.normal,
-                                switchInCurve: AppMotion.standard,
-                                switchOutCurve: AppMotion.standard,
-                                transitionBuilder: (child, animation) =>
-                                    FadeTransition(
-                                      opacity: animation,
-                                      child: child,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) => Column(
+                            children: [
+                              Expanded(
+                                child: Center(
+                                  child: RepaintBoundary(
+                                    child: AnimatedSwitcher(
+                                      duration: AppMotion.normal,
+                                      switchInCurve: AppMotion.standard,
+                                      switchOutCurve: AppMotion.standard,
+                                      transitionBuilder: (child, animation) =>
+                                          FadeTransition(
+                                            opacity: animation,
+                                            child: child,
+                                          ),
+                                      child: Hero(
+                                        key: ValueKey(song.id),
+                                        tag: 'song-artwork-${song.id}',
+                                        child: ArtworkImage(
+                                          songId: song.id,
+                                          size: _artworkSize(
+                                            context,
+                                            constraints.maxHeight,
+                                          ),
+                                          borderRadius: AppRadius.xl,
+                                        ),
+                                      ),
                                     ),
-                                child: Hero(
-                                  key: ValueKey(song.id),
-                                  tag: 'song-artwork-${song.id}',
-                                  child: ArtworkImage(
-                                    songId: song.id,
-                                    size: _artworkSize(context),
-                                    borderRadius: AppRadius.xl,
                                   ),
                                 ),
                               ),
-                            ),
+                              AnimatedSwitcher(
+                                duration: AppMotion.fast,
+                                switchInCurve: AppMotion.standard,
+                                switchOutCurve: AppMotion.standard,
+                                child: PlayerTrackInfo(key: ValueKey(song.id)),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              const SeekBar(),
+                              const SizedBox(height: AppSpacing.xs),
+                              const PlayerControlsRow(),
+                              const SizedBox(height: AppSpacing.xs),
+                              _PlayerActions(song: song),
+                              if (!hideQuickDelete) ...[
+                                const SizedBox(height: AppSpacing.xs),
+                                DeleteCurrentButton(song: song),
+                              ],
+                              const SizedBox(height: AppSpacing.xs),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      AnimatedSwitcher(
-                        duration: AppMotion.fast,
-                        switchInCurve: AppMotion.standard,
-                        switchOutCurve: AppMotion.standard,
-                        child: PlayerTrackInfo(key: ValueKey(song.id)),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      const SeekBar(),
-                      const SizedBox(height: AppSpacing.md),
-                      const PlayerControlsRow(),
-                      const SizedBox(height: AppSpacing.xl),
-                      _PlayerActions(song: song),
-                      if (!hideQuickDelete) ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        DeleteCurrentButton(song: song),
-                      ],
-                      const SizedBox(height: AppSpacing.md),
                     ],
                   ),
           ),
@@ -101,9 +105,11 @@ class PlayerScreen extends ConsumerWidget {
     );
   }
 
-  static double _artworkSize(BuildContext context) {
+  static double _artworkSize(BuildContext context, double availableHeight) {
     final shortest = MediaQuery.sizeOf(context).shortestSide;
-    return (shortest - AppSpacing.xl * 2).clamp(200.0, 360.0);
+    final widthBased = shortest - AppSpacing.xl * 2;
+    final heightBased = (availableHeight * 0.72).clamp(120.0, 340.0);
+    return widthBased.clamp(120.0, heightBased).toDouble();
   }
 }
 
@@ -122,59 +128,71 @@ class _PlayerActions extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => ref
-                      .read(libraryStatsProvider.notifier)
-                      .toggleFavorite(song.id),
-                  icon: Icon(
-                    isFavorite
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    color: isFavorite ? colors.danger : null,
-                  ),
-                  label: Text(
-                    isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => showAddToPlaylistSheet(context, song),
-                  icon: const Icon(Icons.playlist_add_rounded),
-                  label: Text(
-                    l10n.addToPlaylist,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
+          _ActionIcon(
+            tooltip: isFavorite
+                ? l10n.removeFromFavorites
+                : l10n.addToFavorites,
+            icon: isFavorite
+                ? Icons.favorite_rounded
+                : Icons.favorite_border_rounded,
+            color: isFavorite ? colors.danger : colors.textMedium,
+            onPressed: () =>
+                ref.read(libraryStatsProvider.notifier).toggleFavorite(song.id),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: TextButton.icon(
-              onPressed: () => showPlaybackOptionsSheet(context, ref),
-              icon: const Icon(Icons.tune_rounded),
-              label: Text(context.l10n.playbackOptionsTitle),
-            ),
+          _ActionIcon(
+            tooltip: l10n.addToPlaylist,
+            icon: Icons.playlist_add_rounded,
+            onPressed: () => showAddToPlaylistSheet(context, song),
           ),
-          TextButton.icon(
+          _ActionIcon(
+            tooltip: l10n.playbackOptionsTitle,
+            icon: Icons.tune_rounded,
+            onPressed: () => showPlaybackOptionsSheet(context, ref),
+          ),
+          _ActionIcon(
+            tooltip: l10n.lyricsTitle,
+            icon: Icons.lyrics_outlined,
             onPressed: () => Navigator.of(
               context,
             ).pushNamed(RouteNames.lyrics, arguments: song),
-            icon: const Icon(Icons.lyrics_outlined),
-            label: Text(context.l10n.lyricsTitle),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionIcon extends StatelessWidget {
+  const _ActionIcon({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.color,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        onPressed: onPressed,
+        iconSize: 24,
+        color: color ?? context.colors.textMedium,
+        splashRadius: 24,
+        icon: AnimatedSwitcher(
+          duration: AppMotion.fast,
+          transitionBuilder: (child, animation) =>
+              ScaleTransition(scale: animation, child: child),
+          child: Icon(icon, key: ValueKey(icon)),
+        ),
       ),
     );
   }

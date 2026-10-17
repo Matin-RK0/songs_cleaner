@@ -178,6 +178,7 @@ class MainActivity : AudioServiceActivity() {
                 .putString(NowPlayingWidgetProvider.TITLE, call.argument<String>("title"))
                 .putString(NowPlayingWidgetProvider.ARTIST, call.argument<String>("artist"))
                 .putInt(NowPlayingWidgetProvider.SONG_ID, call.argument<Int>("songId") ?: -1)
+                .putBoolean(NowPlayingWidgetProvider.PLAYING, call.argument<Boolean>("playing") ?: false)
                 .apply()
             NowPlayingWidgetProvider.updateAll(this)
             result.success(null)

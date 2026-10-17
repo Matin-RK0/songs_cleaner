@@ -226,6 +226,7 @@ class PlayerController extends Notifier<PlayerState> {
         title: current?.title,
         artist: current?.artist,
         songId: current?.id,
+        playing: handler.playbackState.value.playing,
       ),
     );
   }

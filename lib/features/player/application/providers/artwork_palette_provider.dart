@@ -15,10 +15,11 @@ final artworkPaletteProvider = FutureProvider.autoDispose
 
 @immutable
 class ArtworkPalette {
-  const ArtworkPalette(this.first, this.second);
+  const ArtworkPalette(this.first, this.second, this.third);
 
   final Color first;
   final Color second;
+  final Color third;
 }
 
 Future<ArtworkPalette?> _extractPalette(Uint8List bytes) async {
@@ -34,11 +35,8 @@ Future<ArtworkPalette?> _extractPalette(Uint8List bytes) async {
     final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     if (data == null) return null;
     final colors = data.buffer.asUint8List();
-    final half = image.width ~/ 2;
-    return ArtworkPalette(
-      _averageRegion(colors, image.width, image.height, 0, half),
-      _averageRegion(colors, image.width, image.height, half, image.width),
-    );
+    final extracted = _extractDistinctPixels(colors, image.width, image.height);
+    return ArtworkPalette(extracted[0], extracted[1], extracted[2]);
   } catch (_) {
     return null;
   } finally {
@@ -47,37 +45,58 @@ Future<ArtworkPalette?> _extractPalette(Uint8List bytes) async {
   }
 }
 
-Color _averageRegion(
-  Uint8List pixels,
-  int width,
-  int height,
-  int startX,
-  int endX,
-) {
-  var red = 0.0;
-  var green = 0.0;
-  var blue = 0.0;
-  var weightTotal = 0.0;
+List<Color> _extractDistinctPixels(Uint8List pixels, int width, int height) {
+  final allSamples = <Color>[];
+  final samples = <Color>[];
   for (var y = 0; y < height; y += 2) {
-    for (var x = startX; x < endX; x += 2) {
+    for (var x = 0; x < width; x += 2) {
       final offset = (y * width + x) * 4;
-      final r = pixels[offset].toDouble();
-      final g = pixels[offset + 1].toDouble();
-      final b = pixels[offset + 2].toDouble();
-      final max = [r, g, b].reduce((a, value) => a > value ? a : value);
-      final min = [r, g, b].reduce((a, value) => a < value ? a : value);
-      final weight = ((max - min) / 255).clamp(0.25, 1.0);
-      red += r * weight;
-      green += g * weight;
-      blue += b * weight;
-      weightTotal += weight;
+      final color = Color.fromARGB(
+        pixels[offset + 3],
+        pixels[offset],
+        pixels[offset + 1],
+        pixels[offset + 2],
+      );
+      allSamples.add(color);
+      final hsl = HSLColor.fromColor(color);
+      if (hsl.saturation >= 0.16 &&
+          hsl.lightness >= 0.10 &&
+          hsl.lightness <= 0.90) {
+        samples.add(color);
+      }
     }
   }
-  if (weightTotal == 0) return Colors.blueGrey;
-  return Color.fromARGB(
-    255,
-    (red / weightTotal).round(),
-    (green / weightTotal).round(),
-    (blue / weightTotal).round(),
+  if (samples.isEmpty) samples.addAll(allSamples);
+  if (samples.isEmpty) {
+    return const [Colors.black, Colors.black, Colors.black];
+  }
+
+  samples.sort(
+    (first, second) => HSLColor.fromColor(
+      second,
+    ).saturation.compareTo(HSLColor.fromColor(first).saturation),
   );
+  final selected = <Color>[samples.first];
+  while (selected.length < 3) {
+    var best = samples.first;
+    var bestDistance = -1.0;
+    for (final candidate in samples) {
+      final distance = selected
+          .map((color) => _colorDistance(candidate, color))
+          .reduce((a, b) => a < b ? a : b);
+      if (distance > bestDistance) {
+        best = candidate;
+        bestDistance = distance;
+      }
+    }
+    selected.add(best);
+  }
+  return selected;
+}
+
+double _colorDistance(Color first, Color second) {
+  final red = first.r - second.r;
+  final green = first.g - second.g;
+  final blue = first.b - second.b;
+  return red * red + green * green + blue * blue;
 }
