@@ -104,6 +104,7 @@ class SongDetailsScreen extends ConsumerWidget {
                   songId: song.id,
                   size: 180,
                   borderRadius: AppRadius.xl,
+                  semanticLabel: song.title,
                 ),
               ),
             ),

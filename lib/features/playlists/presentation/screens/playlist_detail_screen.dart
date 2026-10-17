@@ -152,6 +152,11 @@ class PlaylistDetailScreen extends ConsumerWidget {
     final colors = context.colors;
     final action = await showModalBottomSheet<_PlaylistAction>(
       context: context,
+      showDragHandle: true,
+      backgroundColor: colors.surfaceHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
+      ),
       builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,

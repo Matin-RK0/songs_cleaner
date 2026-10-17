@@ -18,6 +18,7 @@ class ArtworkImage extends ConsumerWidget {
     this.borderRadius,
     this.expand = false,
     this.resolution,
+    this.semanticLabel,
   });
 
   final int songId;
@@ -28,6 +29,7 @@ class ArtworkImage extends ConsumerWidget {
   /// Overrides the requested source resolution. Small collage cells can pass a
   /// lower value so they are not decoded at the full list-thumbnail size.
   final int? resolution;
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,7 +40,7 @@ class ArtworkImage extends ConsumerWidget {
     final requestSize = resolution ?? math.max(500, size.round());
     final bytes = ref.watch(songArtworkProvider((songId, requestSize)));
     final colors = context.colors;
-    return RepaintBoundary(
+    final image = RepaintBoundary(
       child: SizedBox(
         width: expand ? double.infinity : size,
         height: expand ? double.infinity : size,
@@ -57,6 +59,8 @@ class ArtworkImage extends ConsumerWidget {
         ),
       ),
     );
+    if (semanticLabel == null || semanticLabel!.isEmpty) return image;
+    return Semantics(image: true, label: semanticLabel, child: image);
   }
 
   Widget _image(Uint8List data) {

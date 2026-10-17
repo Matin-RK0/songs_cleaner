@@ -42,8 +42,8 @@ class MiniPlayerBar extends ConsumerWidget {
         onNext: () => ref.read(playerProvider.notifier).next(),
         child: Material(
           color: colors.surfaceHigh,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: AppRadius.lg.topLeft),
           ),
           clipBehavior: Clip.antiAlias,
           child: Stack(
@@ -61,8 +61,8 @@ class MiniPlayerBar extends ConsumerWidget {
                       songId: song.id,
                       size: 300,
                       expand: true,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(14),
+                      borderRadius: BorderRadius.vertical(
+                        top: AppRadius.lg.topLeft,
                       ),
                     ),
                   ),
@@ -316,7 +316,7 @@ class _MiniSongProgressState extends State<_MiniSongProgress> {
             height: 28,
             child: Center(
               child: LinearProgressIndicator(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: AppRadius.pill,
                 value: value,
                 minHeight: 4,
                 backgroundColor: colors.scrimTrack,

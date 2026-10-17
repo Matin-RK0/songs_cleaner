@@ -92,7 +92,11 @@ class SongTile extends ConsumerWidget {
               ),
               minVerticalPadding: 0,
               leading: showArtwork
-                  ? _ArtworkLeading(songId: song.id, isCurrent: isCurrent)
+                  ? _ArtworkLeading(
+                      songId: song.id,
+                      isCurrent: isCurrent,
+                      semanticLabel: song.title,
+                    )
                   : const SizedBox(width: AppSpacing.sm),
               title: Text(
                 song.title,
@@ -221,10 +225,15 @@ class SongTile extends ConsumerWidget {
 }
 
 class _ArtworkLeading extends StatelessWidget {
-  const _ArtworkLeading({required this.songId, required this.isCurrent});
+  const _ArtworkLeading({
+    required this.songId,
+    required this.isCurrent,
+    required this.semanticLabel,
+  });
 
   final int songId;
   final bool isCurrent;
+  final String semanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -233,6 +242,7 @@ class _ArtworkLeading extends StatelessWidget {
       songId: songId,
       size: isCurrent ? artworkSize - (AppSpacing.xs * 2) : artworkSize,
       borderRadius: isCurrent ? AppRadius.md : AppRadius.lg,
+      semanticLabel: semanticLabel,
     );
 
     if (!isCurrent) {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_feedback.dart';
@@ -24,6 +25,11 @@ Future<void> showAddSongsToPlaylistSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    showDragHandle: true,
+    backgroundColor: context.colors.surfaceHigh,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
+    ),
     constraints: BoxConstraints(
       maxHeight: MediaQuery.of(context).size.height * 0.6,
     ),
