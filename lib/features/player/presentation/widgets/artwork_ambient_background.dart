@@ -191,7 +191,7 @@ class _AmbientLightsState extends State<_AmbientLights>
                       centerY: _firstPath.position(_motionController.value).dy,
                       viewportWidth: width,
                       viewportHeight: height,
-                      size: width * 1.70,
+                      size: width * 2.05,
                     ),
                     _light(
                       color: _secondColor.evaluate(_paletteController)!,
@@ -203,7 +203,7 @@ class _AmbientLightsState extends State<_AmbientLights>
                           .dy,
                       viewportWidth: width,
                       viewportHeight: height,
-                      size: width * 1.62,
+                      size: width * 1.95,
                     ),
                     _light(
                       color: _thirdColor.evaluate(_paletteController)!,
@@ -215,7 +215,7 @@ class _AmbientLightsState extends State<_AmbientLights>
                           .dy,
                       viewportWidth: width,
                       viewportHeight: height,
-                      size: width * 1.58,
+                      size: width * 1.88,
                     ),
                   ],
                 );
@@ -245,11 +245,11 @@ class _AmbientLightsState extends State<_AmbientLights>
           shape: BoxShape.circle,
           gradient: RadialGradient(
             colors: [
-              color.withValues(alpha: 0.66),
-              color.withValues(alpha: 0.28),
+              color.withValues(alpha: 0.32),
+              color.withValues(alpha: 0.14),
               Colors.transparent,
             ],
-            stops: const [0, 0.42, 1],
+            stops: const [0, 0.62, 1],
           ),
         ),
       ),
