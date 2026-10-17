@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../library/presentation/widgets/artwork_image.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../player/presentation/widgets/delete_current_button.dart';
+import '../../../player/presentation/widgets/artwork_ambient_background.dart';
 import '../../../player/presentation/widgets/player_controls_row.dart';
 import '../../../player/presentation/widgets/player_state_views.dart';
 import '../../../player/presentation/widgets/player_track_info.dart';
@@ -26,9 +27,8 @@ class LockScreenPlayerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final song = ref.watch(playerProvider.select((state) => state.current));
+    final playing = ref.watch(playerProvider.select((state) => state.playing));
     final l10n = context.l10n;
-    final surface = context.colors.surface;
-
     return PopScope(
       // The route is removed by the lock-screen coordinator (unlock or back);
       // after it is gone tell native to drop the over-keyguard window flags.
@@ -36,9 +36,10 @@ class LockScreenPlayerScreen extends ConsumerWidget {
         if (didPop) ref.read(lockScreenServiceProvider).dismiss();
       },
       child: Scaffold(
-        backgroundColor: surface,
-        body: ColoredBox(
-          color: surface,
+        backgroundColor: context.colors.background,
+        body: ArtworkAmbientBackground(
+          songId: song?.id,
+          visible: song != null && playing,
           child: SafeArea(
             child: song == null
                 ? const NothingPlayingView()

@@ -14,6 +14,7 @@ import '../../../playlists/presentation/widgets/add_to_playlist_sheet.dart';
 import '../../application/providers/player_controller.dart';
 import '../../application/providers/player_preferences_controller.dart';
 import '../widgets/delete_current_button.dart';
+import '../widgets/artwork_ambient_background.dart';
 import '../widgets/player_controls_row.dart';
 import '../widgets/player_state_views.dart';
 import '../widgets/player_track_info.dart';
@@ -30,14 +31,14 @@ class PlayerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final song = ref.watch(playerProvider.select((state) => state.current));
+    final playing = ref.watch(playerProvider.select((state) => state.playing));
     final hideQuickDelete = ref.watch(hideQuickDeleteProvider);
-    final surface = context.colors.surface;
-
     return SwipeDownToDismiss(
       child: Scaffold(
-        backgroundColor: surface,
-        body: ColoredBox(
-          color: surface,
+        backgroundColor: context.colors.background,
+        body: ArtworkAmbientBackground(
+          songId: song?.id,
+          visible: song != null && playing,
           child: SafeArea(
             child: song == null
                 ? const NothingPlayingView()

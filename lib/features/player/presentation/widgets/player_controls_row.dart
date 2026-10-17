@@ -8,8 +8,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../application/providers/player_controller.dart';
 import '../../domain/playback_enums.dart';
 
-/// Transport controls row (shuffle, previous, play/pause, next, repeat).
-/// Shared by the normal player screen and the lock-screen player.
+/// Transport controls shared by the full and lock-screen players.
 class PlayerControlsRow extends ConsumerWidget {
   const PlayerControlsRow({super.key});
 
@@ -28,8 +27,6 @@ class PlayerControlsRow extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Row(
-        // Playback order is physical: previous stays on the left and next on
-        // the right, including when the app is displayed in an RTL locale.
         textDirection: TextDirection.ltr,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -51,21 +48,42 @@ class PlayerControlsRow extends ConsumerWidget {
               color: colors.textHigh,
             ),
           ),
-          DecoratedBox(
-            decoration: ShapeDecoration(
-              color: colors.primary,
-              shape: const CircleBorder(),
-            ),
-            child: IconButton.filled(
-              tooltip: playing ? l10n.pauseTooltip : l10n.playTooltip,
-              onPressed: () => ref.read(playerProvider.notifier).playPause(),
-              icon: AnimatedSwitcher(
-                duration: AppMotion.fast,
-                child: Icon(
-                  playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  key: ValueKey(playing),
-                  size: 34,
-                  color: colors.onPrimary,
+          RepaintBoundary(
+            child: AnimatedScale(
+              scale: playing ? 1 : 0.94,
+              duration: AppMotion.fast,
+              curve: AppMotion.standard,
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: colors.primary,
+                  shape: const CircleBorder(),
+                  shadows: [
+                    BoxShadow(
+                      color: colors.primary.withValues(alpha: 0.22),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  tooltip: playing ? l10n.pauseTooltip : l10n.playTooltip,
+                  onPressed: () =>
+                      ref.read(playerProvider.notifier).playPause(),
+                  constraints: const BoxConstraints.tightFor(
+                    width: 68,
+                    height: 68,
+                  ),
+                  padding: EdgeInsets.zero,
+                  iconSize: 38,
+                  icon: AnimatedSwitcher(
+                    duration: AppMotion.fast,
+                    transitionBuilder: (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                    child: Icon(
+                      playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                      key: ValueKey(playing),
+                      color: colors.onPrimary,
+                    ),
+                  ),
                 ),
               ),
             ),

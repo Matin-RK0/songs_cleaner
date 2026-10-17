@@ -41,9 +41,12 @@ class _SeekBarState extends ConsumerState<SeekBar> {
         children: [
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
               activeTrackColor: colors.primary,
               inactiveTrackColor: colors.outline,
               thumbColor: colors.primary,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
