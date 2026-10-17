@@ -128,7 +128,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
     final hasCurrent = ref.watch(
       playerProvider.select((state) => state.hasCurrent),
     );
-    final onPlaylistsTab = _tabController.index == 5;
+    final onPlaylistsTab = _tabController.index == 3;
 
     return Scaffold(
       appBar: AppBar(
@@ -215,11 +215,14 @@ class _HomeShellState extends ConsumerState<HomeShell>
               ),
             ],
           ),
-          if (hasCurrent)
-            const Align(
-              alignment: Alignment.bottomCenter,
-              child: MiniPlayerBar(),
-            ),
+          AnimatedPositionedDirectional(
+            duration: AppMotion.normal,
+            curve: AppMotion.standard,
+            start: 0,
+            end: 0,
+            bottom: hasCurrent ? 0 : -MiniPlayerBar.height,
+            child: const MiniPlayerBar(),
+          ),
           if (onPlaylistsTab)
             PositionedDirectional(
               end: AppSpacing.md,

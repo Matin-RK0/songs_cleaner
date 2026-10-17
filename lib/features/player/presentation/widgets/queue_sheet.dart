@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
@@ -14,6 +16,11 @@ Future<void> showQueueSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    showDragHandle: true,
+    backgroundColor: context.colors.surfaceHigh,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
+    ),
     constraints: BoxConstraints(
       maxHeight: MediaQuery.of(context).size.height * 0.75,
     ),
@@ -85,65 +92,87 @@ class QueueSheetContent extends ConsumerWidget {
             itemBuilder: (context, index) {
               final song = songs[index];
               final isCurrent = index == currentIndex;
-              return ListTile(
+              return AnimatedContainer(
                 key: ValueKey(song.id),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
+                duration: AppMotion.fast,
+                curve: AppMotion.standard,
+                margin: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 2,
                 ),
-                leading: isCurrent
-                    ? Icon(Icons.graphic_eq_rounded, color: colors.primary)
-                    : Text(
-                        '${index + 1}',
-                        style: AppTypography.caption.copyWith(
-                          color: colors.textLow,
+                decoration: BoxDecoration(
+                  color: isCurrent
+                      ? colors.primary.withValues(alpha: 0.10)
+                      : Colors.transparent,
+                  borderRadius: AppRadius.md,
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                  ),
+                  leading: AnimatedSwitcher(
+                    duration: AppMotion.fast,
+                    child: isCurrent
+                        ? Icon(
+                            Icons.graphic_eq_rounded,
+                            key: const ValueKey('current'),
+                            color: colors.primary,
+                          )
+                        : Text(
+                            '${index + 1}',
+                            key: const ValueKey('index'),
+                            style: AppTypography.caption.copyWith(
+                              color: colors.textLow,
+                            ),
+                          ),
+                  ),
+                  title: Text(
+                    song.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.titleSmall.copyWith(
+                      fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500,
+                      color: isCurrent ? colors.primary : colors.textHigh,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${song.artist.isEmpty ? l10n.unknownArtist : song.artist} · ${song.duration.mmss}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.captionSmall.copyWith(
+                      color: colors.textMedium,
+                    ),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: l10n.removeFromQueueTooltip,
+                        icon: const Icon(
+                          Icons.remove_circle_outline_rounded,
+                          size: 20,
+                        ),
+                        onPressed: () => ref
+                            .read(playerProvider.notifier)
+                            .removeFromQueue(song.id),
+                      ),
+                      ReorderableDragStartListener(
+                        index: index,
+                        child: Tooltip(
+                          message: l10n.reorderQueueTooltip,
+                          child: const Padding(
+                            padding: EdgeInsets.all(AppSpacing.sm),
+                            child: Icon(Icons.drag_handle_rounded),
+                          ),
                         ),
                       ),
-                title: Text(
-                  song.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.titleSmall.copyWith(
-                    fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500,
-                    color: isCurrent ? colors.primary : colors.textHigh,
+                    ],
                   ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    ref.read(playerProvider.notifier).jumpToQueueIndex(index);
+                  },
                 ),
-                subtitle: Text(
-                  '${song.artist.isEmpty ? l10n.unknownArtist : song.artist} · ${song.duration.mmss}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.captionSmall.copyWith(
-                    color: colors.textMedium,
-                  ),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: l10n.removeFromQueueTooltip,
-                      icon: const Icon(
-                        Icons.remove_circle_outline_rounded,
-                        size: 20,
-                      ),
-                      onPressed: () => ref
-                          .read(playerProvider.notifier)
-                          .removeFromQueue(song.id),
-                    ),
-                    ReorderableDragStartListener(
-                      index: index,
-                      child: Tooltip(
-                        message: l10n.reorderQueueTooltip,
-                        child: const Padding(
-                          padding: EdgeInsets.all(AppSpacing.sm),
-                          child: Icon(Icons.drag_handle_rounded),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  ref.read(playerProvider.notifier).jumpToQueueIndex(index);
-                },
               );
             },
           ),

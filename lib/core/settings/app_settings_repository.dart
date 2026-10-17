@@ -243,10 +243,11 @@ class AppSettingsRepository {
   Future<void> saveEqualizerEnabled(bool enabled) =>
       _prefs.setBool(_equalizerEnabledKey, enabled);
 
-  List<double> loadEqualizerGains() => (_prefs.getStringList(_equalizerGainsKey) ?? const [])
-      .map(double.tryParse)
-      .whereType<double>()
-      .toList(growable: false);
+  List<double> loadEqualizerGains() =>
+      (_prefs.getStringList(_equalizerGainsKey) ?? const [])
+          .map(double.tryParse)
+          .whereType<double>()
+          .toList(growable: false);
 
   Future<void> saveEqualizerGains(List<double> gains) => _prefs.setStringList(
     _equalizerGainsKey,

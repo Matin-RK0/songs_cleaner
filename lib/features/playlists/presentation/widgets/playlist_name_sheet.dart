@@ -18,6 +18,11 @@ Future<String?> showPlaylistNameSheet({
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    showDragHandle: true,
+    backgroundColor: context.colors.surfaceHigh,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
+    ),
     builder: (_) => _PlaylistNameSheet(
       title: title,
       actionLabel: actionLabel,

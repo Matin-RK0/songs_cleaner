@@ -5,6 +5,7 @@ import '../../../../app/router/app_router.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../library/presentation/widgets/artwork_image.dart';
@@ -48,65 +49,88 @@ class MiniPlayerBar extends ConsumerWidget {
           child: Stack(
             children: [
               Positioned.fill(
-                child: ArtworkImage(
-                  songId: song.id,
-                  size: 300,
-                  expand: true,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(14),
+                child: RepaintBoundary(
+                  child: AnimatedSwitcher(
+                    duration: AppMotion.normal,
+                    switchInCurve: AppMotion.standard,
+                    switchOutCurve: AppMotion.standard,
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: ArtworkImage(
+                      key: ValueKey(song.id),
+                      songId: song.id,
+                      size: 300,
+                      expand: true,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(14),
+                      ),
+                    ),
                   ),
                 ),
               ),
               Positioned.fill(child: ColoredBox(color: colors.scrim)),
               Stack(
                 children: [
-                  ListTile(
-                    onTap: () => AppRouter.openPlayer(context),
-                    contentPadding: const EdgeInsetsDirectional.fromSTEB(
-                      AppSpacing.md,
-                      0,
-                      AppSpacing.sm,
-                      0,
-                    ),
-                    splashColor: Colors.transparent,
-                    leading: DecoratedBox(
-                      decoration: ShapeDecoration(
-                        color: colors.primary.withValues(alpha: 0.24),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.lg,
+                  AnimatedSwitcher(
+                    duration: AppMotion.normal,
+                    switchInCurve: AppMotion.standard,
+                    switchOutCurve: AppMotion.standard,
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: ListTile(
+                      key: ValueKey(song.id),
+                      onTap: () => AppRouter.openPlayer(context),
+                      contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                        AppSpacing.md,
+                        0,
+                        AppSpacing.sm,
+                        0,
+                      ),
+                      splashColor: Colors.transparent,
+                      leading: DecoratedBox(
+                        decoration: ShapeDecoration(
+                          color: colors.primary.withValues(alpha: 0.24),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.lg,
+                          ),
+                        ),
+                        child: Hero(
+                          tag: 'song-artwork-${song.id}',
+                          child: ArtworkImage(
+                            songId: song.id,
+                            size: 45,
+                            borderRadius: AppRadius.lg,
+                          ),
                         ),
                       ),
-                      child: ArtworkImage(
-                        songId: song.id,
-                        size: 45,
-                        borderRadius: AppRadius.lg,
+                      title: Text(
+                        song.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.emphasisTitle.copyWith(
+                          color: colors.onScrim,
+                        ),
                       ),
-                    ),
-                    title: Text(
-                      song.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.emphasisTitle.copyWith(
-                        color: colors.onScrim,
+                      subtitle: Text(
+                        song.artist.isEmpty ? l10n.unknownArtist : song.artist,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.songSubtitle.copyWith(
+                          color: colors.onScrimMuted,
+                        ),
                       ),
-                    ),
-                    subtitle: Text(
-                      song.artist.isEmpty ? l10n.unknownArtist : song.artist,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.songSubtitle.copyWith(
-                        color: colors.onScrimMuted,
-                      ),
-                    ),
-                    trailing: SizedBox(
-                      width: 50,
-                      height: 50,
-                      child: _PlayPauseProgress(
-                        progress: progress,
-                        playing: playing,
-                        onPressed: () =>
-                            ref.read(playerProvider.notifier).playPause(),
-                        tooltip: playing ? l10n.pauseTooltip : l10n.playTooltip,
+                      trailing: SizedBox(
+                        width: 50,
+                        height: 50,
+                        child: _PlayPauseProgress(
+                          progress: progress,
+                          playing: playing,
+                          onPressed: () =>
+                              ref.read(playerProvider.notifier).playPause(),
+                          tooltip: playing
+                              ? l10n.pauseTooltip
+                              : l10n.playTooltip,
+                        ),
                       ),
                     ),
                   ),

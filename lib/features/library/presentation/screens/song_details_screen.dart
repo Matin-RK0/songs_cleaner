@@ -97,10 +97,15 @@ class SongDetailsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           Center(
-            child: ArtworkImage(
-              songId: song.id,
-              size: 180,
-              borderRadius: AppRadius.xl,
+            child: RepaintBoundary(
+              child: Hero(
+                tag: 'song-details-art-${song.id}',
+                child: ArtworkImage(
+                  songId: song.id,
+                  size: 180,
+                  borderRadius: AppRadius.xl,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

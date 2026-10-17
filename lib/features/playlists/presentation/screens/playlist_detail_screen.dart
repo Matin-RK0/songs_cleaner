@@ -102,6 +102,7 @@ class PlaylistDetailScreen extends ConsumerWidget {
                 SliverToBoxAdapter(
                   child: _PlaylistHeader(
                     songs: songs,
+                    heroTag: customId == null ? null : 'playlist-art-$customId',
                     isCustom: isCustom,
                     onPlayAll: () => ref
                         .read(playerProvider.notifier)
@@ -234,12 +235,14 @@ class _PlaylistHeader extends StatelessWidget {
     required this.isCustom,
     required this.onPlayAll,
     required this.onShuffle,
+    this.heroTag,
   });
 
   final List<Song> songs;
   final bool isCustom;
   final VoidCallback onPlayAll;
   final VoidCallback onShuffle;
+  final String? heroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -263,6 +266,7 @@ class _PlaylistHeader extends StatelessWidget {
             songIds: songs.take(4).map((song) => song.id).toList(),
             size: _artworkSize,
             borderRadius: AppRadius.xl,
+            heroTag: heroTag,
           ),
           const SizedBox(height: AppSpacing.md),
           Text(

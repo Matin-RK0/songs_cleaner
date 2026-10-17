@@ -5,6 +5,7 @@ import '../../../../core/errors/failure.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/l10n/generated/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -62,59 +63,73 @@ class _SongsTabState extends ConsumerState<SongsTab> {
         }
         return Column(
           children: [
-            if (_selectedIds.isNotEmpty)
-              _SelectionToolbar(
-                count: _selectedIds.length,
-                onClose: _clearSelection,
-                onSelectAll: () => setState(() {
-                  _selectedIds
-                    ..clear()
-                    ..addAll(state.visibleSongs.map((song) => song.id));
-                }),
-                onPlay: () {
-                  final selected = state.visibleSongs
-                      .where((song) => _selectedIds.contains(song.id))
-                      .toList(growable: false);
-                  if (selected.isEmpty) return;
-                  ref
-                      .read(playerProvider.notifier)
-                      .playFromList(selected, startIndex: 0);
-                  _clearSelection();
-                },
-                onQueue: () async {
-                  final selected = state.visibleSongs.where(
-                    (song) => _selectedIds.contains(song.id),
-                  );
-                  for (final song in selected) {
-                    await ref.read(playerProvider.notifier).addToQueue(song);
-                  }
-                  if (mounted) _clearSelection();
-                },
-                onFavorite: () async {
-                  await ref
-                      .read(libraryStatsProvider.notifier)
-                      .addFavorites(_selectedIds);
-                  if (mounted) _clearSelection();
-                },
-                onPlaylist: () async {
-                  final selected = state.visibleSongs
-                      .where((song) => _selectedIds.contains(song.id))
-                      .toList(growable: false);
-                  await showAddSongsToPlaylistSheet(context, selected);
-                  if (mounted) _clearSelection();
-                },
-                onDelete: () => _deleteSelected(
-                  state.visibleSongs
-                      .where((song) => _selectedIds.contains(song.id))
-                      .toList(growable: false),
-                ),
-                onInfo: _selectedIds.length == 1
-                    ? () => Navigator.of(context).pushNamed(
-                        RouteNames.songDetails,
-                        arguments: _selectedIds.single,
-                      )
-                    : null,
+            AnimatedSwitcher(
+              duration: AppMotion.fast,
+              switchInCurve: AppMotion.standard,
+              switchOutCurve: AppMotion.standard,
+              transitionBuilder: (child, animation) => SizeTransition(
+                sizeFactor: animation,
+                alignment: Alignment.topCenter,
+                child: FadeTransition(opacity: animation, child: child),
               ),
+              child: _selectedIds.isEmpty
+                  ? const SizedBox.shrink(key: ValueKey('no-selection'))
+                  : _SelectionToolbar(
+                      key: const ValueKey('selection'),
+                      count: _selectedIds.length,
+                      onClose: _clearSelection,
+                      onSelectAll: () => setState(() {
+                        _selectedIds
+                          ..clear()
+                          ..addAll(state.visibleSongs.map((song) => song.id));
+                      }),
+                      onPlay: () {
+                        final selected = state.visibleSongs
+                            .where((song) => _selectedIds.contains(song.id))
+                            .toList(growable: false);
+                        if (selected.isEmpty) return;
+                        ref
+                            .read(playerProvider.notifier)
+                            .playFromList(selected, startIndex: 0);
+                        _clearSelection();
+                      },
+                      onQueue: () async {
+                        final selected = state.visibleSongs.where(
+                          (song) => _selectedIds.contains(song.id),
+                        );
+                        for (final song in selected) {
+                          await ref
+                              .read(playerProvider.notifier)
+                              .addToQueue(song);
+                        }
+                        if (mounted) _clearSelection();
+                      },
+                      onFavorite: () async {
+                        await ref
+                            .read(libraryStatsProvider.notifier)
+                            .addFavorites(_selectedIds);
+                        if (mounted) _clearSelection();
+                      },
+                      onPlaylist: () async {
+                        final selected = state.visibleSongs
+                            .where((song) => _selectedIds.contains(song.id))
+                            .toList(growable: false);
+                        await showAddSongsToPlaylistSheet(context, selected);
+                        if (mounted) _clearSelection();
+                      },
+                      onDelete: () => _deleteSelected(
+                        state.visibleSongs
+                            .where((song) => _selectedIds.contains(song.id))
+                            .toList(growable: false),
+                      ),
+                      onInfo: _selectedIds.length == 1
+                          ? () => Navigator.of(context).pushNamed(
+                              RouteNames.songDetails,
+                              arguments: _selectedIds.single,
+                            )
+                          : null,
+                    ),
+            ),
             Expanded(
               child: state.visibleSongs.isEmpty
                   ? AppEmptyState(
@@ -212,6 +227,7 @@ class _SongsTabState extends ConsumerState<SongsTab> {
 
 class _SelectionToolbar extends StatelessWidget {
   const _SelectionToolbar({
+    super.key,
     required this.count,
     required this.onClose,
     required this.onSelectAll,
@@ -326,7 +342,11 @@ Future<void> showSortSheet(BuildContext context, WidgetRef ref) async {
 
   final selected = await showModalBottomSheet<SongSort>(
     context: context,
-    shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+    showDragHandle: true,
+    backgroundColor: colors.surfaceHigh,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
+    ),
     builder: (sheetContext) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -363,6 +383,9 @@ Future<void> showSortSheet(BuildContext context, WidgetRef ref) async {
 
   if (selected != null) {
     ref.read(libraryProvider.notifier).setSort(selected);
+    if (context.mounted) {
+      showAppSnackBar(context, l10n.sortApplied(_sortLabel(l10n, selected)));
+    }
   }
 }
 
@@ -381,6 +404,10 @@ Future<void> showFilterSheet(BuildContext context, WidgetRef ref) async {
   final selected = await showModalBottomSheet<SongFilter>(
     context: context,
     showDragHandle: true,
+    backgroundColor: context.colors.surfaceHigh,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
+    ),
     builder: (sheetContext) => SafeArea(
       child: RadioGroup<SongFilter>(
         groupValue: current,
@@ -400,6 +427,7 @@ Future<void> showFilterSheet(BuildContext context, WidgetRef ref) async {
             for (final filter in SongFilter.values)
               RadioListTile<SongFilter>(
                 value: filter,
+                activeColor: context.colors.primary,
                 title: Text(_filterLabel(context.l10n, filter)),
               ),
           ],
@@ -409,6 +437,9 @@ Future<void> showFilterSheet(BuildContext context, WidgetRef ref) async {
   );
   if (selected != null) {
     ref.read(libraryProvider.notifier).setFilter(selected);
+    if (context.mounted) {
+      showAppSnackBar(context, context.l10n.filterApplied);
+    }
   }
 }
 

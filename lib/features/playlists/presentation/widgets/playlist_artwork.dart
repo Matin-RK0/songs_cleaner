@@ -15,12 +15,14 @@ class PlaylistArtwork extends ConsumerWidget {
     this.size = 56,
     this.borderRadius,
     this.expand = false,
+    this.heroTag,
   });
 
   final List<int> songIds;
   final double size;
   final BorderRadius? borderRadius;
   final bool expand;
+  final String? heroTag;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,8 +38,13 @@ class PlaylistArtwork extends ConsumerWidget {
       ),
     );
 
-    if (expand) return content;
-    return SizedBox.square(dimension: size, child: content);
+    final sized = expand
+        ? content
+        : SizedBox.square(dimension: size, child: content);
+    if (heroTag == null) return RepaintBoundary(child: sized);
+    return RepaintBoundary(
+      child: Hero(tag: heroTag!, child: sized),
+    );
   }
 
   Widget _collage(AppColorTokens colors, List<int> covers) {

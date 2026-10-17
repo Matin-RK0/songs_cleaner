@@ -98,6 +98,17 @@ class AppLocalizationsFa extends AppLocalizations {
   String get ringtoneSetFailed => 'تنظیم این آهنگ به‌عنوان زنگ تماس انجام نشد.';
 
   @override
+  String sortApplied(String value) {
+    return 'مرتب‌سازی بر اساس $value';
+  }
+
+  @override
+  String get filterApplied => 'فیلتر به‌روزرسانی شد';
+
+  @override
+  String get historyClearedToast => 'تاریخچه پخش پاک شد';
+
+  @override
   String get appName => 'پاک‌کن آهنگ';
 
   @override

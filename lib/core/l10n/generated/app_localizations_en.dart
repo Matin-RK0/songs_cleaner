@@ -98,6 +98,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ringtoneSetFailed => 'Could not set this song as ringtone.';
 
   @override
+  String sortApplied(String value) {
+    return 'Sorted by $value';
+  }
+
+  @override
+  String get filterApplied => 'Filter updated';
+
+  @override
+  String get historyClearedToast => 'Play history cleared';
+
+  @override
   String get appName => 'Songs Cleaner';
 
   @override

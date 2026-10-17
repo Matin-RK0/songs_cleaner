@@ -266,6 +266,24 @@ abstract class AppLocalizations {
   /// **'تنظیم این آهنگ به‌عنوان زنگ تماس انجام نشد.'**
   String get ringtoneSetFailed;
 
+  /// No description provided for @sortApplied.
+  ///
+  /// In fa, this message translates to:
+  /// **'مرتب‌سازی بر اساس {value}'**
+  String sortApplied(String value);
+
+  /// No description provided for @filterApplied.
+  ///
+  /// In fa, this message translates to:
+  /// **'فیلتر به‌روزرسانی شد'**
+  String get filterApplied;
+
+  /// No description provided for @historyClearedToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'تاریخچه پخش پاک شد'**
+  String get historyClearedToast;
+
   /// No description provided for @appName.
   ///
   /// In fa, this message translates to:

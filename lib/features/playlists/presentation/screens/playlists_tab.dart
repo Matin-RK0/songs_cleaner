@@ -165,6 +165,7 @@ class PlaylistsTab extends ConsumerWidget {
                   cover: PlaylistArtwork(
                     songIds: playlist.songIds,
                     expand: true,
+                    heroTag: 'playlist-art-${playlist.id}',
                   ),
                   onTap: () => _openCustom(context, playlist.id),
                 );

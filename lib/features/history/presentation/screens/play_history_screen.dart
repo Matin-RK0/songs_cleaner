@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../library/presentation/widgets/song_tile.dart';
 import '../../../player/application/providers/player_controller.dart';
@@ -45,25 +47,19 @@ class PlayHistoryScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.l10n.clearHistoryTitle),
-        content: Text(context.l10n.clearHistoryMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(context.l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(context.l10n.clearAction),
-          ),
-        ],
-      ),
+      title: context.l10n.clearHistoryTitle,
+      message: context.l10n.clearHistoryMessage,
+      confirmLabel: context.l10n.clearAction,
+      cancelLabel: context.l10n.cancel,
+      destructive: true,
     );
     if (confirmed == true) {
       await ref.read(playHistoryProvider.notifier).clear();
+      if (context.mounted) {
+        showAppSnackBar(context, context.l10n.historyClearedToast);
+      }
     }
   }
 }
@@ -97,11 +93,35 @@ class _HistoryList extends ConsumerWidget {
                   AppSpacing.md,
                   AppSpacing.xs,
                 ),
-                child: Text(
-                  _dayLabel(context, item.entry.playedAt),
-                  style: AppTypography.sectionLabel.copyWith(
-                    color: context.colors.primary,
-                  ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded,
+                      size: 15,
+                      color: context.colors.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    DecoratedBox(
+                      decoration: ShapeDecoration(
+                        color: context.colors.primary.withValues(alpha: 0.10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.pill,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.xs,
+                        ),
+                        child: Text(
+                          _dayLabel(context, item.entry.playedAt),
+                          style: AppTypography.sectionLabel.copyWith(
+                            color: context.colors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             SongTile(

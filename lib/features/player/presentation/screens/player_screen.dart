@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -49,16 +50,37 @@ class PlayerScreen extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(
                               horizontal: AppSpacing.lg,
                             ),
-                            child: ArtworkImage(
-                              songId: song.id,
-                              size: _artworkSize(context),
-                              borderRadius: AppRadius.xl,
+                            child: RepaintBoundary(
+                              child: AnimatedSwitcher(
+                                duration: AppMotion.normal,
+                                switchInCurve: AppMotion.standard,
+                                switchOutCurve: AppMotion.standard,
+                                transitionBuilder: (child, animation) =>
+                                    FadeTransition(
+                                      opacity: animation,
+                                      child: child,
+                                    ),
+                                child: Hero(
+                                  key: ValueKey(song.id),
+                                  tag: 'song-artwork-${song.id}',
+                                  child: ArtworkImage(
+                                    songId: song.id,
+                                    size: _artworkSize(context),
+                                    borderRadius: AppRadius.xl,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      const PlayerTrackInfo(),
+                      AnimatedSwitcher(
+                        duration: AppMotion.fast,
+                        switchInCurve: AppMotion.standard,
+                        switchOutCurve: AppMotion.standard,
+                        child: PlayerTrackInfo(key: ValueKey(song.id)),
+                      ),
                       const SizedBox(height: AppSpacing.sm),
                       const SeekBar(),
                       const SizedBox(height: AppSpacing.md),

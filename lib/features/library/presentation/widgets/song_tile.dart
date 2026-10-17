@@ -57,59 +57,73 @@ class SongTile extends ConsumerWidget {
         end: AppSpacing.sm,
         bottom: AppSpacing.xs,
       ),
-      child: Material(
-        // Keep the selected row's surface identical to every other row;
-        // the active title and equalizer provide the playback indication.
-        color: selected ? colors.surfaceHigh : Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onSelectionLongPress ?? () => _showActions(context, ref),
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          hoverColor: Colors.transparent,
-          focusColor: Colors.transparent,
-          child: ListTile(
-            contentPadding: const EdgeInsetsDirectional.fromSTEB(
-              AppSpacing.sm,
-              AppSpacing.xs,
-              AppSpacing.sm,
-              AppSpacing.xs,
+      child: AnimatedContainer(
+        duration: AppMotion.fast,
+        curve: AppMotion.standard,
+        decoration: ShapeDecoration(
+          color: selected ? colors.surfaceHigh : Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.lg,
+            side: BorderSide(
+              color: selected
+                  ? colors.primary.withValues(alpha: 0.35)
+                  : Colors.transparent,
             ),
-            minVerticalPadding: 0,
-            leading: showArtwork
-                ? _ArtworkLeading(songId: song.id, isCurrent: isCurrent)
-                : const SizedBox(width: AppSpacing.sm),
-            title: Text(
-              song.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.songTitle.copyWith(
-                fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
-                color: isCurrent ? colors.primary : colors.textHigh,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            onLongPress:
+                onSelectionLongPress ?? () => _showActions(context, ref),
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            focusColor: Colors.transparent,
+            child: ListTile(
+              contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                AppSpacing.sm,
+                AppSpacing.xs,
+                AppSpacing.sm,
+                AppSpacing.xs,
               ),
-            ),
-            subtitle: Text(
-              '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.songSubtitle.copyWith(
-                color: colors.textMedium,
+              minVerticalPadding: 0,
+              leading: showArtwork
+                  ? _ArtworkLeading(songId: song.id, isCurrent: isCurrent)
+                  : const SizedBox(width: AppSpacing.sm),
+              title: Text(
+                song.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.songTitle.copyWith(
+                  fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
+                  color: isCurrent ? colors.primary : colors.textHigh,
+                ),
               ),
-            ),
-            trailing: selected
-                ? Icon(Icons.check_circle_rounded, color: colors.primary)
-                : isCurrent
-                ? _FakeEqualizer(playing: playing)
-                : trailingLabel == null
-                ? null
-                : Text(
-                    trailingLabel!,
-                    style: AppTypography.captionSmall.copyWith(
-                      color: colors.textLow,
+              subtitle: Text(
+                '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.songSubtitle.copyWith(
+                  color: colors.textMedium,
+                ),
+              ),
+              trailing: selected
+                  ? Icon(Icons.check_circle_rounded, color: colors.primary)
+                  : isCurrent
+                  ? _FakeEqualizer(playing: playing)
+                  : trailingLabel == null
+                  ? null
+                  : Text(
+                      trailingLabel!,
+                      style: AppTypography.captionSmall.copyWith(
+                        color: colors.textLow,
+                      ),
                     ),
-                  ),
+            ),
           ),
         ),
       ),
@@ -121,6 +135,11 @@ class SongTile extends ConsumerWidget {
     final colors = context.colors;
     showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
+      backgroundColor: colors.surfaceHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
+      ),
       builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -216,7 +235,9 @@ class _ArtworkLeading extends StatelessWidget {
       borderRadius: isCurrent ? AppRadius.md : AppRadius.lg,
     );
 
-    if (!isCurrent) return artwork;
+    if (!isCurrent) {
+      return Hero(tag: 'song-details-art-$songId', child: artwork);
+    }
 
     return SizedBox.square(
       dimension: artworkSize,
@@ -229,7 +250,7 @@ class _ArtworkLeading extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xs),
-          child: artwork,
+          child: Hero(tag: 'song-details-art-$songId', child: artwork),
         ),
       ),
     );

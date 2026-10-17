@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../player/presentation/widgets/mini_player_bar.dart';
@@ -42,15 +46,33 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ),
         titleSpacing: 0,
         title: Padding(
-          padding: const EdgeInsets.only(right: 16),
+          padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
           child: TextField(
             controller: _controller,
             autofocus: true,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               hintText: context.l10n.searchHint,
-              border: InputBorder.none,
-              filled: false,
+              prefixIcon: const Icon(Icons.search_rounded),
+              filled: true,
+              fillColor: context.colors.surfaceHigh,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: AppRadius.pill,
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AppRadius.pill,
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: AppRadius.pill,
+                borderSide: BorderSide(
+                  color: context.colors.primary.withValues(alpha: 0.45),
+                ),
+              ),
             ),
             onChanged: (value) => setState(() => _query = value),
           ),
@@ -101,13 +123,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     message: context.l10n.noResultsMessage,
                   );
                 }
-                return SongListView(
-                  songs: songs,
-                  currentSongId: currentId,
-                  physics: const BouncingScrollPhysics(),
-                  onSongTap: (items, index) => ref
-                      .read(playerProvider.notifier)
-                      .playFromList(items, startIndex: index),
+                return AnimatedSwitcher(
+                  duration: AppMotion.fast,
+                  switchInCurve: AppMotion.standard,
+                  switchOutCurve: AppMotion.standard,
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
+                  child: SongListView(
+                    key: ValueKey('${_query.trim()}-${songs.length}'),
+                    songs: songs,
+                    currentSongId: currentId,
+                    physics: const ClampingScrollPhysics(),
+                    onSongTap: (items, index) => ref
+                        .read(playerProvider.notifier)
+                        .playFromList(items, startIndex: index),
+                  ),
                 );
               },
             ),
