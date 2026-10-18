@@ -55,6 +55,27 @@ class SongTile extends ConsumerWidget {
     // continuing to bob.
     final playing =
         isCurrent && ref.watch(playerProvider.select((state) => state.playing));
+    final trailing = selected
+        ? SizedBox.square(
+            dimension: kMinInteractiveDimension,
+            child: Center(
+              child: Icon(Icons.check_circle_rounded, color: colors.primary),
+            ),
+          )
+        : onPreview != null
+        ? IconButton(
+            tooltip: l10n.playTooltip,
+            onPressed: onPreview,
+            icon: const Icon(Icons.play_circle_outline_rounded),
+          )
+        : isCurrent
+        ? _FakeEqualizer(playing: playing)
+        : trailingLabel == null
+        ? null
+        : Text(
+            trailingLabel!,
+            style: AppTypography.captionSmall.copyWith(color: colors.textLow),
+          );
     return Padding(
       padding: const EdgeInsetsDirectional.only(
         start: AppSpacing.sm,
@@ -90,65 +111,57 @@ class SongTile extends ConsumerWidget {
               highlightColor: Colors.transparent,
               hoverColor: Colors.transparent,
               focusColor: Colors.transparent,
-              child: ListTile(
-                titleAlignment: ListTileTitleAlignment.center,
-                contentPadding: const EdgeInsetsDirectional.fromSTEB(
-                  AppSpacing.sm,
-                  AppSpacing.xs,
-                  AppSpacing.sm,
-                  AppSpacing.xs,
+              child: Padding(
+                padding: const EdgeInsetsDirectional.symmetric(
+                  horizontal: AppSpacing.sm,
                 ),
-                minVerticalPadding: 0,
-                leading: showArtwork
-                    ? _ArtworkLeading(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (showArtwork)
+                      _ArtworkLeading(
                         songId: song.id,
                         isCurrent: isCurrent,
                         semanticLabel: song.title,
                       )
-                    : const SizedBox(width: AppSpacing.sm),
-                title: Text(
-                  song.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.songTitle.copyWith(
-                    fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
-                    color: isCurrent ? colors.primary : colors.textHigh,
-                  ),
-                ),
-                subtitle: Text(
-                  '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.songSubtitle.copyWith(
-                    color: colors.textMedium,
-                  ),
-                ),
-                trailing: selected
-                    ? SizedBox.square(
-                        dimension: kMinInteractiveDimension,
-                        child: Center(
-                          child: Icon(
-                            Icons.check_circle_rounded,
-                            color: colors.primary,
+                    else
+                      const SizedBox(width: AppSpacing.sm),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            song.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.songTitle.copyWith(
+                              fontWeight: isCurrent
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
+                              color: isCurrent
+                                  ? colors.primary
+                                  : colors.textHigh,
+                            ),
                           ),
-                        ),
-                      )
-                    : onPreview != null
-                    ? IconButton(
-                        tooltip: l10n.playTooltip,
-                        onPressed: onPreview,
-                        icon: const Icon(Icons.play_circle_outline_rounded),
-                      )
-                    : isCurrent
-                    ? _FakeEqualizer(playing: playing)
-                    : trailingLabel == null
-                    ? null
-                    : Text(
-                        trailingLabel!,
-                        style: AppTypography.captionSmall.copyWith(
-                          color: colors.textLow,
-                        ),
+                          Text(
+                            '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.songSubtitle.copyWith(
+                              color: colors.textMedium,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    if (trailing != null) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      trailing,
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
