@@ -33,4 +33,8 @@ class NowPlayingWidgetService {
       }
     });
   }
+
+  void disposeActionListener() {
+    _channel.setMethodCallHandler(null);
+  }
 }

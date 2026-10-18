@@ -232,12 +232,13 @@ class PlaylistsTab extends ConsumerWidget {
     WidgetRef ref,
     List<Song> songs,
   ) async {
+    final importedPlaylistName = context.l10n.importedPlaylistName;
     try {
       final imported = await const PlaylistTransferService().importFromFile();
       if (imported == null) return;
       final count = await ref
           .read(playlistsProvider.notifier)
-          .importPlaylists(imported, songs);
+          .importPlaylists(imported, songs, importedPlaylistName);
       if (context.mounted) {
         showAppSnackBar(context, context.l10n.playlistsImported(count));
       }

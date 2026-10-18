@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/playlist.dart';
@@ -14,6 +12,8 @@ final playlistsProvider = NotifierProvider<PlaylistsController, List<Playlist>>(
 );
 
 class PlaylistsController extends Notifier<List<Playlist>> {
+  Future<void> _pendingSave = Future<void>.value();
+
   @override
   List<Playlist> build() {
     final repository = ref.watch(playlistRepositoryProvider);
@@ -55,6 +55,7 @@ class PlaylistsController extends Notifier<List<Playlist>> {
   Future<int> importPlaylists(
     List<ImportedPlaylist> imported,
     List<Song> songs,
+    String fallbackName,
   ) async {
     final songsByPath = {for (final song in songs) song.path: song.id};
     var added = 0;
@@ -69,9 +70,7 @@ class PlaylistsController extends Notifier<List<Playlist>> {
       next.add(
         Playlist(
           id: '${now.microsecondsSinceEpoch}_${added++}',
-          name: item.name.trim().isEmpty
-              ? 'Imported playlist'
-              : item.name.trim(),
+          name: item.name.trim().isEmpty ? fallbackName : item.name.trim(),
           songIds: List.unmodifiable(ids),
           createdAt: now,
           updatedAt: now,
@@ -155,7 +154,11 @@ class PlaylistsController extends Notifier<List<Playlist>> {
   }
 
   void _commit(List<Playlist> playlists) {
-    state = List.unmodifiable(playlists);
-    unawaited(ref.read(playlistRepositoryProvider).savePlaylists(state));
+    final snapshot = List<Playlist>.unmodifiable(playlists);
+    state = snapshot;
+    final repository = ref.read(playlistRepositoryProvider);
+    _pendingSave = _pendingSave
+        .catchError((Object _) {})
+        .then((_) => repository.savePlaylists(snapshot));
   }
 }

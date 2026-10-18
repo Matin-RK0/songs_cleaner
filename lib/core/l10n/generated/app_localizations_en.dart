@@ -64,6 +64,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get importedPlaylistName => 'Imported playlist';
+
+  @override
   String get playlistFileInvalid => 'This playlist file is invalid.';
 
   @override
@@ -328,7 +331,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get primaryColorSubtitle => 'Choose the app accent color';
 
   @override
-  String get primaryColorOption => 'Primary color option';
+  String primaryColorOption(int index) {
+    return 'Primary color option $index';
+  }
 
   @override
   String get themeModeSystem => 'System';

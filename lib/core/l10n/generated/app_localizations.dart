@@ -200,6 +200,12 @@ abstract class AppLocalizations {
   /// **'{count} پلی‌لیست درون‌ریزی شد'**
   String playlistsImported(int count);
 
+  /// No description provided for @importedPlaylistName.
+  ///
+  /// In fa, this message translates to:
+  /// **'پلی‌لیست درون‌ریزی‌شده'**
+  String get importedPlaylistName;
+
   /// No description provided for @playlistFileInvalid.
   ///
   /// In fa, this message translates to:
@@ -695,8 +701,8 @@ abstract class AppLocalizations {
   /// No description provided for @primaryColorOption.
   ///
   /// In fa, this message translates to:
-  /// **'گزینه رنگ اصلی'**
-  String get primaryColorOption;
+  /// **'گزینه رنگ اصلی {index}'**
+  String primaryColorOption(int index);
 
   /// No description provided for @themeModeSystem.
   ///

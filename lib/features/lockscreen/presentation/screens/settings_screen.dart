@@ -232,7 +232,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   final isSelected = index == current;
                   final color = AppPrimaryPalette.colors[index];
                   return Semantics(
-                    label: l10n.primaryColorOption,
+                    label: l10n.primaryColorOption(index + 1),
                     selected: isSelected,
                     button: true,
                     child: InkResponse(

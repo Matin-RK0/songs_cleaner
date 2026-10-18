@@ -29,12 +29,13 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription<LockScreenEvent>? _eventsSub;
   bool _lockScreenOpen = false;
+  final NowPlayingWidgetService _widgetService =
+      const NowPlayingWidgetService();
 
   @override
   void initState() {
     super.initState();
-    const widgetService = NowPlayingWidgetService();
-    widgetService.listenToActions(_handlePendingWidgetActionValue);
+    _widgetService.listenToActions(_handlePendingWidgetActionValue);
     final service = ref.read(lockScreenServiceProvider);
     _eventsSub = service.events.listen(_onLockScreenEvent);
 
@@ -57,7 +58,7 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   }
 
   Future<void> _handlePendingWidgetAction() async {
-    final action = await const NowPlayingWidgetService().consumeAction();
+    final action = await _widgetService.consumeAction();
     await _handlePendingWidgetActionValue(action);
   }
 
@@ -77,6 +78,7 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   @override
   void dispose() {
     _eventsSub?.cancel();
+    _widgetService.disposeActionListener();
     super.dispose();
   }
 

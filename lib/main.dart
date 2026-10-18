@@ -42,9 +42,18 @@ Future<void> main() async {
         extras: {'path': song.path},
       );
       if (parentId == 'root') {
+        final isPersian = settings.loadLocale('en') == 'fa';
         return [
-          const MediaItem(id: 'library', title: 'Library', playable: false),
-          const MediaItem(id: 'queue', title: 'Queue', playable: false),
+          MediaItem(
+            id: 'library',
+            title: isPersian ? 'کتابخانه' : 'Library',
+            playable: false,
+          ),
+          MediaItem(
+            id: 'queue',
+            title: isPersian ? 'صف پخش' : 'Queue',
+            playable: false,
+          ),
           ...playlistRepository.loadPlaylists().map(
             (playlist) => MediaItem(
               id: 'playlist:${playlist.id}',

@@ -41,18 +41,10 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 val artwork = loadArtwork(context, songId)
                 if (artwork != null) {
                     setImageViewBitmap(R.id.widget_artwork, artwork)
-                    setColorStateList(
-                        R.id.widget_root,
-                        "setBackgroundTintList",
-                        ColorStateList.valueOf(artworkBackground(artwork)),
-                    )
+                    setWidgetBackground(this, artworkBackground(artwork))
                 } else {
                     setImageViewResource(R.id.widget_artwork, R.drawable.ic_notif_applogo)
-                    setColorStateList(
-                        R.id.widget_root,
-                        "setBackgroundTintList",
-                        ColorStateList.valueOf(Color.rgb(32, 37, 43)),
-                    )
+                    setWidgetBackground(this, Color.rgb(32, 37, 43))
                 }
                 setImageViewResource(
                     R.id.widget_play_pause,
@@ -123,6 +115,18 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 ((green / count) * 0.55f).toInt().coerceIn(0, 255),
                 ((blue / count) * 0.55f).toInt().coerceIn(0, 255),
             )
+        }
+
+        private fun setWidgetBackground(views: RemoteViews, color: Int) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                views.setColorStateList(
+                    R.id.widget_root,
+                    "setBackgroundTintList",
+                    ColorStateList.valueOf(color),
+                )
+            } else {
+                views.setInt(R.id.widget_root, "setBackgroundColor", color)
+            }
         }
 
         private fun actionIntent(context: Context, action: String): PendingIntent {

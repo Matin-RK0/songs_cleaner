@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
@@ -673,6 +674,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
         controls: const [],
       ),
     );
+    await super.stop();
   }
 
   @override
@@ -733,10 +735,10 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> customAction(String name, [Map<String, dynamic>? extras]) async {
     switch (name) {
       case 'toggleShuffle':
-        toggleShuffle();
+        await toggleShuffle();
         return;
       case 'cycleRepeat':
-        cycleRepeatMode();
+        await cycleRepeatMode();
         return;
       case 'closePlayer':
         await closeApp();
@@ -857,7 +859,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
               androidIcon: shuffled
                   ? 'drawable/ic_notif_shuffle'
                   : 'drawable/ic_notif_shuffle_off',
-              label: 'Shuffle',
+              label: _localizedLabel('Shuffle', 'پخش تصادفی'),
               name: 'toggleShuffle',
             ),
             MediaControl.skipToPrevious,
@@ -865,7 +867,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
             MediaControl.skipToNext,
             MediaControl.custom(
               androidIcon: 'drawable/ic_notif_close',
-              label: 'Close',
+              label: _localizedLabel('Close', 'بستن'),
               name: 'closePlayer',
             ),
           ]
@@ -898,5 +900,14 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
         queueIndex: event.currentIndex,
       ),
     );
+  }
+
+  String _localizedLabel(String english, String persian) {
+    final stored =
+        settings?.loadLocale(Platform.localeName) ?? Platform.localeName;
+    final language = stored == 'system'
+        ? Platform.localeName.split(RegExp('[-_]')).first
+        : stored.split(RegExp('[-_]')).first;
+    return language == 'fa' ? persian : english;
   }
 }

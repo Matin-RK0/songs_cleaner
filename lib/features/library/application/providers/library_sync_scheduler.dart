@@ -25,7 +25,7 @@ final librarySyncSchedulerProvider = Provider<LibrarySyncScheduler>((ref) {
 class LibrarySyncScheduler {
   LibrarySyncScheduler({
     required this.onSync,
-    this.interval = const Duration(minutes: 5),
+    this.interval = const Duration(minutes: 15),
     this.resumeCooldown = const Duration(minutes: 2),
   });
 

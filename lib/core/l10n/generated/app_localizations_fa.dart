@@ -64,6 +64,9 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
+  String get importedPlaylistName => 'پلی‌لیست درون‌ریزی‌شده';
+
+  @override
   String get playlistFileInvalid => 'فایل پلی‌لیست معتبر نیست.';
 
   @override
@@ -327,7 +330,9 @@ class AppLocalizationsFa extends AppLocalizations {
   String get primaryColorSubtitle => 'رنگ تأکیدی برنامه را انتخاب کنید';
 
   @override
-  String get primaryColorOption => 'گزینه رنگ اصلی';
+  String primaryColorOption(int index) {
+    return 'گزینه رنگ اصلی $index';
+  }
 
   @override
   String get themeModeSystem => 'سیستم';

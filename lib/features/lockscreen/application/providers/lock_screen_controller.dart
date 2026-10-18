@@ -84,12 +84,20 @@ class LockScreenController extends AsyncNotifier<LockScreenState> {
     final service = ref.read(lockScreenServiceProvider);
     final supported = state.value?.supported ?? await service.isSupported();
     final overlayGranted = supported && await service.hasOverlayPermission();
+    final wasEnabled = state.value?.enabled ?? false;
+    final enabled = supported && overlayGranted && wasEnabled;
     state = AsyncData(
       LockScreenState(
         supported: supported,
         overlayGranted: overlayGranted,
-        enabled: state.value?.enabled ?? false,
+        enabled: enabled,
       ),
     );
+    if (!overlayGranted && wasEnabled) {
+      await ref
+          .read(appSettingsRepositoryProvider)
+          .saveLockScreenEnabled(false);
+      await service.setEnabled(false);
+    }
   }
 }
