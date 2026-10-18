@@ -36,9 +36,7 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        ids.forEach { id ->
-            update(context, manager, id)
-        }
+        updateAll(context, manager)
     }
 
     companion object {
@@ -49,13 +47,6 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
         const val PLAYING = "playing"
 
         fun updateAll(context: Context, manager: AppWidgetManager = AppWidgetManager.getInstance(context)) {
-            val ids = manager.getAppWidgetIds(
-                ComponentName(context, NowPlayingWidgetProvider::class.java),
-            )
-            ids.forEach { id -> update(context, manager, id) }
-        }
-
-        private fun update(context: Context, manager: AppWidgetManager, appWidgetId: Int) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             val views = RemoteViews(context.packageName, R.layout.widget_now_playing).apply {
                 setTextViewText(R.id.widget_title, prefs.getString(TITLE, "Songs Cleaner"))
@@ -88,7 +79,7 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 setOnClickPendingIntent(R.id.widget_play_pause, actionIntent(context, ACTION_PLAY_PAUSE))
                 setOnClickPendingIntent(R.id.widget_next, actionIntent(context, ACTION_NEXT))
             }
-            manager.updateAppWidget(appWidgetId, views)
+            manager.updateAppWidget(ComponentName(context, NowPlayingWidgetProvider::class.java), views)
         }
 
         private fun loadArtwork(context: Context, songId: Int): Bitmap? {
