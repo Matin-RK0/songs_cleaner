@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
+import android.content.res.ColorStateList
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
@@ -55,10 +56,18 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 val artwork = loadArtwork(context, songId)
                 if (artwork != null) {
                     setImageViewBitmap(R.id.widget_artwork, artwork)
-                    setInt(R.id.widget_root, "setBackgroundColor", artworkBackground(artwork))
+                    setColorStateList(
+                        R.id.widget_root,
+                        "setBackgroundTintList",
+                        ColorStateList.valueOf(artworkBackground(artwork)),
+                    )
                 } else {
                     setImageViewResource(R.id.widget_artwork, R.drawable.ic_notif_applogo)
-                    setInt(R.id.widget_root, "setBackgroundColor", Color.rgb(32, 37, 43))
+                    setColorStateList(
+                        R.id.widget_root,
+                        "setBackgroundTintList",
+                        ColorStateList.valueOf(Color.rgb(32, 37, 43)),
+                    )
                 }
                 setImageViewResource(
                     R.id.widget_play_pause,

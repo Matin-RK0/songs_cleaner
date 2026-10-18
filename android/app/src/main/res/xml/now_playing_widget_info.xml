@@ -6,5 +6,5 @@
     android:minResizeHeight="70dp"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/widget_now_playing"
-    android:resizeMode="horizontal|vertical"
+    android:resizeMode="horizontal"
     android:widgetCategory="home_screen" />
