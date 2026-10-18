@@ -71,10 +71,15 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 )
                 val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
                 if (launch != null) {
-                    setOnClickPendingIntent(
-                        R.id.widget_title,
-                        PendingIntent.getActivity(context, 0, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT),
+                    val launchPendingIntent = PendingIntent.getActivity(
+                        context,
+                        0,
+                        launch,
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
                     )
+                    setOnClickPendingIntent(R.id.widget_root, launchPendingIntent)
+                    setOnClickPendingIntent(R.id.widget_artwork, launchPendingIntent)
+                    setOnClickPendingIntent(R.id.widget_title, launchPendingIntent)
                 }
                 setOnClickPendingIntent(R.id.widget_previous, actionIntent(context, ACTION_PREVIOUS))
                 setOnClickPendingIntent(R.id.widget_play_pause, actionIntent(context, ACTION_PLAY_PAUSE))
