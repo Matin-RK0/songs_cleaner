@@ -20,4 +20,17 @@ class NowPlayingWidgetService {
       'playing': playing,
     });
   }
+
+  Future<String?> consumeAction() =>
+      _channel.invokeMethod<String>('consumeAction');
+
+  Future<void> listenToActions(
+    Future<void> Function(String action) onAction,
+  ) async {
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'widgetAction' && call.arguments is String) {
+        await onAction(call.arguments as String);
+      }
+    });
+  }
 }

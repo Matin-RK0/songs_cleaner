@@ -14,6 +14,7 @@ import '../features/lockscreen/application/providers/lock_screen_controller.dart
 import '../features/lockscreen/infrastructure/lock_screen_service.dart';
 import '../features/player/application/providers/player_controller.dart';
 import '../features/player/application/providers/playback_stats_recorder.dart';
+import '../features/player/infrastructure/now_playing_widget_service.dart';
 import 'router/app_router.dart';
 import 'router/route_names.dart';
 
@@ -32,6 +33,8 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   @override
   void initState() {
     super.initState();
+    const widgetService = NowPlayingWidgetService();
+    widgetService.listenToActions(_handlePendingWidgetActionValue);
     final service = ref.read(lockScreenServiceProvider);
     _eventsSub = service.events.listen(_onLockScreenEvent);
 
@@ -49,7 +52,26 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
       if (pendingPlay) {
         unawaited(_startPendingPlayback());
       }
+      unawaited(_handlePendingWidgetAction());
     });
+  }
+
+  Future<void> _handlePendingWidgetAction() async {
+    final action = await const NowPlayingWidgetService().consumeAction();
+    await _handlePendingWidgetActionValue(action);
+  }
+
+  Future<void> _handlePendingWidgetActionValue(String? action) async {
+    if (!mounted || action == null) return;
+    final handler = ref.read(musicPlayerHandlerProvider);
+    switch (action) {
+      case 'com.example.songs_cleaner.widget.PREVIOUS':
+        await handler.previous();
+      case 'com.example.songs_cleaner.widget.PLAY_PAUSE':
+        await handler.playPause();
+      case 'com.example.songs_cleaner.widget.NEXT':
+        await handler.next();
+    }
   }
 
   @override

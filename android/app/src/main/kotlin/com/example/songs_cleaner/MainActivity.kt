@@ -16,8 +16,12 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : AudioServiceActivity() {
+    private var pendingWidgetAction: String? = null
+    private var widgetChannel: MethodChannel? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        rememberWidgetAction(intent)
         LockScreenController.onActivityCreated(this)
         // A cold start triggered by LockScreenController carries the extra that
         // asks Dart to open the lock-screen player route.
@@ -27,6 +31,7 @@ class MainActivity : AudioServiceActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        rememberWidgetAction(intent)
         LockScreenController.onNewIntent(intent)
     }
 
@@ -165,23 +170,30 @@ class MainActivity : AudioServiceActivity() {
                 else -> result.notImplemented()
             }
         }
-        MethodChannel(
+        val nowPlayingWidgetChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             NOW_PLAYING_WIDGET_CHANNEL,
-        ).setMethodCallHandler { call, result ->
-            if (call.method != "update") {
-                result.notImplemented()
-                return@setMethodCallHandler
+        )
+        widgetChannel = nowPlayingWidgetChannel
+        nowPlayingWidgetChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "update" -> {
+                    getSharedPreferences(NowPlayingWidgetProvider.PREFS, MODE_PRIVATE)
+                        .edit()
+                        .putString(NowPlayingWidgetProvider.TITLE, call.argument<String>("title"))
+                        .putString(NowPlayingWidgetProvider.ARTIST, call.argument<String>("artist"))
+                        .putInt(NowPlayingWidgetProvider.SONG_ID, call.argument<Int>("songId") ?: -1)
+                        .putBoolean(NowPlayingWidgetProvider.PLAYING, call.argument<Boolean>("playing") ?: false)
+                        .apply()
+                    NowPlayingWidgetProvider.updateAll(this)
+                    result.success(null)
+                }
+                "consumeAction" -> {
+                    result.success(pendingWidgetAction)
+                    pendingWidgetAction = null
+                }
+                else -> result.notImplemented()
             }
-            getSharedPreferences(NowPlayingWidgetProvider.PREFS, MODE_PRIVATE)
-                .edit()
-                .putString(NowPlayingWidgetProvider.TITLE, call.argument<String>("title"))
-                .putString(NowPlayingWidgetProvider.ARTIST, call.argument<String>("artist"))
-                .putInt(NowPlayingWidgetProvider.SONG_ID, call.argument<Int>("songId") ?: -1)
-                .putBoolean(NowPlayingWidgetProvider.PLAYING, call.argument<Boolean>("playing") ?: false)
-                .apply()
-            NowPlayingWidgetProvider.updateAll(this)
-            result.success(null)
         }
     }
 
@@ -229,6 +241,18 @@ class MainActivity : AudioServiceActivity() {
         const val OPEN_FILE_REQUEST = 4102
         const val NOW_PLAYING_WIDGET_CHANNEL =
             "com.example.songs_cleaner/now_playing_widget"
+    }
+
+    private fun rememberWidgetAction(intent: Intent?) {
+        val action = intent?.action ?: return
+        if (action == NowPlayingWidgetProvider.ACTION_PREVIOUS ||
+            action == NowPlayingWidgetProvider.ACTION_PLAY_PAUSE ||
+            action == NowPlayingWidgetProvider.ACTION_NEXT
+        ) {
+            pendingWidgetAction = action
+            widgetChannel?.invokeMethod("widgetAction", action)
+            if (widgetChannel != null) pendingWidgetAction = null
+        }
     }
 
     private var pendingFileResult: MethodChannel.Result? = null
