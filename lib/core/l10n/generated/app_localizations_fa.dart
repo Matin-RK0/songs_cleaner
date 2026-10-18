@@ -482,6 +482,11 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
+  String removedFromPlaylistToast(int count, Object name) {
+    return '$count آهنگ از «$name» حذف شد';
+  }
+
+  @override
   String get addToPlaylist => 'افزودن به پلی‌لیست';
 
   @override

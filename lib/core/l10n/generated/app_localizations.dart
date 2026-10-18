@@ -968,6 +968,12 @@ abstract class AppLocalizations {
   /// **'به «{name}» اضافه شد'**
   String addedToPlaylistToast(String name);
 
+  /// No description provided for @removedFromPlaylistToast.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} آهنگ از «{name}» حذف شد'**
+  String removedFromPlaylistToast(int count, Object name);
+
   /// No description provided for @addToPlaylist.
   ///
   /// In fa, this message translates to:

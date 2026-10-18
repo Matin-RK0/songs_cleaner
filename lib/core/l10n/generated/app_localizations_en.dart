@@ -482,6 +482,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String removedFromPlaylistToast(int count, Object name) {
+    return 'Removed $count song(s) from \"$name\"';
+  }
+
+  @override
   String get addToPlaylist => 'Add to playlist';
 
   @override

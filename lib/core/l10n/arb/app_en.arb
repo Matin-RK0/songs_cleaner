@@ -147,6 +147,13 @@
   "playlistRenamedToast": "Playlist renamed",
   "playlistDeletedToast": "\"{name}\" deleted",
   "addedToPlaylistToast": "Added to \"{name}\"",
+  "removedFromPlaylistToast": "Removed {count} song(s) from \"{name}\"",
+  "@removedFromPlaylistToast": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "name": {}
+    }
+  },
   "addToPlaylist": "Add to playlist",
   "addToFavorites": "Add to favorites",
   "removeFromFavorites": "Remove from favorites",

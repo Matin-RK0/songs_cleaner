@@ -203,6 +203,13 @@
     }
   },
   "addedToPlaylistToast": "به «{name}» اضافه شد",
+  "removedFromPlaylistToast": "{count} آهنگ از «{name}» حذف شد",
+  "@removedFromPlaylistToast": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "name": {}
+    }
+  },
   "@addedToPlaylistToast": {
     "placeholders": {
       "name": {

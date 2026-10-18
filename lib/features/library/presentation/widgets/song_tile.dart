@@ -55,6 +55,7 @@ class SongTile extends ConsumerWidget {
       padding: const EdgeInsetsDirectional.only(
         start: AppSpacing.sm,
         end: AppSpacing.sm,
+        top: AppSpacing.xs,
         bottom: AppSpacing.xs,
       ),
       child: AnimatedContainer(

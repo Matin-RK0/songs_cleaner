@@ -141,7 +141,7 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                       songs: state.visibleSongs,
                       currentSongId: currentId,
                       controller: widget.scrollController,
-                      itemExtent: 76,
+                      itemExtent: 72,
                       selectedSongIds: _selectedIds,
                       onSelectionChanged: _toggleSelection,
                       onSongTap: (songs, index) => ref
@@ -250,86 +250,109 @@ class _SelectionToolbar extends StatelessWidget {
   final VoidCallback? onInfo;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: context.colors.surfaceHigh,
-    child: Row(
-      children: [
-        IconButton(
-          tooltip: context.l10n.cancel,
-          onPressed: onClose,
-          icon: const Icon(Icons.close_rounded),
-        ),
-        Expanded(
-          child: Text(
-            context.l10n.selectedCount(count),
-            style: AppTypography.emphasisTitle.copyWith(
-              color: context.colors.textHigh,
-            ),
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        AppSpacing.sm,
+        AppSpacing.xs,
+        AppSpacing.sm,
+        AppSpacing.xs,
+      ),
+      child: AnimatedContainer(
+        duration: AppMotion.fast,
+        curve: AppMotion.standard,
+        height: 64,
+        decoration: ShapeDecoration(
+          color: colors.surfaceHigh,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.lg,
+            side: BorderSide(color: colors.primary.withValues(alpha: 0.22)),
           ),
         ),
-        IconButton(
-          tooltip: context.l10n.selectAll,
-          onPressed: onSelectAll,
-          icon: const Icon(Icons.select_all_rounded),
-        ),
-        IconButton(
-          tooltip: context.l10n.playTooltip,
-          onPressed: onPlay,
-          icon: const Icon(Icons.play_arrow_rounded),
-        ),
-        PopupMenuButton<_SelectionAction>(
-          tooltip: context.l10n.moreActions,
-          onSelected: (action) {
-            switch (action) {
-              case _SelectionAction.queue:
-                onQueue();
-                return;
-              case _SelectionAction.favorite:
-                onFavorite();
-                return;
-              case _SelectionAction.playlist:
-                onPlaylist();
-                return;
-              case _SelectionAction.info:
-                onInfo?.call();
-                return;
-              case _SelectionAction.delete:
-                onDelete();
-                return;
-            }
-          },
-          itemBuilder: (_) => [
-            PopupMenuItem(
-              value: _SelectionAction.queue,
-              child: Text(context.l10n.addToQueue),
-            ),
-            PopupMenuItem(
-              value: _SelectionAction.favorite,
-              child: Text(context.l10n.addToFavorites),
-            ),
-            PopupMenuItem(
-              value: _SelectionAction.playlist,
-              child: Text(context.l10n.addToPlaylist),
-            ),
-            if (onInfo != null)
-              PopupMenuItem(
-                value: _SelectionAction.info,
-                child: Text(context.l10n.songDetailsTitle),
+        child: Material(
+          color: Colors.transparent,
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: l10n.cancel,
+                onPressed: onClose,
+                icon: const Icon(Icons.close_rounded),
               ),
-            PopupMenuItem(
-              value: _SelectionAction.delete,
-              child: Text(
-                context.l10n.deleteAction,
-                style: AppTypography.body.copyWith(
-                  color: context.colors.danger,
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: AppMotion.fast,
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
+                  child: Text(
+                    l10n.selectedCount(count),
+                    key: ValueKey(count),
+                    style: AppTypography.emphasisTitle.copyWith(
+                      color: colors.textHigh,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+              IconButton(
+                tooltip: l10n.selectAll,
+                onPressed: onSelectAll,
+                icon: const Icon(Icons.select_all_rounded),
+              ),
+              IconButton(
+                tooltip: l10n.playTooltip,
+                onPressed: onPlay,
+                icon: const Icon(Icons.play_arrow_rounded),
+              ),
+              PopupMenuButton<_SelectionAction>(
+                tooltip: l10n.moreActions,
+                onSelected: (action) {
+                  switch (action) {
+                    case _SelectionAction.queue:
+                      onQueue();
+                    case _SelectionAction.favorite:
+                      onFavorite();
+                    case _SelectionAction.playlist:
+                      onPlaylist();
+                    case _SelectionAction.info:
+                      onInfo?.call();
+                    case _SelectionAction.delete:
+                      onDelete();
+                  }
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: _SelectionAction.queue,
+                    child: Text(l10n.addToQueue),
+                  ),
+                  PopupMenuItem(
+                    value: _SelectionAction.favorite,
+                    child: Text(l10n.addToFavorites),
+                  ),
+                  PopupMenuItem(
+                    value: _SelectionAction.playlist,
+                    child: Text(l10n.addToPlaylist),
+                  ),
+                  if (onInfo != null)
+                    PopupMenuItem(
+                      value: _SelectionAction.info,
+                      child: Text(l10n.songDetailsTitle),
+                    ),
+                  PopupMenuItem(
+                    value: _SelectionAction.delete,
+                    child: Text(
+                      l10n.deleteAction,
+                      style: AppTypography.body.copyWith(color: colors.danger),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
 enum _SelectionAction { queue, favorite, playlist, info, delete }

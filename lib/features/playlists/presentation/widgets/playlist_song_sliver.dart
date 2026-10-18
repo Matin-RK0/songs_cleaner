@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -22,6 +23,8 @@ class PlaylistSongSliver extends StatelessWidget {
     required this.onSongTap,
     this.onReorder,
     this.onRemove,
+    this.selectedSongIds = const <int>{},
+    this.onSelectionChanged,
   });
 
   final List<Song> songs;
@@ -29,10 +32,12 @@ class PlaylistSongSliver extends StatelessWidget {
   final void Function(List<Song> songs, int index) onSongTap;
   final void Function(int oldIndex, int newIndex)? onReorder;
   final ValueChanged<Song>? onRemove;
+  final Set<int> selectedSongIds;
+  final ValueChanged<int>? onSelectionChanged;
 
   @override
   Widget build(BuildContext context) {
-    final reorder = onReorder;
+    final reorder = selectedSongIds.isEmpty ? onReorder : null;
     if (reorder != null) {
       return SliverReorderableList(
         itemCount: songs.length,
@@ -60,7 +65,13 @@ class PlaylistSongSliver extends StatelessWidget {
       song: song,
       isCurrent: song.id == currentSongId,
       dragIndex: dragIndex,
-      onTap: () => onSongTap(songs, index),
+      selected: selectedSongIds.contains(song.id),
+      onTap: onSelectionChanged != null && selectedSongIds.isNotEmpty
+          ? () => onSelectionChanged!(song.id)
+          : () => onSongTap(songs, index),
+      onSelectionLongPress: onSelectionChanged == null
+          ? null
+          : () => onSelectionChanged!(song.id),
       onRemove: onRemove == null ? null : () => onRemove!(song),
     );
   }
@@ -82,6 +93,8 @@ class PlaylistSongTile extends StatelessWidget {
     required this.onTap,
     this.dragIndex,
     this.onRemove,
+    this.selected = false,
+    this.onSelectionLongPress,
   });
 
   final Song song;
@@ -89,69 +102,90 @@ class PlaylistSongTile extends StatelessWidget {
   final VoidCallback onTap;
   final int? dragIndex;
   final VoidCallback? onRemove;
+  final bool selected;
+  final VoidCallback? onSelectionLongPress;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Padding(
       padding: const EdgeInsetsDirectional.only(bottom: AppSpacing.xs),
-      child: Material(
-        color: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onRemove == null ? null : () => _showActions(context),
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          child: ListTile(
-            contentPadding: const EdgeInsetsDirectional.fromSTEB(
-              AppSpacing.sm,
-              AppSpacing.xs,
-              AppSpacing.xs,
-              AppSpacing.xs,
+      child: AnimatedContainer(
+        duration: AppMotion.fast,
+        curve: AppMotion.standard,
+        decoration: ShapeDecoration(
+          color: selected ? colors.surfaceHigh : Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.lg,
+            side: BorderSide(
+              color: selected
+                  ? colors.primary.withValues(alpha: 0.35)
+                  : Colors.transparent,
             ),
-            minVerticalPadding: 0,
-            leading: ArtworkImage(
-              songId: song.id,
-              size: _tileArtworkSize,
-              borderRadius: AppRadius.md,
-            ),
-            title: Text(
-              song.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.songTitle.copyWith(
-                fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
-                color: isCurrent ? colors.primary : colors.textHigh,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            onLongPress:
+                onSelectionLongPress ??
+                (onRemove == null ? null : () => _showActions(context)),
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: ListTile(
+              contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                AppSpacing.sm,
+                AppSpacing.xs,
+                AppSpacing.xs,
+                AppSpacing.xs,
               ),
-            ),
-            subtitle: Text(
-              '${song.artist.isEmpty ? context.l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.songSubtitle.copyWith(
-                color: colors.textMedium,
+              minVerticalPadding: 0,
+              leading: ArtworkImage(
+                songId: song.id,
+                size: _tileArtworkSize,
+                borderRadius: AppRadius.md,
               ),
-            ),
-            trailing: dragIndex == null
-                ? null
-                : Semantics(
-                    label: context.l10n.reorderTooltip,
-                    child: ReorderableDragStartListener(
-                      index: dragIndex!,
-                      child: Padding(
-                        padding: const EdgeInsetsDirectional.only(
-                          start: AppSpacing.sm,
-                          end: AppSpacing.xs,
-                        ),
-                        child: Icon(
-                          Icons.drag_handle_rounded,
-                          color: colors.textLow,
+              title: Text(
+                song.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.songTitle.copyWith(
+                  fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
+                  color: isCurrent ? colors.primary : colors.textHigh,
+                ),
+              ),
+              subtitle: Text(
+                '${song.artist.isEmpty ? context.l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.songSubtitle.copyWith(
+                  color: colors.textMedium,
+                ),
+              ),
+              trailing: selected
+                  ? Icon(Icons.check_circle_rounded, color: colors.primary)
+                  : dragIndex == null
+                  ? null
+                  : Semantics(
+                      label: context.l10n.reorderTooltip,
+                      child: ReorderableDragStartListener(
+                        index: dragIndex!,
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.only(
+                            start: AppSpacing.sm,
+                            end: AppSpacing.xs,
+                          ),
+                          child: Icon(
+                            Icons.drag_handle_rounded,
+                            color: colors.textLow,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+            ),
           ),
         ),
       ),

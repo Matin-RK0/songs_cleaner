@@ -102,6 +102,7 @@ class PlayerController extends Notifier<PlayerState> {
             playing: playerState.playing,
             processingState: _mapProcessingState(playerState.processingState),
           );
+          unawaited(_updateWidget(handler, playing: playerState.playing));
         }),
       );
 
@@ -220,14 +221,21 @@ class PlayerController extends Notifier<PlayerState> {
       shuffled: handler.shuffled,
       queueRevision: state.queueRevision + 1,
     );
-    final current = handler.currentSong;
     unawaited(
-      const NowPlayingWidgetService().update(
-        title: current?.title,
-        artist: current?.artist,
-        songId: current?.id,
-        playing: handler.playbackState.value.playing,
-      ),
+      _updateWidget(handler, playing: handler.playbackState.value.playing),
+    );
+  }
+
+  Future<void> _updateWidget(
+    MusicPlayerHandler handler, {
+    required bool playing,
+  }) {
+    final current = handler.currentSong;
+    return const NowPlayingWidgetService().update(
+      title: current?.title,
+      artist: current?.artist,
+      songId: current?.id,
+      playing: playing,
     );
   }
 

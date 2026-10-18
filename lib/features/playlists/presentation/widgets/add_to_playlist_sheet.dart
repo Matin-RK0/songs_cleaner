@@ -130,13 +130,23 @@ class _AddToPlaylistSheet extends ConsumerWidget {
                         : Icons.add_circle_outline_rounded,
                     color: contains ? colors.primary : colors.textLow,
                   ),
-                  onTap: () {
+                  onTap: () async {
                     final controller = ref.read(playlistsProvider.notifier);
                     if (contains) {
-                      controller.removeSongs(playlist.id, songIds);
+                      await controller.removeSongs(playlist.id, songIds);
                     } else {
-                      controller.addSongs(playlist.id, songIds);
+                      await controller.addSongs(playlist.id, songIds);
                     }
+                    if (!context.mounted) return;
+                    showAppSnackBar(
+                      context,
+                      contains
+                          ? l10n.removedFromPlaylistToast(
+                              songIds.length,
+                              playlist.name,
+                            )
+                          : l10n.addedToPlaylistToast(playlist.name),
+                    );
                   },
                 );
               },
