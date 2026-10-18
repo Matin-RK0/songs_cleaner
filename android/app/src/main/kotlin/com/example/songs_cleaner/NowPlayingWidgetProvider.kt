@@ -10,14 +10,29 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Size
+import android.view.KeyEvent
 import android.widget.RemoteViews
 
 class NowPlayingWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
+        val keyCode = when (intent.action) {
+            ACTION_PREVIOUS -> KeyEvent.KEYCODE_MEDIA_PREVIOUS
+            ACTION_PLAY_PAUSE -> KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+            ACTION_NEXT -> KeyEvent.KEYCODE_MEDIA_NEXT
+            else -> null
+        }
+        if (keyCode != null) {
+            val audioManager = context.getSystemService(AudioManager::class.java)
+            val event = KeyEvent(KeyEvent.ACTION_DOWN, keyCode)
+            audioManager?.dispatchMediaKeyEvent(event)
+            audioManager?.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+            return
+        }
         super.onReceive(context, intent)
     }
 
@@ -130,11 +145,8 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
         }
 
         private fun actionIntent(context: Context, action: String): PendingIntent {
-            val intent = Intent(context, MainActivity::class.java).apply {
-                this.action = action
-                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            }
-            return PendingIntent.getActivity(
+            val intent = Intent(context, NowPlayingWidgetProvider::class.java).setAction(action)
+            return PendingIntent.getBroadcast(
                 context,
                 action.hashCode(),
                 intent,
