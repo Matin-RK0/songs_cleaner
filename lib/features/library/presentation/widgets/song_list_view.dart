@@ -60,6 +60,9 @@ class SongListView extends ConsumerWidget {
           onSelectionLongPress: onSelectionChanged == null
               ? null
               : () => onSelectionChanged!(song.id),
+          onPreview: onSelectionChanged != null && selectedSongIds.isNotEmpty
+              ? () => onSongTap?.call([song], 0)
+              : null,
           onAddToPlaylist: (target) => showAddToPlaylistSheet(context, target),
           onToggleFavorite: () =>
               ref.read(libraryStatsProvider.notifier).toggleFavorite(song.id),

@@ -27,6 +27,7 @@ class SongTile extends ConsumerWidget {
     this.onShowInfo,
     this.selected = false,
     this.onSelectionLongPress,
+    this.onPreview,
   });
 
   final Song song;
@@ -41,6 +42,7 @@ class SongTile extends ConsumerWidget {
   final VoidCallback? onShowInfo;
   final bool selected;
   final VoidCallback? onSelectionLongPress;
+  final VoidCallback? onPreview;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -118,6 +120,12 @@ class SongTile extends ConsumerWidget {
               ),
               trailing: selected
                   ? Icon(Icons.check_circle_rounded, color: colors.primary)
+                  : onPreview != null
+                  ? IconButton(
+                      tooltip: l10n.playTooltip,
+                      onPressed: onPreview,
+                      icon: const Icon(Icons.play_circle_outline_rounded),
+                    )
                   : isCurrent
                   ? _FakeEqualizer(playing: playing)
                   : trailingLabel == null

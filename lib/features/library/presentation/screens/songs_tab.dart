@@ -91,7 +91,6 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                         ref
                             .read(playerProvider.notifier)
                             .playFromList(selected, startIndex: 0);
-                        _clearSelection();
                       },
                       onQueue: () async {
                         final selected = state.visibleSongs.where(
