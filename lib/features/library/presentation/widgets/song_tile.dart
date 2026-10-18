@@ -76,76 +76,79 @@ class SongTile extends ConsumerWidget {
             ),
           ),
         ),
-        child: Material(
-          color: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            onLongPress:
-                onSelectionLongPress ?? () => _showActions(context, ref),
-            splashColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            hoverColor: Colors.transparent,
-            focusColor: Colors.transparent,
-            child: ListTile(
-              contentPadding: const EdgeInsetsDirectional.fromSTEB(
-                AppSpacing.sm,
-                AppSpacing.xs,
-                AppSpacing.sm,
-                AppSpacing.xs,
-              ),
-              minVerticalPadding: 0,
-              leading: showArtwork
-                  ? _ArtworkLeading(
-                      songId: song.id,
-                      isCurrent: isCurrent,
-                      semanticLabel: song.title,
-                    )
-                  : const SizedBox(width: AppSpacing.sm),
-              title: Text(
-                song.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.songTitle.copyWith(
-                  fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
-                  color: isCurrent ? colors.primary : colors.textHigh,
+        child: SizedBox(
+          height: itemExtent - (AppSpacing.xs * 2),
+          child: Material(
+            color: Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              onLongPress:
+                  onSelectionLongPress ?? () => _showActions(context, ref),
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              child: ListTile(
+                contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                  AppSpacing.sm,
+                  AppSpacing.xs,
+                  AppSpacing.sm,
+                  AppSpacing.xs,
                 ),
-              ),
-              subtitle: Text(
-                '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.songSubtitle.copyWith(
-                  color: colors.textMedium,
+                minVerticalPadding: 0,
+                leading: showArtwork
+                    ? _ArtworkLeading(
+                        songId: song.id,
+                        isCurrent: isCurrent,
+                        semanticLabel: song.title,
+                      )
+                    : const SizedBox(width: AppSpacing.sm),
+                title: Text(
+                  song.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.songTitle.copyWith(
+                    fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
+                    color: isCurrent ? colors.primary : colors.textHigh,
+                  ),
                 ),
-              ),
-              trailing: selected
-                  ? SizedBox.square(
-                      dimension: kMinInteractiveDimension,
-                      child: Center(
-                        child: Icon(
-                          Icons.check_circle_rounded,
-                          color: colors.primary,
+                subtitle: Text(
+                  '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.songSubtitle.copyWith(
+                    color: colors.textMedium,
+                  ),
+                ),
+                trailing: selected
+                    ? SizedBox.square(
+                        dimension: kMinInteractiveDimension,
+                        child: Center(
+                          child: Icon(
+                            Icons.check_circle_rounded,
+                            color: colors.primary,
+                          ),
+                        ),
+                      )
+                    : onPreview != null
+                    ? IconButton(
+                        tooltip: l10n.playTooltip,
+                        onPressed: onPreview,
+                        icon: const Icon(Icons.play_circle_outline_rounded),
+                      )
+                    : isCurrent
+                    ? _FakeEqualizer(playing: playing)
+                    : trailingLabel == null
+                    ? null
+                    : Text(
+                        trailingLabel!,
+                        style: AppTypography.captionSmall.copyWith(
+                          color: colors.textLow,
                         ),
                       ),
-                    )
-                  : onPreview != null
-                  ? IconButton(
-                      tooltip: l10n.playTooltip,
-                      onPressed: onPreview,
-                      icon: const Icon(Icons.play_circle_outline_rounded),
-                    )
-                  : isCurrent
-                  ? _FakeEqualizer(playing: playing)
-                  : trailingLabel == null
-                  ? null
-                  : Text(
-                      trailingLabel!,
-                      style: AppTypography.captionSmall.copyWith(
-                        color: colors.textLow,
-                      ),
-                    ),
+              ),
             ),
           ),
         ),
