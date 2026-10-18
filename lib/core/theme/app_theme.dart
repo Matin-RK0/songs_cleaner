@@ -6,9 +6,23 @@ import 'app_radius.dart';
 import 'app_typography.dart';
 
 abstract final class AppTheme {
-  static ThemeData dark() => _build(AppColorTokens.dark, Brightness.dark);
+  static ThemeData dark({Color? primary}) =>
+      _build(_withPrimary(AppColorTokens.dark, primary), Brightness.dark);
 
-  static ThemeData light() => _build(AppColorTokens.light, Brightness.light);
+  static ThemeData light({Color? primary}) =>
+      _build(_withPrimary(AppColorTokens.light, primary), Brightness.light);
+
+  static AppColorTokens _withPrimary(AppColorTokens tokens, Color? primary) {
+    if (primary == null) return tokens;
+    final onPrimary = primary.computeLuminance() > 0.5
+        ? Colors.black
+        : Colors.white;
+    return tokens.copyWith(
+      primary: primary,
+      onPrimary: onPrimary,
+      accent: primary,
+    );
+  }
 
   static ThemeData _build(AppColorTokens tokens, Brightness brightness) {
     final colorScheme =

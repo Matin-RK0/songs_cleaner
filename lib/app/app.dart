@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/l10n/generated/app_localizations.dart';
 import '../core/l10n/locale_controller.dart';
+import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/primary_color_controller.dart';
 import '../core/theme/theme_mode_controller.dart';
 import '../features/lockscreen/application/providers/lock_screen_controller.dart';
 import '../features/lockscreen/infrastructure/lock_screen_service.dart';
@@ -108,12 +110,14 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
           ref.read(lockScreenServiceProvider).setPlaybackActive(active),
     );
 
+    final primaryColor = ref.watch(appPrimaryColorProvider);
+
     return MaterialApp(
       title: 'Songs Cleaner',
       debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.light(primary: AppPrimaryPalette.colors[primaryColor]),
+      darkTheme: AppTheme.dark(primary: AppPrimaryPalette.colors[primaryColor]),
       themeMode: ref.watch(appThemeModeProvider),
       locale: ref.watch(appLocaleProvider),
       supportedLocales: AppLocalizations.supportedLocales,

@@ -321,6 +321,15 @@ class AppLocalizationsFa extends AppLocalizations {
   String get themeModeTitle => 'تم';
 
   @override
+  String get primaryColorTitle => 'رنگ اصلی';
+
+  @override
+  String get primaryColorSubtitle => 'رنگ تأکیدی برنامه را انتخاب کنید';
+
+  @override
+  String get primaryColorOption => 'گزینه رنگ اصلی';
+
+  @override
   String get themeModeSystem => 'سیستم';
 
   @override

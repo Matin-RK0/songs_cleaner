@@ -1,5 +1,22 @@
 import 'package:flutter/material.dart';
 
+abstract final class AppPrimaryPalette {
+  static const List<Color> colors = <Color>[
+    Color(0xFF2196F3),
+    Color(0xFF03A9F4),
+    Color(0xFF00BCD4),
+    Color(0xFF009688),
+    Color(0xFF4CAF50),
+    Color(0xFF8BC34A),
+    Color(0xFFFFC107),
+    Color(0xFFFF9800),
+    Color(0xFFFF5722),
+    Color(0xFFE91E63),
+    Color(0xFF9C27B0),
+    Color(0xFF673AB7),
+  ];
+}
+
 /// Semantic color tokens that adapt to the active [Brightness].
 ///
 /// Widgets must never hardcode palette values. Read the active tokens through

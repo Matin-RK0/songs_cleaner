@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/primary_color_controller.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_state_views.dart';
@@ -190,6 +191,89 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _showPrimaryColorSheet() async {
+    final l10n = context.l10n;
+    final current = ref.read(appPrimaryColorProvider);
+
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: context.colors.surfaceHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.primaryColorTitle,
+                style: AppTypography.sectionTitle.copyWith(
+                  color: sheetContext.colors.textHigh,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              GridView.builder(
+                shrinkWrap: true,
+                itemCount: AppPrimaryPalette.colors.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: AppSpacing.md,
+                  crossAxisSpacing: AppSpacing.md,
+                ),
+                itemBuilder: (context, index) {
+                  final isSelected = index == current;
+                  final color = AppPrimaryPalette.colors[index];
+                  return Semantics(
+                    label: l10n.primaryColorOption,
+                    selected: isSelected,
+                    button: true,
+                    child: InkResponse(
+                      onTap: () => Navigator.of(sheetContext).pop(index),
+                      radius: 30,
+                      child: DecoratedBox(
+                        decoration: ShapeDecoration(
+                          color: color,
+                          shape: CircleBorder(
+                            side: isSelected
+                                ? BorderSide(
+                                    color: sheetContext.colors.textHigh,
+                                    width: 3,
+                                  )
+                                : BorderSide.none,
+                          ),
+                        ),
+                        child: isSelected
+                            ? Icon(
+                                Icons.check_rounded,
+                                color: color.computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                              )
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (selected != null) {
+      await ref.read(appPrimaryColorProvider.notifier).setIndex(selected);
+    }
+  }
+
   String _themeModeLabel(AppLocalizations l10n, ThemeMode mode) =>
       switch (mode) {
         ThemeMode.system => l10n.themeModeSystem,
@@ -355,6 +439,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   color: colors.textLow,
                 ),
                 onTap: _showThemeSheet,
+              ),
+              ListTile(
+                leading: Icon(Icons.palette_outlined, color: colors.primary),
+                title: Text(
+                  l10n.primaryColorTitle,
+                  style: AppTypography.emphasisTitle.copyWith(
+                    color: colors.textHigh,
+                  ),
+                ),
+                subtitle: Text(
+                  l10n.primaryColorSubtitle,
+                  style: AppTypography.songSubtitle.copyWith(
+                    color: colors.textMedium,
+                  ),
+                ),
+                trailing: CircleAvatar(
+                  radius: 12,
+                  backgroundColor: AppPrimaryPalette
+                      .colors[ref.watch(appPrimaryColorProvider)],
+                ),
+                onTap: _showPrimaryColorSheet,
               ),
               _SectionHeader(title: l10n.settingsLanguageSection),
               ListTile(

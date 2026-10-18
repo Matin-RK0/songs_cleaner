@@ -124,6 +124,17 @@ void main() {
     expect(repository.loadThemeMode('dark'), 'light');
   });
 
+  test('round-trips the primary color selection', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+
+    expect(repository.loadPrimaryColorIndex(0), 0);
+
+    await repository.savePrimaryColorIndex(7);
+    expect(repository.loadPrimaryColorIndex(0), 7);
+  });
+
   test('round-trips the app locale', () async {
     SharedPreferences.setMockInitialValues({});
     final preferences = await SharedPreferences.getInstance();

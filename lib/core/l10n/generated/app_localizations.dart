@@ -680,6 +680,24 @@ abstract class AppLocalizations {
   /// **'تم'**
   String get themeModeTitle;
 
+  /// No description provided for @primaryColorTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'رنگ اصلی'**
+  String get primaryColorTitle;
+
+  /// No description provided for @primaryColorSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'رنگ تأکیدی برنامه را انتخاب کنید'**
+  String get primaryColorSubtitle;
+
+  /// No description provided for @primaryColorOption.
+  ///
+  /// In fa, this message translates to:
+  /// **'گزینه رنگ اصلی'**
+  String get primaryColorOption;
+
   /// No description provided for @themeModeSystem.
   ///
   /// In fa, this message translates to:

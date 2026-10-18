@@ -322,6 +322,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeModeTitle => 'Theme';
 
   @override
+  String get primaryColorTitle => 'Primary color';
+
+  @override
+  String get primaryColorSubtitle => 'Choose the app accent color';
+
+  @override
+  String get primaryColorOption => 'Primary color option';
+
+  @override
   String get themeModeSystem => 'System';
 
   @override

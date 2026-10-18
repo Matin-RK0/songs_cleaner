@@ -164,6 +164,7 @@ class AppSettingsRepository {
   static const String _audioFocusModeKey = 'audio.focusMode';
   static const String _gaplessPlaybackKey = 'audio.gaplessPlayback';
   static const String _themeModeKey = 'appearance.themeMode';
+  static const String _primaryColorIndexKey = 'appearance.primaryColorIndex';
   static const String _localeKey = 'appearance.locale';
 
   final SharedPreferences _prefs;
@@ -207,6 +208,12 @@ class AppSettingsRepository {
 
   Future<void> saveThemeMode(String value) =>
       _prefs.setString(_themeModeKey, value);
+
+  int loadPrimaryColorIndex(int fallback) =>
+      _prefs.getInt(_primaryColorIndexKey) ?? fallback;
+
+  Future<void> savePrimaryColorIndex(int index) =>
+      _prefs.setInt(_primaryColorIndexKey, index);
 
   // -- Locale -----------------------------------------------------------------
 
