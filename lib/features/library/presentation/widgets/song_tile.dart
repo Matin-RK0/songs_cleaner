@@ -91,6 +91,7 @@ class SongTile extends ConsumerWidget {
               hoverColor: Colors.transparent,
               focusColor: Colors.transparent,
               child: ListTile(
+                titleAlignment: ListTileTitleAlignment.center,
                 contentPadding: const EdgeInsetsDirectional.fromSTEB(
                   AppSpacing.sm,
                   AppSpacing.xs,
