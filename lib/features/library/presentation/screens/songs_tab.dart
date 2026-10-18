@@ -22,6 +22,7 @@ import '../../domain/value_objects/song_filter.dart';
 import '../../domain/entities/song.dart';
 import '../widgets/permission_gate_view.dart';
 import '../widgets/song_list_view.dart';
+import '../widgets/song_tile.dart';
 
 class SongsTab extends ConsumerStatefulWidget {
   const SongsTab({super.key, this.scrollController});
@@ -136,16 +137,20 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                       title: context.l10n.noResultsTitle,
                       message: context.l10n.noResultsMessage,
                     )
-                  : SongListView(
-                      songs: state.visibleSongs,
-                      currentSongId: currentId,
-                      controller: widget.scrollController,
-                      itemExtent: 72,
-                      selectedSongIds: _selectedIds,
-                      onSelectionChanged: _toggleSelection,
-                      onSongTap: (songs, index) => ref
-                          .read(playerProvider.notifier)
-                          .playFromList(songs, startIndex: index),
+                  : RefreshIndicator(
+                      onRefresh: () =>
+                          ref.read(libraryProvider.notifier).refresh(),
+                      child: SongListView(
+                        songs: state.visibleSongs,
+                        currentSongId: currentId,
+                        controller: widget.scrollController,
+                        itemExtent: SongTile.itemExtent,
+                        selectedSongIds: _selectedIds,
+                        onSelectionChanged: _toggleSelection,
+                        onSongTap: (songs, index) => ref
+                            .read(playerProvider.notifier)
+                            .playFromList(songs, startIndex: index),
+                      ),
                     ),
             ),
           ],

@@ -13,6 +13,8 @@ import '../../domain/entities/song.dart';
 import 'artwork_image.dart';
 
 class SongTile extends ConsumerWidget {
+  static const double itemExtent = 80;
+
   const SongTile({
     super.key,
     required this.song,
@@ -119,7 +121,15 @@ class SongTile extends ConsumerWidget {
                 ),
               ),
               trailing: selected
-                  ? Icon(Icons.check_circle_rounded, color: colors.primary)
+                  ? SizedBox.square(
+                      dimension: kMinInteractiveDimension,
+                      child: Center(
+                        child: Icon(
+                          Icons.check_circle_rounded,
+                          color: colors.primary,
+                        ),
+                      ),
+                    )
                   : onPreview != null
                   ? IconButton(
                       tooltip: l10n.playTooltip,
