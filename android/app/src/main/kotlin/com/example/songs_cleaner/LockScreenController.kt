@@ -69,7 +69,12 @@ object LockScreenController {
     private val screenWakeHandler = Handler(Looper.getMainLooper())
     private val clearScreenWake = Runnable {
         activity?.let { host ->
-            if (playerShown) clearTurnScreenOn(host)
+            if (playerShown) {
+                clearWakeFlags(host)
+                // The activity may remain alive behind the keyguard, but the
+                // next manual SCREEN_ON must present it again.
+                playerShown = false
+            }
         }
     }
 
@@ -244,7 +249,7 @@ object LockScreenController {
     }
 
     private fun clearLockedFlags(host: Activity) {
-        clearTurnScreenOn(host)
+        clearWakeFlags(host)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             host.setShowWhenLocked(false)
         } else {
@@ -255,13 +260,20 @@ object LockScreenController {
         }
     }
 
-    private fun clearTurnScreenOn(host: Activity) {
+    private fun clearWakeFlags(host: Activity) {
         screenWakeHandler.removeCallbacks(clearScreenWake)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             host.setTurnScreenOn(false)
         } else {
             @Suppress("DEPRECATION")
             host.window.clearFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+        }
+        host.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            host.setShowWhenLocked(false)
+        } else {
+            @Suppress("DEPRECATION")
+            host.window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
         }
     }
 
