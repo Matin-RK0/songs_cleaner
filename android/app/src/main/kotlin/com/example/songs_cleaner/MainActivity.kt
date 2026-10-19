@@ -19,6 +19,11 @@ class MainActivity : AudioServiceActivity() {
     private var pendingWidgetAction: String? = null
     private var widgetChannel: MethodChannel? = null
 
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        LockScreenController.onUserInteraction(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         rememberWidgetAction(intent)

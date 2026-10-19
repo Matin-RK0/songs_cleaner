@@ -123,6 +123,13 @@ object LockScreenController {
         return true
     }
 
+    /** Resets the wake grace period while the lock-screen player is being used. */
+    fun onUserInteraction(host: Activity) {
+        if (!playerShown) return
+        screenWakeHandler.removeCallbacks(clearScreenWake)
+        screenWakeHandler.postDelayed(clearScreenWake, SCREEN_WAKE_DURATION_MS)
+    }
+
     // -- Screen / keyguard events ----------------------------------------------
 
     private fun registerReceiver(context: Context) {
