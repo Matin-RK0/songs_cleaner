@@ -3,6 +3,7 @@ package com.example.songs_cleaner
 import android.app.Activity
 import android.app.KeyguardManager
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -71,6 +72,10 @@ object LockScreenController {
     private val clearScreenWake = Runnable {
         activity?.let { host ->
             if (playerShown) {
+                val keyguard = host.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+                // Only the over-keyguard presentation may auto-lock. A Routine
+                // can also open this player while the user is using the phone.
+                if (keyguard.isKeyguardLocked && lockScreen() == "locked") return@let
                 clearWakeFlags(host)
                 // The activity may remain alive behind the keyguard, but the
                 // next manual SCREEN_ON must present it again.
@@ -287,6 +292,17 @@ object LockScreenController {
 
     // -- Dart channel -----------------------------------------------------------
 
+    /** Shared by the inactivity timer and the explicit double-tap action. */
+    private fun lockScreen(): String {
+        val status = ScreenLockAccessibilityService.lockScreen()
+        if (status == "locked") {
+            activity?.let(::clearLockedFlags)
+            playerShown = false
+            pendingShow = false
+        }
+        return status
+    }
+
     fun handleMethodCall(call: MethodCall, result: MethodChannel.Result) {
         val context = appContext
         when (call.method) {
@@ -354,6 +370,40 @@ object LockScreenController {
             "dismiss" -> {
                 dismissFromBack()
                 result.success(null)
+            }
+            "lockScreen" -> {
+                result.success(lockScreen())
+            }
+            "requestScreenLockAccess" -> {
+                val host = activity
+                if (host == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                    result.success(false)
+                    return
+                }
+                val openSettings = {
+                    try {
+                        host.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                            putExtra(
+                                ":settings:fragment_args_key",
+                                ComponentName(host, ScreenLockAccessibilityService::class.java)
+                                    .flattenToString(),
+                            )
+                        })
+                        true
+                    } catch (_: Exception) {
+                        // An OEM may omit the accessibility settings activity.
+                        false
+                    }
+                }
+                val keyguard = host.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+                if (keyguard.isKeyguardLocked) {
+                    keyguard.requestDismissKeyguard(host, object : KeyguardManager.KeyguardDismissCallback() {
+                        override fun onDismissSucceeded() { openSettings() }
+                    })
+                    result.success(true)
+                } else {
+                    result.success(openSettings())
+                }
             }
             else -> result.notImplemented()
         }

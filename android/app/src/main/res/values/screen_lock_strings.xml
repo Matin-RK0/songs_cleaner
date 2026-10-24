@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="screen_lock_accessibility_label">Double-tap to turn screen off</string>
+    <string name="screen_lock_accessibility_description">Turns off the display and locks the device when you double-tap the lock-screen player background, or when its configured inactivity timeout expires while the phone is locked. Does not read screen content or collect or send data. Enabling this service is optional and you can disable it at any time.</string>
+</resources>

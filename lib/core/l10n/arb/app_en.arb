@@ -115,6 +115,10 @@
   "settingsLockScreenSection": "Lock screen",
   "lockScreenControlTitle": "Music controls on lock screen",
   "lockScreenTimeoutTitle": "Lock screen player timeout",
+  "screenLockAccessTitle": "Allow double-tap to turn screen off?",
+  "screenLockAccessMessage": "This optional feature uses Android Accessibility to turn off the display and lock your phone when you double-tap the player background, or when the selected inactivity timeout expires while your phone is locked. It does not read screen content or collect or send data. In Accessibility settings, open Installed apps and enable Double-tap to turn screen off. Unlock your phone if prompted. You can revoke access at any time. After enabling it, return and double-tap again.",
+  "screenLockUnsupported": "Double-tap screen locking requires Android 9 or later.",
+  "screenLockFailed": "Could not turn off the screen. Check the accessibility service and try again.",
   "lockScreenTimeoutSeconds": "{seconds} seconds",
   "@lockScreenTimeoutSeconds": {
     "placeholders": { "seconds": { "type": "int" } }

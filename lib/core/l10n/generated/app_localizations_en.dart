@@ -369,6 +369,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockScreenTimeoutTitle => 'Lock screen player timeout';
 
   @override
+  String get screenLockAccessTitle => 'Allow double-tap to turn screen off?';
+
+  @override
+  String get screenLockAccessMessage =>
+      'This optional feature uses Android Accessibility to turn off the display and lock your phone when you double-tap the player background, or when the selected inactivity timeout expires while your phone is locked. It does not read screen content or collect or send data. In Accessibility settings, open Installed apps and enable Double-tap to turn screen off. Unlock your phone if prompted. You can revoke access at any time. After enabling it, return and double-tap again.';
+
+  @override
+  String get screenLockUnsupported =>
+      'Double-tap screen locking requires Android 9 or later.';
+
+  @override
+  String get screenLockFailed =>
+      'Could not turn off the screen. Check the accessibility service and try again.';
+
+  @override
   String lockScreenTimeoutSeconds(int seconds) {
     return '$seconds seconds';
   }

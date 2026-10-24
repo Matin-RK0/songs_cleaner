@@ -9,6 +9,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../library/presentation/widgets/artwork_image.dart';
 import '../../../player/application/providers/player_controller.dart';
+import '../../../player/application/providers/player_preferences_controller.dart';
 import '../../../player/presentation/widgets/delete_current_button.dart';
 import '../../../player/presentation/widgets/artwork_ambient_background.dart';
 import '../../../player/presentation/widgets/player_controls_row.dart';
@@ -16,6 +17,7 @@ import '../../../player/presentation/widgets/player_state_views.dart';
 import '../../../player/presentation/widgets/player_track_info.dart';
 import '../../../player/presentation/widgets/seek_bar.dart';
 import '../../application/providers/lock_screen_controller.dart';
+import '../widgets/lock_screen_background.dart';
 
 /// Lock-screen player. Pushed by the lock-screen coordinator when the keyguard
 /// turns on during playback, so the controls cover the lock screen instead of
@@ -28,6 +30,7 @@ class LockScreenPlayerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final song = ref.watch(playerProvider.select((state) => state.current));
     final playing = ref.watch(playerProvider.select((state) => state.playing));
+    final hideQuickDelete = ref.watch(hideQuickDeleteProvider);
     final l10n = context.l10n;
     return PopScope(
       // The route is removed by the lock-screen coordinator (unlock or back);
@@ -40,96 +43,98 @@ class LockScreenPlayerScreen extends ConsumerWidget {
         body: ArtworkAmbientBackground(
           songId: song?.id,
           visible: song != null && playing,
-          child: SafeArea(
-            child: song == null
-                ? const NothingPlayingView()
-                : Column(
-                    children: [
-                      Padding(
-                        padding: AppSpacing.screenPadding,
-                        child: SizedBox(
-                          height: 48,
-                          child: Stack(
-                            alignment: AlignmentDirectional.center,
-                            children: [
-                              Align(
-                                alignment: AlignmentDirectional.centerStart,
-                                child: IconButton(
-                                  tooltip: l10n.backTooltip,
-                                  iconSize: 30,
-                                  icon: const Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                  ),
-                                  onPressed: () {
-                                    ref
-                                        .read(lockScreenServiceProvider)
-                                        .dismiss();
-                                    Navigator.of(context).maybePop();
-                                  },
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.xl,
-                                ),
-                                child: Text(
-                                  l10n.playerScreenTitle,
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.sectionTitle.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: context.colors.textHigh,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.lg,
-                            ),
-                            child: RepaintBoundary(
-                              child: AnimatedSwitcher(
-                                duration: AppMotion.normal,
-                                switchInCurve: AppMotion.standard,
-                                switchOutCurve: AppMotion.standard,
-                                transitionBuilder: (child, animation) =>
-                                    FadeTransition(
-                                      opacity: animation,
-                                      child: child,
+          child: LockScreenBackground(
+            child: SafeArea(
+              child: song == null
+                  ? const NothingPlayingView()
+                  : Column(
+                      children: [
+                        Padding(
+                          padding: AppSpacing.screenPadding,
+                          child: SizedBox(
+                            height: 48,
+                            child: Stack(
+                              alignment: AlignmentDirectional.center,
+                              children: [
+                                Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: IconButton(
+                                    tooltip: l10n.backTooltip,
+                                    iconSize: 30,
+                                    icon: const Icon(
+                                      Icons.keyboard_arrow_down_rounded,
                                     ),
-                                child: ArtworkImage(
-                                  key: ValueKey(song.id),
-                                  songId: song.id,
-                                  size: _artworkSize(context),
-                                  borderRadius: AppRadius.xl,
+                                    onPressed: () {
+                                      ref
+                                          .read(lockScreenServiceProvider)
+                                          .dismiss();
+                                      Navigator.of(context).maybePop();
+                                    },
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.xl,
+                                  ),
+                                  child: Text(
+                                    l10n.playerScreenTitle,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.sectionTitle.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: context.colors.textHigh,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                              ),
+                              child: RepaintBoundary(
+                                child: AnimatedSwitcher(
+                                  duration: AppMotion.normal,
+                                  switchInCurve: AppMotion.standard,
+                                  switchOutCurve: AppMotion.standard,
+                                  transitionBuilder: (child, animation) =>
+                                      FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      ),
+                                  child: ArtworkImage(
+                                    key: ValueKey(song.id),
+                                    songId: song.id,
+                                    size: _artworkSize(context),
+                                    borderRadius: AppRadius.xl,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      AnimatedSwitcher(
-                        duration: AppMotion.fast,
-                        switchInCurve: AppMotion.standard,
-                        switchOutCurve: AppMotion.standard,
-                        child: PlayerTrackInfo(key: ValueKey(song.id)),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      SeekBar(),
-                      const SizedBox(height: AppSpacing.md),
-                      const PlayerControlsRow(),
-                      const SizedBox(height: AppSpacing.xl),
-                      DeleteCurrentButton(song: song),
-                      const SizedBox(height: AppSpacing.md),
-                    ],
-                  ),
+                        const SizedBox(height: AppSpacing.md),
+                        AnimatedSwitcher(
+                          duration: AppMotion.fast,
+                          switchInCurve: AppMotion.standard,
+                          switchOutCurve: AppMotion.standard,
+                          child: PlayerTrackInfo(key: ValueKey(song.id)),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        SeekBar(),
+                        const SizedBox(height: AppSpacing.md),
+                        const PlayerControlsRow(),
+                        const SizedBox(height: AppSpacing.xl),
+                        if (!hideQuickDelete) DeleteCurrentButton(song: song),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),

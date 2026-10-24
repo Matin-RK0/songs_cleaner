@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+enum ScreenLockResult { locked, permissionRequired, unsupported, failed }
+
 /// Commands pushed from the native lock-screen controller to Dart.
 enum LockScreenEvent {
   /// The keyguard turned on while a song was playing: show the player route.
@@ -94,6 +96,18 @@ class LockScreenService {
   /// Back pressed on the lock-screen player: drop the window flags and retreat
   /// to the keyguard.
   Future<void> dismiss() => _invoke<void>('dismiss');
+
+  Future<ScreenLockResult> lockScreen() async {
+    return switch (await _invoke<String>('lockScreen')) {
+      'locked' => ScreenLockResult.locked,
+      'permissionRequired' => ScreenLockResult.permissionRequired,
+      'unsupported' => ScreenLockResult.unsupported,
+      _ => ScreenLockResult.failed,
+    };
+  }
+
+  Future<bool> requestScreenLockAccess() async =>
+      await _invoke<bool>('requestScreenLockAccess') ?? false;
 
   Future<T?> _invoke<T>(String method, [Object? arguments]) async {
     if (!_isAndroid) return null;

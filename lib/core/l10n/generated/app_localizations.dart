@@ -770,6 +770,30 @@ abstract class AppLocalizations {
   /// **'زمان نمایش پخش‌کننده روی صفحه قفل'**
   String get lockScreenTimeoutTitle;
 
+  /// No description provided for @screenLockAccessTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'خاموش کردن صفحه با دوبار لمس فعال شود؟'**
+  String get screenLockAccessTitle;
+
+  /// No description provided for @screenLockAccessMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'این قابلیت اختیاری برای خاموش کردن نمایشگر و قفل کردن گوشی با دوبار لمس پس‌زمینه پخش‌کننده، یا پایان زمان بی‌فعالیتی انتخاب‌شده هنگامی که گوشی قفل است، از دسترسی Accessibility اندروید استفاده می‌کند. محتوای صفحه خوانده نمی‌شود و داده‌ای جمع‌آوری یا ارسال نمی‌شود. در تنظیمات دسترس‌پذیری، بخش برنامه‌های نصب‌شده، «خاموش کردن صفحه با دوبار لمس» را فعال کنید. در صورت درخواست، ابتدا قفل گوشی را باز کنید. هر زمان می‌توانید این دسترسی را لغو کنید. پس از فعال‌سازی برگردید و دوباره پس‌زمینه را دوبار لمس کنید.'**
+  String get screenLockAccessMessage;
+
+  /// No description provided for @screenLockUnsupported.
+  ///
+  /// In fa, this message translates to:
+  /// **'قفل کردن صفحه با دوبار لمس به اندروید ۹ یا جدیدتر نیاز دارد.'**
+  String get screenLockUnsupported;
+
+  /// No description provided for @screenLockFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'خاموش کردن صفحه انجام نشد. سرویس دسترس‌پذیری را بررسی و دوباره تلاش کنید.'**
+  String get screenLockFailed;
+
   /// No description provided for @lockScreenTimeoutSeconds.
   ///
   /// In fa, this message translates to:
