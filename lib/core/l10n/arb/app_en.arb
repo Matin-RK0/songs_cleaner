@@ -114,6 +114,11 @@
   "languagePersian": "فارسی",
   "settingsLockScreenSection": "Lock screen",
   "lockScreenControlTitle": "Music controls on lock screen",
+  "lockScreenTimeoutTitle": "Lock screen player timeout",
+  "lockScreenTimeoutSeconds": "{seconds} seconds",
+  "@lockScreenTimeoutSeconds": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
   "lockScreenControlSubtitle": "Show the player when the screen turns on while music is playing.",
   "lockScreenPermissionNeeded": "Allow \"Display over other apps\" to turn this on.",
   "lockScreenUnsupportedSubtitle": "Not supported on this device.",

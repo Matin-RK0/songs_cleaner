@@ -195,6 +195,21 @@ class AppSettingsRepository {
 
   // -- Lock screen ------------------------------------------------------------
 
+  static const lockScreenTimeoutOptions = [5, 10, 15, 30, 60];
+  static const _lockScreenTimeoutKey = 'lockscreen.timeoutSeconds';
+
+  int loadLockScreenTimeoutSeconds() {
+    final value = _prefs.getInt(_lockScreenTimeoutKey);
+    return lockScreenTimeoutOptions.contains(value) ? value! : 5;
+  }
+
+  Future<void> saveLockScreenTimeoutSeconds(int seconds) {
+    if (!lockScreenTimeoutOptions.contains(seconds)) {
+      throw ArgumentError.value(seconds, 'seconds');
+    }
+    return _prefs.setInt(_lockScreenTimeoutKey, seconds);
+  }
+
   bool loadLockScreenEnabled(bool fallback) =>
       _prefs.getBool(_lockScreenEnabledKey) ?? fallback;
 

@@ -42,7 +42,8 @@ object LockScreenController {
     private const val FLUTTER_PREFS = "FlutterSharedPreferences"
     private const val FLUTTER_ENABLED_KEY = "flutter.lockscreen.enabled"
     private const val PENDING_PLAY_KEY = "pending_play"
-    private const val SCREEN_WAKE_DURATION_MS = 5_000L
+    private const val TIMEOUT_KEY = "timeout_seconds"
+    private var screenWakeDurationMs = 5_000L
 
     @Volatile private var activity: Activity? = null
     @Volatile private var channel: MethodChannel? = null
@@ -127,7 +128,7 @@ object LockScreenController {
     fun onUserInteraction(host: Activity) {
         if (!playerShown) return
         screenWakeHandler.removeCallbacks(clearScreenWake)
-        screenWakeHandler.postDelayed(clearScreenWake, SCREEN_WAKE_DURATION_MS)
+        screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
     }
 
     // -- Screen / keyguard events ----------------------------------------------
@@ -163,7 +164,7 @@ object LockScreenController {
         val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         if (!keyguard.isKeyguardLocked) return
 
-        // The initial presentation applies TURN_SCREEN_ON for five seconds.
+        // The initial presentation applies TURN_SCREEN_ON for the configured timeout.
         // Re-applying it here on every Samsung SCREEN_ON event keeps resetting
         // the device display timeout and can leave the screen awake forever.
         if (playerShown) {
@@ -252,7 +253,7 @@ object LockScreenController {
         // lock-screen presentation. Leaving it attached makes some Samsung
         // builds bypass their normal lock-screen display timeout.
         screenWakeHandler.removeCallbacks(clearScreenWake)
-        screenWakeHandler.postDelayed(clearScreenWake, SCREEN_WAKE_DURATION_MS)
+        screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
     }
 
     private fun clearLockedFlags(host: Activity) {
@@ -323,6 +324,21 @@ object LockScreenController {
                 if (!enabled) dismissIfShown()
                 result.success(null)
             }
+            "setTimeoutSeconds" -> {
+                val seconds = (call.arguments as? Number)?.toInt()
+                if (seconds !in listOf(5, 10, 15, 30, 60)) {
+                    result.error("invalid_timeout", null, null)
+                    return
+                }
+                screenWakeDurationMs = seconds!!.toLong() * 1000L
+                context?.getSharedPreferences(LOCK_SCREEN_PREFS, Context.MODE_PRIVATE)
+                    ?.edit()?.putInt(TIMEOUT_KEY, seconds)?.apply()
+                if (playerShown) {
+                    screenWakeHandler.removeCallbacks(clearScreenWake)
+                    screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
+                }
+                result.success(null)
+            }
             "setPlaybackActive" -> {
                 playbackActive = call.arguments == true
                 result.success(null)
@@ -345,6 +361,8 @@ object LockScreenController {
 
     private fun loadEnabled(context: Context): Boolean {
         val nativePrefs = context.getSharedPreferences(LOCK_SCREEN_PREFS, Context.MODE_PRIVATE)
+        screenWakeDurationMs = nativePrefs.getInt(TIMEOUT_KEY, 5)
+            .coerceIn(5, 60).toLong() * 1000L
         if (nativePrefs.contains(ENABLED_KEY)) {
             return nativePrefs.getBoolean(ENABLED_KEY, false)
         }

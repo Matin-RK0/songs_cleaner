@@ -73,6 +73,9 @@ class LockScreenService {
 
   Future<void> setEnabled(bool enabled) => _invoke<void>('setEnabled', enabled);
 
+  Future<void> setTimeoutSeconds(int seconds) =>
+      _invoke<void>('setTimeoutSeconds', seconds);
+
   /// Mirrors the live playback rule (`hasCurrent && playing`) so the native
   /// side only reacts to the lock screen while music is actually playing.
   Future<void> setPlaybackActive(bool active) =>

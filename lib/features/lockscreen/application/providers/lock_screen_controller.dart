@@ -16,6 +16,7 @@ class LockScreenState {
     required this.supported,
     required this.overlayGranted,
     required this.enabled,
+    this.timeoutSeconds = 5,
   });
 
   /// Device/OS supports the feature (Android only).
@@ -26,16 +27,19 @@ class LockScreenState {
 
   /// User toggle. Only ever true when [supported] and [overlayGranted].
   final bool enabled;
+  final int timeoutSeconds;
 
   LockScreenState copyWith({
     bool? supported,
     bool? overlayGranted,
     bool? enabled,
+    int? timeoutSeconds,
   }) {
     return LockScreenState(
       supported: supported ?? this.supported,
       overlayGranted: overlayGranted ?? this.overlayGranted,
       enabled: enabled ?? this.enabled,
+      timeoutSeconds: timeoutSeconds ?? this.timeoutSeconds,
     );
   }
 }
@@ -59,11 +63,16 @@ class LockScreenController extends AsyncNotifier<LockScreenState> {
     final enabled =
         supported && overlayGranted && settings.loadLockScreenEnabled(false);
 
-    if (supported) await service.setEnabled(enabled);
+    final timeoutSeconds = settings.loadLockScreenTimeoutSeconds();
+    if (supported) {
+      await service.setTimeoutSeconds(timeoutSeconds);
+      await service.setEnabled(enabled);
+    }
     return LockScreenState(
       supported: supported,
       overlayGranted: overlayGranted,
       enabled: enabled,
+      timeoutSeconds: timeoutSeconds,
     );
   }
 
@@ -73,6 +82,16 @@ class LockScreenController extends AsyncNotifier<LockScreenState> {
     state = AsyncData(current.copyWith(enabled: value));
     await ref.read(appSettingsRepositoryProvider).saveLockScreenEnabled(value);
     await ref.read(lockScreenServiceProvider).setEnabled(value);
+  }
+
+  Future<void> setTimeoutSeconds(int seconds) async {
+    final current = state.value;
+    if (current == null) return;
+    await ref
+        .read(appSettingsRepositoryProvider)
+        .saveLockScreenTimeoutSeconds(seconds);
+    await ref.read(lockScreenServiceProvider).setTimeoutSeconds(seconds);
+    state = AsyncData(current.copyWith(timeoutSeconds: seconds));
   }
 
   /// Opens the system screen that grants "Display over other apps".
@@ -91,6 +110,11 @@ class LockScreenController extends AsyncNotifier<LockScreenState> {
         supported: supported,
         overlayGranted: overlayGranted,
         enabled: enabled,
+        timeoutSeconds:
+            state.value?.timeoutSeconds ??
+            ref
+                .read(appSettingsRepositoryProvider)
+                .loadLockScreenTimeoutSeconds(),
       ),
     );
     if (!overlayGranted && wasEnabled) {

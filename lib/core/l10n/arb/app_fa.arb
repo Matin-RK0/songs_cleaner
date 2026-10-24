@@ -149,6 +149,11 @@
   "languagePersian": "فارسی",
   "settingsLockScreenSection": "صفحه قفل",
   "lockScreenControlTitle": "کنترل موزیک روی صفحه قفل",
+  "lockScreenTimeoutTitle": "زمان نمایش پخش‌کننده روی صفحه قفل",
+  "lockScreenTimeoutSeconds": "{seconds} ثانیه",
+  "@lockScreenTimeoutSeconds": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
   "lockScreenControlSubtitle": "وقتی موزیک در حال پخش است و صفحه روشن می‌شود، پخش‌کننده نمایش داده شود.",
   "lockScreenPermissionNeeded": "برای فعال‌سازی، اجازه «نمایش روی برنامه‌های دیگر» را بدهید.",
   "lockScreenUnsupportedSubtitle": "روی این دستگاه پشتیبانی نمی‌شود.",

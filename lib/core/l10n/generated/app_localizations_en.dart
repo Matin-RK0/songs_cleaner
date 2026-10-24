@@ -366,6 +366,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockScreenControlTitle => 'Music controls on lock screen';
 
   @override
+  String get lockScreenTimeoutTitle => 'Lock screen player timeout';
+
+  @override
+  String lockScreenTimeoutSeconds(int seconds) {
+    return '$seconds seconds';
+  }
+
+  @override
   String get lockScreenControlSubtitle =>
       'Show the player when the screen turns on while music is playing.';
 

@@ -764,6 +764,18 @@ abstract class AppLocalizations {
   /// **'کنترل موزیک روی صفحه قفل'**
   String get lockScreenControlTitle;
 
+  /// No description provided for @lockScreenTimeoutTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'زمان نمایش پخش‌کننده روی صفحه قفل'**
+  String get lockScreenTimeoutTitle;
+
+  /// No description provided for @lockScreenTimeoutSeconds.
+  ///
+  /// In fa, this message translates to:
+  /// **'{seconds} ثانیه'**
+  String lockScreenTimeoutSeconds(int seconds);
+
   /// No description provided for @lockScreenControlSubtitle.
   ///
   /// In fa, this message translates to:

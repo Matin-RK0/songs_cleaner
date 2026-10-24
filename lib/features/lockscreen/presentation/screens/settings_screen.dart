@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/l10n/generated/app_localizations.dart';
 import '../../../../core/l10n/locale_controller.dart';
+import '../../../../core/settings/app_settings_repository.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -27,6 +28,52 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  Future<void> _showLockScreenTimeoutSheet(int current) async {
+    final l10n = context.l10n;
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: context.colors.surfaceHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Text(
+                l10n.lockScreenTimeoutTitle,
+                style: AppTypography.sectionTitle,
+              ),
+            ),
+            RadioGroup<int>(
+              groupValue: current,
+              onChanged: (value) => Navigator.of(sheetContext).pop(value),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final seconds
+                      in AppSettingsRepository.lockScreenTimeoutOptions)
+                    RadioListTile<int>(
+                      value: seconds,
+                      title: Text(l10n.lockScreenTimeoutSeconds(seconds)),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null && mounted) {
+      await ref
+          .read(lockScreenControllerProvider.notifier)
+          .setTimeoutSeconds(selected);
+    }
+  }
+
   AppLifecycleListener? _lifecycleListener;
 
   /// Set while the user is taken to system settings to grant the overlay
@@ -490,14 +537,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 error: (_, _) =>
                     AppErrorState(title: l10n.errorLoadFailedTitle),
-                data: (state) => _SettingSwitchTile(
-                  value: state.enabled,
-                  onChanged: state.supported
-                      ? (value) => _onToggle(state, value)
-                      : null,
-                  title: l10n.lockScreenControlTitle,
-                  subtitle: _subtitle(l10n, state),
-                  icon: Icons.music_note_rounded,
+                data: (state) => Column(
+                  children: [
+                    _SettingSwitchTile(
+                      value: state.enabled,
+                      onChanged: state.supported
+                          ? (value) => _onToggle(state, value)
+                          : null,
+                      title: l10n.lockScreenControlTitle,
+                      subtitle: _subtitle(l10n, state),
+                      icon: Icons.music_note_rounded,
+                    ),
+                    ListTile(
+                      enabled: state.enabled,
+                      leading: Icon(
+                        Icons.timer_outlined,
+                        color: colors.primary,
+                      ),
+                      title: Text(l10n.lockScreenTimeoutTitle),
+                      subtitle: Text(
+                        l10n.lockScreenTimeoutSeconds(state.timeoutSeconds),
+                      ),
+                      onTap: state.enabled
+                          ? () => _showLockScreenTimeoutSheet(
+                              state.timeoutSeconds,
+                            )
+                          : null,
+                    ),
+                  ],
                 ),
               ),
               _SectionHeader(title: l10n.settingsPlaybackSection),

@@ -3,6 +3,36 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songs_cleaner/core/settings/app_settings_repository.dart';
 
 void main() {
+  test(
+    'lock screen timeout defaults to five seconds and persists options',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final repository = AppSettingsRepository(
+        await SharedPreferences.getInstance(),
+      );
+      expect(repository.loadLockScreenTimeoutSeconds(), 5);
+      for (final seconds in AppSettingsRepository.lockScreenTimeoutOptions) {
+        await repository.saveLockScreenTimeoutSeconds(seconds);
+        expect(repository.loadLockScreenTimeoutSeconds(), seconds);
+      }
+      expect(
+        () => repository.saveLockScreenTimeoutSeconds(0),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  test(
+    'invalid stored lock screen timeout falls back to five seconds',
+    () async {
+      SharedPreferences.setMockInitialValues({'lockscreen.timeoutSeconds': -1});
+      final repository = AppSettingsRepository(
+        await SharedPreferences.getInstance(),
+      );
+      expect(repository.loadLockScreenTimeoutSeconds(), 5);
+    },
+  );
+
   test('round-trips an atomic playback session snapshot', () async {
     SharedPreferences.setMockInitialValues({});
     final preferences = await SharedPreferences.getInstance();

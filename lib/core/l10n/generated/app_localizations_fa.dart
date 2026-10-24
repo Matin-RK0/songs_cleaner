@@ -365,6 +365,14 @@ class AppLocalizationsFa extends AppLocalizations {
   String get lockScreenControlTitle => 'کنترل موزیک روی صفحه قفل';
 
   @override
+  String get lockScreenTimeoutTitle => 'زمان نمایش پخش‌کننده روی صفحه قفل';
+
+  @override
+  String lockScreenTimeoutSeconds(int seconds) {
+    return '$seconds ثانیه';
+  }
+
+  @override
   String get lockScreenControlSubtitle =>
       'وقتی موزیک در حال پخش است و صفحه روشن می‌شود، پخش‌کننده نمایش داده شود.';
 
