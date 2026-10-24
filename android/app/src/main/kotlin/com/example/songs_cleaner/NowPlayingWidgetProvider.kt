@@ -57,7 +57,7 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 val songId = prefs.getInt(SONG_ID, -1)
                 val artwork = loadArtwork(context, songId)
                 if (artwork != null) {
-                    setImageViewBitmap(R.id.widget_artwork, artwork)
+                    setImageViewBitmap(R.id.widget_artwork, squareArtwork(artwork))
                 } else {
                     setImageViewResource(R.id.widget_artwork, R.drawable.ic_notif_applogo)
                 }
@@ -102,6 +102,17 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 setOnClickPendingIntent(R.id.widget_next, actionIntent(context, ACTION_NEXT))
             }
             manager.updateAppWidget(ComponentName(context, NowPlayingWidgetProvider::class.java), views)
+        }
+
+        private fun squareArtwork(bitmap: Bitmap): Bitmap {
+            val side = minOf(bitmap.width, bitmap.height)
+            return Bitmap.createBitmap(
+                bitmap,
+                (bitmap.width - side) / 2,
+                (bitmap.height - side) / 2,
+                side,
+                side,
+            )
         }
 
         private fun loadArtwork(context: Context, songId: Int): Bitmap? {

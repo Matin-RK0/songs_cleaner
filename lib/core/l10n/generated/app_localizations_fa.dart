@@ -342,6 +342,46 @@ class AppLocalizationsFa extends AppLocalizations {
   String get widgetBackgroundUseDynamic => 'استفاده از پس‌زمینه پویا';
 
   @override
+  String get colorHue => 'فام';
+
+  @override
+  String get colorSaturation => 'اشباع';
+
+  @override
+  String get colorBrightness => 'روشنایی';
+
+  @override
+  String get colorSuggested => 'رنگ‌های پیشنهادی';
+
+  @override
+  String get colorFineAdjustments => 'تنظیمات دقیق';
+
+  @override
+  String get colorBefore => 'قبلی';
+
+  @override
+  String get colorAfter => 'انتخاب‌شده';
+
+  @override
+  String get colorFieldHint =>
+      'اشباع و روشنایی را انتخاب کنید یا برای تنظیم دقیق از لغزنده‌های زیر استفاده کنید.';
+
+  @override
+  String colorChoice(String hex) {
+    return 'انتخاب رنگ $hex';
+  }
+
+  @override
+  String colorDegrees(String value) {
+    return '$value درجه';
+  }
+
+  @override
+  String colorPercent(String value) {
+    return '$value٪';
+  }
+
+  @override
   String get colorRed => 'قرمز';
 
   @override

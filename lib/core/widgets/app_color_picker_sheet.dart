@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../extensions/context_l10n.dart';
+import '../theme/app_color_picker_tokens.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import 'app_color_picker_editor.dart';
 
 class AppColorPickerSheet extends StatefulWidget {
   const AppColorPickerSheet({
@@ -27,22 +28,15 @@ class AppColorPickerSheet extends StatefulWidget {
 }
 
 class _AppColorPickerSheetState extends State<AppColorPickerSheet> {
-  late int _red;
-  late int _green;
-  late int _blue;
+  late Color _draft;
   bool _saving = false;
   bool _failed = false;
 
   @override
   void initState() {
     super.initState();
-    final argb = widget.initialColor.toARGB32();
-    _red = (argb >> 16) & 0xff;
-    _green = (argb >> 8) & 0xff;
-    _blue = argb & 0xff;
+    _draft = Color(widget.initialColor.toARGB32() | 0xff000000);
   }
-
-  Color get _color => Color.fromARGB(255, _red, _green, _blue);
 
   Future<void> _submit(Future<void> Function() action) async {
     if (_saving) return;
@@ -53,7 +47,11 @@ class _AppColorPickerSheetState extends State<AppColorPickerSheet> {
     try {
       await action();
       if (!mounted) return;
-      Navigator.of(context).pop();
+      setState(() => _saving = false);
+      // PopScope must rebuild before the successful programmatic pop.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop();
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -71,108 +69,112 @@ class _AppColorPickerSheetState extends State<AppColorPickerSheet> {
       canPop: !_saving,
       child: SafeArea(
         top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            AppSpacing.lg,
-            0,
-            AppSpacing.lg,
-            AppSpacing.lg,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                widget.title,
-                style: AppTypography.sectionTitle.copyWith(
-                  color: colors.textHigh,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              SizedBox(
-                height: AppSpacing.xl,
-                child: DecoratedBox(
-                  decoration: ShapeDecoration(
-                    color: _color,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                      side: BorderSide(color: colors.outline),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _channel(l10n.colorRed, _red, (value) => _red = value),
-              _channel(l10n.colorGreen, _green, (value) => _green = value),
-              _channel(l10n.colorBlue, _blue, (value) => _blue = value),
-              if (_failed) ...[
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    l10n.errorLoadFailedMessage,
-                    style: AppTypography.body.copyWith(color: colors.danger),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-              const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                alignment: WrapAlignment.end,
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
+        child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppColorPickerTokens.maxWidth,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (widget.resetLabel != null && widget.onReset != null)
-                    TextButton(
-                      onPressed: _saving
-                          ? null
-                          : () => _submit(widget.onReset!),
-                      child: Text(widget.resetLabel!),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        widget.title,
+                        style: AppTypography.sheetTitle.copyWith(
+                          color: colors.textHigh,
+                        ),
+                      ),
                     ),
-                  TextButton(
-                    onPressed: _saving
-                        ? null
-                        : () => Navigator.of(context).pop(),
-                    child: Text(l10n.cancel),
                   ),
-                  FilledButton(
-                    onPressed: _saving
-                        ? null
-                        : () => _submit(() => widget.onSave(_color)),
-                    child: Text(l10n.saveAction),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: AppColorPickerEditor(
+                        initialColor: _draft,
+                        enabled: !_saving,
+                        onChanged: (color) => _draft = color,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_failed) ...[
+                          Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              l10n.errorLoadFailedMessage,
+                              style: AppTypography.body.copyWith(
+                                color: colors.danger,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
+                        Wrap(
+                          alignment: WrapAlignment.end,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.xs,
+                          children: [
+                            if (widget.resetLabel != null &&
+                                widget.onReset != null)
+                              TextButton(
+                                onPressed: _saving
+                                    ? null
+                                    : () => _submit(widget.onReset!),
+                                child: Text(widget.resetLabel!),
+                              ),
+                            TextButton(
+                              onPressed: _saving
+                                  ? null
+                                  : () => Navigator.of(context).pop(),
+                              child: Text(l10n.cancel),
+                            ),
+                            FilledButton(
+                              onPressed: _saving
+                                  ? null
+                                  : () => _submit(() => widget.onSave(_draft)),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_saving) ...[
+                                    SizedBox.square(
+                                      dimension:
+                                          AppColorPickerTokens.progressSize,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth:
+                                            AppColorPickerTokens.progressStroke,
+                                        semanticsLabel: l10n.saveAction,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                  ],
+                                  Text(l10n.saveAction),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _channel(String label, int value, ValueChanged<int> onChanged) {
-    final localizations = MaterialLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          '$label: ${localizations.formatDecimal(value)}',
-          style: AppTypography.body.copyWith(color: context.colors.textHigh),
-        ),
-        Semantics(
-          label: label,
-          child: Slider(
-            value: value.toDouble(),
-            max: 255,
-            divisions: 255,
-            label: localizations.formatDecimal(value),
-            semanticFormatterCallback: (value) =>
-                localizations.formatDecimal(value.round()),
-            onChanged: _saving
-                ? null
-                : (value) => setState(() => onChanged(value.round())),
-          ),
-        ),
-      ],
     );
   }
 }

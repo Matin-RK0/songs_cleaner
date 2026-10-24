@@ -722,6 +722,72 @@ abstract class AppLocalizations {
   /// **'استفاده از پس‌زمینه پویا'**
   String get widgetBackgroundUseDynamic;
 
+  /// No description provided for @colorHue.
+  ///
+  /// In fa, this message translates to:
+  /// **'فام'**
+  String get colorHue;
+
+  /// No description provided for @colorSaturation.
+  ///
+  /// In fa, this message translates to:
+  /// **'اشباع'**
+  String get colorSaturation;
+
+  /// No description provided for @colorBrightness.
+  ///
+  /// In fa, this message translates to:
+  /// **'روشنایی'**
+  String get colorBrightness;
+
+  /// No description provided for @colorSuggested.
+  ///
+  /// In fa, this message translates to:
+  /// **'رنگ‌های پیشنهادی'**
+  String get colorSuggested;
+
+  /// No description provided for @colorFineAdjustments.
+  ///
+  /// In fa, this message translates to:
+  /// **'تنظیمات دقیق'**
+  String get colorFineAdjustments;
+
+  /// No description provided for @colorBefore.
+  ///
+  /// In fa, this message translates to:
+  /// **'قبلی'**
+  String get colorBefore;
+
+  /// No description provided for @colorAfter.
+  ///
+  /// In fa, this message translates to:
+  /// **'انتخاب‌شده'**
+  String get colorAfter;
+
+  /// No description provided for @colorFieldHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'اشباع و روشنایی را انتخاب کنید یا برای تنظیم دقیق از لغزنده‌های زیر استفاده کنید.'**
+  String get colorFieldHint;
+
+  /// No description provided for @colorChoice.
+  ///
+  /// In fa, this message translates to:
+  /// **'انتخاب رنگ {hex}'**
+  String colorChoice(String hex);
+
+  /// No description provided for @colorDegrees.
+  ///
+  /// In fa, this message translates to:
+  /// **'{value} درجه'**
+  String colorDegrees(String value);
+
+  /// No description provided for @colorPercent.
+  ///
+  /// In fa, this message translates to:
+  /// **'{value}٪'**
+  String colorPercent(String value);
+
   /// No description provided for @colorRed.
   ///
   /// In fa, this message translates to:

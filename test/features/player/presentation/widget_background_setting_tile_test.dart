@@ -6,11 +6,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songs_cleaner/core/l10n/generated/app_localizations.dart';
 import 'package:songs_cleaner/core/settings/app_settings_repository.dart';
+import 'package:songs_cleaner/core/theme/app_color_picker_tokens.dart';
+import 'package:songs_cleaner/core/widgets/app_color_picker_sheet.dart';
 import 'package:songs_cleaner/features/player/presentation/widgets/widget_background_setting_tile.dart';
 
 void main() {
   const channel = MethodChannel('com.example.songs_cleaner/now_playing_widget');
   const preferenceKey = 'widget.backgroundColor';
+  const swatchColor = AppColorPickerTokens.darkNeutral;
+  final swatch = find.byKey(const ValueKey('color-picker-swatch-ff30343b'));
+  final hex = find.byKey(const ValueKey('color-picker-hex'));
   final calls = <MethodCall>[];
   late SharedPreferences preferences;
 
@@ -71,39 +76,41 @@ void main() {
     expect(calls, isEmpty);
   });
 
-  testWidgets('saves slider changes and resets to dynamic', (tester) async {
+  testWidgets('saves swatch changes and resets to dynamic', (tester) async {
     final l10n = await pumpTile(tester);
     await tester.tap(find.byType(ListTile));
     await tester.pumpAndSettle();
 
-    final sliders = find.byType(Slider);
-    expect(sliders, findsNWidgets(3));
-    for (var index = 0; index < 3; index++) {
-      await tester.tap(sliders.at(index));
-      await tester.pump();
-      expect(tester.widget<Slider>(sliders.at(index)).value, 128);
-    }
+    await tester.ensureVisible(swatch);
+    await tester.tap(swatch);
+    await tester.pump();
+    expect(tester.widget<Text>(hex).data, '#30343B');
     expect(preferences.containsKey(preferenceKey), isFalse);
     expect(calls, isEmpty);
+    expect(
+      find.widgetWithText(FilledButton, l10n.saveAction).hitTestable(),
+      findsOneWidget,
+    );
 
     await tester.tap(find.widgetWithText(FilledButton, l10n.saveAction));
     await tester.pumpAndSettle();
 
-    expect(find.byType(Slider), findsNothing);
+    expect(find.byType(AppColorPickerSheet), findsNothing);
     expect(find.text(l10n.widgetBackgroundCustom), findsOneWidget);
-    expect(preferences.getInt(preferenceKey), 0xff808080);
+    expect(preferences.getInt(preferenceKey), swatchColor.toARGB32());
     expect(calls, hasLength(1));
     expect(calls.single.method, 'setBackgroundColor');
-    expect(calls.single.arguments, {'color': 0xff808080});
+    expect(calls.single.arguments, {'color': swatchColor.toARGB32()});
 
     await tester.tap(find.byType(ListTile));
     await tester.pumpAndSettle();
+    expect(tester.widget<Text>(hex).data, '#30343B');
     await tester.tap(
       find.widgetWithText(TextButton, l10n.widgetBackgroundUseDynamic),
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(Slider), findsNothing);
+    expect(find.byType(AppColorPickerSheet), findsNothing);
     expect(find.text(l10n.widgetBackgroundDynamic), findsOneWidget);
     expect(preferences.containsKey(preferenceKey), isFalse);
     expect(calls, hasLength(2));
@@ -111,29 +118,29 @@ void main() {
     expect(calls.last.arguments, {'color': null});
   });
 
-  testWidgets('cancel discards slider changes', (tester) async {
+  testWidgets('cancel discards swatch changes', (tester) async {
     const originalColor = 0xff123456;
     await preferences.setInt(preferenceKey, originalColor);
     final l10n = await pumpTile(tester);
     await tester.tap(find.byType(ListTile));
     await tester.pumpAndSettle();
 
-    final redSlider = find.byType(Slider).first;
-    expect(tester.widget<Slider>(redSlider).value, 0x12);
-    await tester.tap(redSlider);
+    expect(tester.widget<Text>(hex).data, '#123456');
+    await tester.ensureVisible(swatch);
+    await tester.tap(swatch);
     await tester.pump();
-    expect(tester.widget<Slider>(redSlider).value, 128);
+    expect(tester.widget<Text>(hex).data, '#30343B');
     await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
     await tester.pumpAndSettle();
 
-    expect(find.byType(Slider), findsNothing);
+    expect(find.byType(AppColorPickerSheet), findsNothing);
     expect(find.text(l10n.widgetBackgroundCustom), findsOneWidget);
     expect(preferences.getInt(preferenceKey), originalColor);
     expect(calls, isEmpty);
 
     await tester.tap(find.byType(ListTile));
     await tester.pumpAndSettle();
-    expect(tester.widget<Slider>(redSlider).value, 0x12);
+    expect(tester.widget<Text>(hex).data, '#123456');
     await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
     await tester.pumpAndSettle();
   });

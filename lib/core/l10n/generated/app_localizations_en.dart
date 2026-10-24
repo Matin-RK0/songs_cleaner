@@ -343,6 +343,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get widgetBackgroundUseDynamic => 'Use dynamic background';
 
   @override
+  String get colorHue => 'Hue';
+
+  @override
+  String get colorSaturation => 'Saturation';
+
+  @override
+  String get colorBrightness => 'Brightness';
+
+  @override
+  String get colorSuggested => 'Suggested colors';
+
+  @override
+  String get colorFineAdjustments => 'Fine adjustments';
+
+  @override
+  String get colorBefore => 'Before';
+
+  @override
+  String get colorAfter => 'After';
+
+  @override
+  String get colorFieldHint =>
+      'Choose saturation and brightness, or use the sliders below for precise adjustments.';
+
+  @override
+  String colorChoice(String hex) {
+    return 'Choose color $hex';
+  }
+
+  @override
+  String colorDegrees(String value) {
+    return '$value°';
+  }
+
+  @override
+  String colorPercent(String value) {
+    return '$value%';
+  }
+
+  @override
   String get colorRed => 'Red';
 
   @override
