@@ -165,6 +165,7 @@ class AppSettingsRepository {
   static const String _gaplessPlaybackKey = 'audio.gaplessPlayback';
   static const String _themeModeKey = 'appearance.themeMode';
   static const String _primaryColorIndexKey = 'appearance.primaryColorIndex';
+  static const String _primaryColorArgbKey = 'appearance.primaryColorArgb';
   static const String _widgetBackgroundColorKey = 'widget.backgroundColor';
   static const String _localeKey = 'appearance.locale';
 
@@ -230,6 +231,14 @@ class AppSettingsRepository {
 
   Future<void> savePrimaryColorIndex(int index) =>
       _prefs.setInt(_primaryColorIndexKey, index);
+
+  int? loadPrimaryColorArgb() => _prefs.getInt(_primaryColorArgbKey);
+
+  Future<void> savePrimaryColorArgb(int color) async {
+    if (!await _prefs.setInt(_primaryColorArgbKey, color)) {
+      throw StateError('Primary color could not be saved');
+    }
+  }
 
   int? loadWidgetBackgroundColor() => _prefs.getInt(_widgetBackgroundColorKey);
 
