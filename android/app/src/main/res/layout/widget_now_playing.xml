@@ -2,14 +2,16 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:padding="8dp"
+    android:gravity="center_vertical"
+    android:paddingStart="@dimen/widget_horizontal_padding"
+    android:paddingEnd="@dimen/widget_horizontal_padding"
     android:background="@drawable/widget_background">
     <ImageView
         android:id="@+id/widget_artwork"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="@dimen/widget_content_size"
+        android:layout_height="@dimen/widget_content_size"
         android:layout_gravity="center_vertical"
         android:layout_marginEnd="8dp"
         android:background="@drawable/widget_artwork_background"
@@ -32,6 +34,7 @@
             android:textColor="#FFFFFF"
             android:textSize="15sp"
             android:textStyle="bold"
+            android:includeFontPadding="false"
             android:maxLines="1"
             android:ellipsize="end" />
         <TextView
@@ -42,6 +45,7 @@
             android:text="No song playing"
             android:textColor="#D0D5DB"
             android:textSize="12sp"
+            android:includeFontPadding="false"
             android:maxLines="1"
             android:ellipsize="end" />
     </LinearLayout>
@@ -52,8 +56,8 @@
         android:orientation="horizontal">
         <ImageButton
             android:id="@+id/widget_previous"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="@dimen/widget_content_size"
+            android:layout_height="@dimen/widget_content_size"
             android:background="@android:color/transparent"
             android:contentDescription="Previous"
             android:padding="8dp"
@@ -61,8 +65,8 @@
             android:tint="#FFFFFFFF" />
         <ImageButton
             android:id="@+id/widget_play_pause"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="@dimen/widget_content_size"
+            android:layout_height="@dimen/widget_content_size"
             android:background="@android:color/transparent"
             android:contentDescription="Play or pause"
             android:padding="7dp"
@@ -70,8 +74,8 @@
             android:tint="#FFFFFFFF" />
         <ImageButton
             android:id="@+id/widget_next"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="@dimen/widget_content_size"
+            android:layout_height="@dimen/widget_content_size"
             android:background="@android:color/transparent"
             android:contentDescription="Next"
             android:padding="8dp"
