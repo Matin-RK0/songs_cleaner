@@ -57,7 +57,13 @@ abstract final class AppRouter {
       case RouteNames.history:
         return _slideRoute(settings, const PlayHistoryScreen());
       case RouteNames.lockScreen:
-        return _fadeRoute(settings, const LockScreenPlayerScreen());
+        // System-driven presentation must not fade through the previous route.
+        return PageRouteBuilder<void>(
+          settings: settings,
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          pageBuilder: (_, _, _) => const LockScreenPlayerScreen(),
+        );
       case RouteNames.groupSongs:
         final args = settings.arguments;
         if (args is GroupSongsArgs) {

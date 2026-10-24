@@ -2,4 +2,10 @@
 <resources>
     <dimen name="widget_content_size">40dp</dimen>
     <dimen name="widget_horizontal_padding">8dp</dimen>
+    <dimen name="widget_vertical_padding">4dp</dimen>
+    <dimen name="widget_title_min_size">15sp</dimen>
+    <dimen name="widget_title_max_size">20sp</dimen>
+    <dimen name="widget_artist_min_size">12sp</dimen>
+    <dimen name="widget_artist_max_size">16sp</dimen>
+    <dimen name="widget_text_size_step">1sp</dimen>
 </resources>

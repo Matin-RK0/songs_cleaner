@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
@@ -20,12 +21,9 @@ import io.flutter.plugin.common.MethodChannel
 /**
  * Drives the "music controls on the lock screen" feature.
  *
- * When the screen turns on while the keyguard is showing and a song is actively
- * playing, this brings the live [MainActivity] forward over the keyguard so the
- * Flutter player route covers the lock screen. It relies on the
- * SYSTEM_ALERT_WINDOW permission ("Display over other apps"), which is a hard
- * background-activity-launch exemption on Android 10+, so the Activity can be
- * raised from the SCREEN_ON broadcast without a full-screen notification.
+ * Prepares the player when the display turns off without waking it. SCREEN_ON
+ * retries presentation if necessary. SYSTEM_ALERT_WINDOW supplies Android's
+ * background-launch exemption, but devices may still restrict presentation.
  *
  * The [MainActivity] is shared with normal use, so the lock-screen window flags
  * are applied dynamically only while the player is shown; the manifest never
@@ -38,6 +36,7 @@ import io.flutter.plugin.common.MethodChannel
 object LockScreenController {
     /** Intent extra MainActivity uses to know the launch came from here. */
     const val EXTRA_SHOW_PLAYER = "com.example.songs_cleaner.LOCK_SCREEN"
+    private const val EXTRA_WAKE_SCREEN = "com.example.songs_cleaner.WAKE_SCREEN"
     private const val LOCK_SCREEN_PREFS = "songs_cleaner_lock_screen"
     private const val ENABLED_KEY = "enabled"
     private const val FLUTTER_PREFS = "FlutterSharedPreferences"
@@ -68,6 +67,7 @@ object LockScreenController {
 
     /** True while the player is currently covering the keyguard. */
     @Volatile private var playerShown = false
+    private var wakeScreenOnPresentation = true
     private val screenWakeHandler = Handler(Looper.getMainLooper())
     private val clearScreenWake = Runnable {
         activity?.let { host ->
@@ -92,7 +92,7 @@ object LockScreenController {
         enabled = loadEnabled(host)
         channel = methodChannel
         registerReceiver(host.applicationContext)
-        if (playerShown) applyLockedFlags(host)
+        if (playerShown) applyLockedFlags(host, wakeScreenOnPresentation)
     }
 
     fun detach(host: Activity) {
@@ -103,7 +103,7 @@ object LockScreenController {
         activity = host
         appContext = host.applicationContext
         enabled = loadEnabled(host)
-        if (playerShown) applyLockedFlags(host)
+        if (playerShown) applyLockedFlags(host, wakeScreenOnPresentation)
     }
 
     /**
@@ -123,8 +123,21 @@ object LockScreenController {
     /** @return true when the intent requested the lock-screen player. */
     fun onNewIntent(intent: Intent): Boolean {
         if (!intent.getBooleanExtra(EXTRA_SHOW_PLAYER, false)) return false
+        val wakeScreen = intent.getBooleanExtra(EXTRA_WAKE_SCREEN, true)
+        // A task's launch intent is replayed on recreation. Consume the request
+        // so a previous Routine launch cannot wake a newly sleeping display.
+        intent.removeExtra(EXTRA_SHOW_PLAYER)
+        intent.removeExtra(EXTRA_WAKE_SCREEN)
+        if (!wakeScreen) {
+            val context = appContext ?: return false
+            val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            if (!enabled || !playbackActive ||
+                (isScreenInteractive(context) && !keyguard.isKeyguardLocked)
+            ) return false
+        }
         playerShown = true
-        activity?.let(::applyLockedFlags)
+        wakeScreenOnPresentation = wakeScreen
+        activity?.let { applyLockedFlags(it, wakeScreenOnPresentation) }
         deliverShow()
         return true
     }
@@ -143,12 +156,14 @@ object LockScreenController {
         val registered = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
+                    Intent.ACTION_SCREEN_OFF -> onScreenOff()
                     Intent.ACTION_SCREEN_ON -> onScreenOn()
                     Intent.ACTION_USER_PRESENT -> onUserPresent()
                 }
             }
         }
         val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
         }
@@ -163,24 +178,36 @@ object LockScreenController {
         receiver = registered
     }
 
+    private fun onScreenOff() {
+        screenWakeHandler.removeCallbacks(clearScreenWake)
+        wakeScreenOnPresentation = false
+        activity?.let(::clearWakeFlags)
+        val context = appContext ?: return
+        if (!enabled || !playbackActive || !overlayGranted(context)) return
+        // Prepare the Flutter route before the next wake, without waking the
+        // display or starting a timeout that would discard the prepared window.
+        showOverLockScreen(context, wakeScreen = false)
+    }
+
     private fun onScreenOn() {
         if (!enabled) return
         val context = appContext ?: return
         val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-        if (!keyguard.isKeyguardLocked) return
-
-        // The initial presentation applies TURN_SCREEN_ON for the configured timeout.
-        // Re-applying it here on every Samsung SCREEN_ON event keeps resetting
-        // the device display timeout and can leave the screen awake forever.
-        if (playerShown) {
-            if (activity == null) {
-                showOverLockScreen(context)
-            }
+        if (!keyguard.isKeyguardLocked) {
+            onUserPresent()
             return
         }
-
-        if (!playbackActive || !overlayGranted(context)) return
-        showOverLockScreen(context)
+        if (!playbackActive || !overlayGranted(context)) {
+            onUserPresent()
+            return
+        }
+        val host = activity
+        if (playerShown && host != null && host.hasWindowFocus()) {
+            applyLockedFlags(host, wakeScreen = false)
+        } else {
+            // Retry blocked background launches even if an Activity still exists.
+            showOverLockScreen(context, wakeScreen = false)
+        }
     }
 
     /** SYSTEM_ALERT_WINDOW is granted at install time before Android 6. */
@@ -188,16 +215,19 @@ object LockScreenController {
         Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
             Settings.canDrawOverlays(context)
 
-    private fun showOverLockScreen(context: Context) {
+    private fun showOverLockScreen(context: Context, wakeScreen: Boolean = true) {
         playerShown = true
-        activity?.let(::applyLockedFlags)
+        wakeScreenOnPresentation = wakeScreen
+        activity?.let { applyLockedFlags(it, wakeScreen) }
         val intent = Intent(context, MainActivity::class.java).apply {
             addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT,
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                    Intent.FLAG_ACTIVITY_NO_ANIMATION,
             )
             putExtra(EXTRA_SHOW_PLAYER, true)
+            putExtra(EXTRA_WAKE_SCREEN, wakeScreen)
         }
         try {
             context.startActivity(intent)
@@ -218,6 +248,7 @@ object LockScreenController {
     }
 
     private fun onUserPresent() {
+        pendingShow = false
         if (!playerShown) return
         playerShown = false
         activity?.let(::clearLockedFlags)
@@ -242,24 +273,32 @@ object LockScreenController {
 
     // -- Window flags -----------------------------------------------------------
 
-    private fun applyLockedFlags(host: Activity) {
+    private fun applyLockedFlags(host: Activity, wakeScreen: Boolean) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             host.setShowWhenLocked(true)
-            host.setTurnScreenOn(true)
+            host.setTurnScreenOn(wakeScreen)
         } else {
             @Suppress("DEPRECATION")
-            host.window.addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON,
-            )
+            host.window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+            @Suppress("DEPRECATION")
+            if (wakeScreen) {
+                host.window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+            } else {
+                host.window.clearFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+            }
         }
 
         // TURN_SCREEN_ON is only needed to wake the display for the initial
         // lock-screen presentation. Leaving it attached makes some Samsung
         // builds bypass their normal lock-screen display timeout.
         screenWakeHandler.removeCallbacks(clearScreenWake)
-        screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
+        if (wakeScreen || isScreenInteractive(host)) {
+            screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
+        }
     }
+
+    private fun isScreenInteractive(context: Context): Boolean =
+        (context.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive
 
     private fun clearLockedFlags(host: Activity) {
         clearWakeFlags(host)
@@ -274,6 +313,7 @@ object LockScreenController {
     }
 
     private fun clearWakeFlags(host: Activity) {
+        wakeScreenOnPresentation = false
         screenWakeHandler.removeCallbacks(clearScreenWake)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             host.setTurnScreenOn(false)
@@ -349,7 +389,7 @@ object LockScreenController {
                 screenWakeDurationMs = seconds!!.toLong() * 1000L
                 context?.getSharedPreferences(LOCK_SCREEN_PREFS, Context.MODE_PRIVATE)
                     ?.edit()?.putInt(TIMEOUT_KEY, seconds)?.apply()
-                if (playerShown) {
+                if (playerShown && context != null && isScreenInteractive(context)) {
                     screenWakeHandler.removeCallbacks(clearScreenWake)
                     screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
                 }
@@ -357,6 +397,9 @@ object LockScreenController {
             }
             "setPlaybackActive" -> {
                 playbackActive = call.arguments == true
+                if (!playbackActive && context != null && !isScreenInteractive(context)) {
+                    onUserPresent()
+                }
                 result.success(null)
             }
             "consumePendingShow" -> {
