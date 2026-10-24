@@ -10,8 +10,8 @@
     android:background="@drawable/widget_background">
     <ImageView
         android:id="@+id/widget_artwork"
-        android:layout_width="@dimen/widget_content_size"
-        android:layout_height="@dimen/widget_content_size"
+        android:layout_width="@dimen/widget_artwork_size"
+        android:layout_height="@dimen/widget_artwork_size"
         android:layout_gravity="center_vertical"
         android:layout_marginEnd="@dimen/widget_horizontal_padding"
         android:background="@drawable/widget_artwork_background"
