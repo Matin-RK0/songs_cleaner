@@ -133,6 +133,9 @@ class AppLocalizationsFa extends AppLocalizations {
   String get shuffleAll => 'شافل همه';
 
   @override
+  String get scrollToTop => 'بازگشت به ابتدای لیست';
+
+  @override
   String get sortLabel => 'مرتب‌سازی';
 
   @override

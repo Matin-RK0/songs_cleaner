@@ -332,6 +332,12 @@ abstract class AppLocalizations {
   /// **'شافل همه'**
   String get shuffleAll;
 
+  /// No description provided for @scrollToTop.
+  ///
+  /// In fa, this message translates to:
+  /// **'بازگشت به ابتدای لیست'**
+  String get scrollToTop;
+
   /// No description provided for @sortLabel.
   ///
   /// In fa, this message translates to:

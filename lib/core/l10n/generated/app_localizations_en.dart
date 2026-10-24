@@ -133,6 +133,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shuffleAll => 'Shuffle all';
 
   @override
+  String get scrollToTop => 'Back to top';
+
+  @override
   String get sortLabel => 'Sort';
 
   @override

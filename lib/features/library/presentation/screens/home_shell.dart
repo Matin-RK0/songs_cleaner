@@ -242,19 +242,33 @@ class _HomeShellState extends ConsumerState<HomeShell>
               bottom: hasCurrent
                   ? MiniPlayerBar.height + AppSpacing.md
                   : AppSpacing.md,
-              child: FloatingActionButton(
-                heroTag: 'shuffle-all',
-                tooltip: l10n.shuffleAll,
-                onPressed: () async {
-                  final songs = ref.read(allSongsProvider);
-                  if (songs.isEmpty) return;
-                  await ref
-                      .read(playerProvider.notifier)
-                      .playAllShuffled(songs);
-                  if (!context.mounted) return;
-                  AppRouter.openPlayer(context);
-                },
-                child: const Icon(Icons.shuffle_rounded),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_tabController.index == 0) ...[
+                    FloatingActionButton.small(
+                      heroTag: 'scroll-to-top',
+                      tooltip: l10n.scrollToTop,
+                      onPressed: _scrollToTop,
+                      child: const Icon(Icons.vertical_align_top_rounded),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                  FloatingActionButton(
+                    heroTag: 'shuffle-all',
+                    tooltip: l10n.shuffleAll,
+                    onPressed: () async {
+                      final songs = ref.read(allSongsProvider);
+                      if (songs.isEmpty) return;
+                      await ref
+                          .read(playerProvider.notifier)
+                          .playAllShuffled(songs);
+                      if (!context.mounted) return;
+                      AppRouter.openPlayer(context);
+                    },
+                    child: const Icon(Icons.shuffle_rounded),
+                  ),
+                ],
               ),
             ),
             PositionedDirectional(
@@ -272,6 +286,20 @@ class _HomeShellState extends ConsumerState<HomeShell>
           ],
         ],
       ),
+    );
+  }
+
+  void _scrollToTop() {
+    if (!_songsScrollController.hasClients) return;
+    final target = _songsScrollController.position.minScrollExtent;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _songsScrollController.jumpTo(target);
+      return;
+    }
+    _songsScrollController.animateTo(
+      target,
+      duration: AppMotion.normal,
+      curve: AppMotion.standard,
     );
   }
 
