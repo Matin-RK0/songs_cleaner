@@ -3,6 +3,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songs_cleaner/core/settings/app_settings_repository.dart';
 
 void main() {
+  test('widget background defaults to dynamic, persists and resets', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final repository = AppSettingsRepository(preferences);
+    expect(repository.loadWidgetBackgroundColor(), isNull);
+
+    await repository.saveWidgetBackgroundColor(0xffe1c4ab);
+    expect(
+      AppSettingsRepository(preferences).loadWidgetBackgroundColor(),
+      0xffe1c4ab,
+    );
+
+    await repository.saveWidgetBackgroundColor(null);
+    expect(repository.loadWidgetBackgroundColor(), isNull);
+    expect(preferences.containsKey('widget.backgroundColor'), isFalse);
+  });
+
   test(
     'lock screen timeout defaults to five seconds and persists options',
     () async {

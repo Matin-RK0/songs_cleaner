@@ -7,6 +7,9 @@ class NowPlayingWidgetService {
     'com.example.songs_cleaner/now_playing_widget',
   );
 
+  Future<void> setBackgroundColor(int? color) =>
+      _channel.invokeMethod<void>('setBackgroundColor', {'color': color});
+
   Future<void> update({
     String? title,
     String? artist,

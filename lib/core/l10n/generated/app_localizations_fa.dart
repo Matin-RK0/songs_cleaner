@@ -330,6 +330,27 @@ class AppLocalizationsFa extends AppLocalizations {
   String get primaryColorTitle => 'رنگ اصلی';
 
   @override
+  String get widgetBackgroundTitle => 'پس‌زمینه ویجت صفحه اصلی';
+
+  @override
+  String get widgetBackgroundDynamic => 'پویا';
+
+  @override
+  String get widgetBackgroundCustom => 'رنگ دلخواه';
+
+  @override
+  String get widgetBackgroundUseDynamic => 'استفاده از پس‌زمینه پویا';
+
+  @override
+  String get colorRed => 'قرمز';
+
+  @override
+  String get colorGreen => 'سبز';
+
+  @override
+  String get colorBlue => 'آبی';
+
+  @override
   String get primaryColorSubtitle => 'رنگ تأکیدی برنامه را انتخاب کنید';
 
   @override

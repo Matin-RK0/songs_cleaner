@@ -7,16 +7,13 @@
     android:gravity="center_vertical"
     android:paddingStart="@dimen/widget_horizontal_padding"
     android:paddingEnd="@dimen/widget_horizontal_padding"
-    android:paddingTop="@dimen/widget_vertical_padding"
-    android:paddingBottom="@dimen/widget_vertical_padding"
     android:background="@drawable/widget_background">
     <ImageView
         android:id="@+id/widget_artwork"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1.25"
+        android:layout_width="@dimen/widget_content_size"
+        android:layout_height="@dimen/widget_content_size"
         android:layout_gravity="center_vertical"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="@dimen/widget_horizontal_padding"
         android:background="@drawable/widget_artwork_background"
         android:clipToOutline="true"
         android:contentDescription="Artwork"
@@ -25,7 +22,8 @@
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="3"
+        android:layout_weight="1"
+        android:layout_marginEnd="@dimen/widget_horizontal_padding"
         android:gravity="center_vertical"
         android:orientation="vertical">
         <TextView
@@ -51,7 +49,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:gravity="top"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="@dimen/widget_text_gap"
             android:text="No song playing"
             android:textColor="#D0D5DB"
             android:textSize="@dimen/widget_artist_max_size"
@@ -64,41 +62,37 @@
             android:ellipsize="end" />
     </LinearLayout>
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_weight="3"
         android:gravity="center_vertical"
         android:orientation="horizontal">
         <ImageButton
             android:id="@+id/widget_previous"
-            android:layout_width="0dp"
+            android:layout_width="@dimen/widget_content_size"
             android:layout_height="match_parent"
-            android:layout_weight="1"
             android:background="@android:color/transparent"
             android:contentDescription="Previous"
-            android:padding="@dimen/widget_vertical_padding"
+            android:padding="@dimen/widget_control_padding"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_widget_previous"
             android:tint="#FFFFFFFF" />
         <ImageButton
             android:id="@+id/widget_play_pause"
-            android:layout_width="0dp"
+            android:layout_width="@dimen/widget_content_size"
             android:layout_height="match_parent"
-            android:layout_weight="1"
             android:background="@android:color/transparent"
             android:contentDescription="Play or pause"
-            android:padding="@dimen/widget_vertical_padding"
+            android:padding="@dimen/widget_play_padding"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_widget_play"
             android:tint="#FFFFFFFF" />
         <ImageButton
             android:id="@+id/widget_next"
-            android:layout_width="0dp"
+            android:layout_width="@dimen/widget_content_size"
             android:layout_height="match_parent"
-            android:layout_weight="1"
             android:background="@android:color/transparent"
             android:contentDescription="Next"
-            android:padding="@dimen/widget_vertical_padding"
+            android:padding="@dimen/widget_control_padding"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_widget_next"
             android:tint="#FFFFFFFF" />

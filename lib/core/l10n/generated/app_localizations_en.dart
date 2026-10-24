@@ -331,6 +331,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get primaryColorTitle => 'Primary color';
 
   @override
+  String get widgetBackgroundTitle => 'Home widget background';
+
+  @override
+  String get widgetBackgroundDynamic => 'Dynamic';
+
+  @override
+  String get widgetBackgroundCustom => 'Custom color';
+
+  @override
+  String get widgetBackgroundUseDynamic => 'Use dynamic background';
+
+  @override
+  String get colorRed => 'Red';
+
+  @override
+  String get colorGreen => 'Green';
+
+  @override
+  String get colorBlue => 'Blue';
+
+  @override
   String get primaryColorSubtitle => 'Choose the app accent color';
 
   @override

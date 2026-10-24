@@ -193,6 +193,19 @@ class MainActivity : AudioServiceActivity() {
                     NowPlayingWidgetProvider.updateAll(this)
                     result.success(null)
                 }
+                "setBackgroundColor" -> {
+                    val color = call.argument<Number>("color")?.toInt()
+                    val editor = getSharedPreferences(NowPlayingWidgetProvider.PREFS, MODE_PRIVATE)
+                        .edit()
+                    if (color == null) {
+                        editor.remove(NowPlayingWidgetProvider.BACKGROUND_COLOR)
+                    } else {
+                        editor.putInt(NowPlayingWidgetProvider.BACKGROUND_COLOR, color)
+                    }
+                    editor.apply()
+                    NowPlayingWidgetProvider.updateAll(this)
+                    result.success(null)
+                }
                 "consumeAction" -> {
                     result.success(pendingWidgetAction)
                     pendingWidgetAction = null

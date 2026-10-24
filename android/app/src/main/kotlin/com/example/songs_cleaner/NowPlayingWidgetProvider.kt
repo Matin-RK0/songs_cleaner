@@ -17,6 +17,7 @@ import android.provider.MediaStore
 import android.util.Size
 import android.view.KeyEvent
 import android.widget.RemoteViews
+import androidx.core.graphics.ColorUtils
 
 class NowPlayingWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -46,6 +47,7 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
         const val ARTIST = "artist"
         const val SONG_ID = "song_id"
         const val PLAYING = "playing"
+        const val BACKGROUND_COLOR = "background_color"
 
         fun updateAll(context: Context, manager: AppWidgetManager = AppWidgetManager.getInstance(context)) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -56,10 +58,24 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 val artwork = loadArtwork(context, songId)
                 if (artwork != null) {
                     setImageViewBitmap(R.id.widget_artwork, artwork)
-                    setWidgetBackground(this, artworkBackground(artwork))
                 } else {
                     setImageViewResource(R.id.widget_artwork, R.drawable.ic_notif_applogo)
-                    setWidgetBackground(this, Color.rgb(32, 37, 43))
+                }
+                val customBackground = prefs.contains(BACKGROUND_COLOR)
+                val background = if (customBackground) {
+                    prefs.getInt(BACKGROUND_COLOR, Color.rgb(32, 37, 43))
+                } else if (artwork != null) {
+                    artworkBackground(artwork)
+                } else {
+                    Color.rgb(32, 37, 43)
+                }
+                setWidgetBackground(this, background)
+                val darkForeground = customBackground && ColorUtils.calculateLuminance(background) > 0.179
+                val foreground = if (darkForeground) Color.BLACK else Color.WHITE
+                setTextColor(R.id.widget_title, foreground)
+                setTextColor(R.id.widget_artist, if (darkForeground) 0xB3000000.toInt() else 0xFFD0D5DB.toInt())
+                for (id in intArrayOf(R.id.widget_previous, R.id.widget_play_pause, R.id.widget_next)) {
+                    setInt(id, "setColorFilter", foreground)
                 }
                 setImageViewResource(
                     R.id.widget_play_pause,

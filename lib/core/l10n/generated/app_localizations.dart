@@ -698,6 +698,48 @@ abstract class AppLocalizations {
   /// **'رنگ اصلی'**
   String get primaryColorTitle;
 
+  /// No description provided for @widgetBackgroundTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'پس‌زمینه ویجت صفحه اصلی'**
+  String get widgetBackgroundTitle;
+
+  /// No description provided for @widgetBackgroundDynamic.
+  ///
+  /// In fa, this message translates to:
+  /// **'پویا'**
+  String get widgetBackgroundDynamic;
+
+  /// No description provided for @widgetBackgroundCustom.
+  ///
+  /// In fa, this message translates to:
+  /// **'رنگ دلخواه'**
+  String get widgetBackgroundCustom;
+
+  /// No description provided for @widgetBackgroundUseDynamic.
+  ///
+  /// In fa, this message translates to:
+  /// **'استفاده از پس‌زمینه پویا'**
+  String get widgetBackgroundUseDynamic;
+
+  /// No description provided for @colorRed.
+  ///
+  /// In fa, this message translates to:
+  /// **'قرمز'**
+  String get colorRed;
+
+  /// No description provided for @colorGreen.
+  ///
+  /// In fa, this message translates to:
+  /// **'سبز'**
+  String get colorGreen;
+
+  /// No description provided for @colorBlue.
+  ///
+  /// In fa, this message translates to:
+  /// **'آبی'**
+  String get colorBlue;
+
   /// No description provided for @primaryColorSubtitle.
   ///
   /// In fa, this message translates to:
