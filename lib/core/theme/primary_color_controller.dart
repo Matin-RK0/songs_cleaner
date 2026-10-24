@@ -17,7 +17,9 @@ class AppPrimaryColorController extends Notifier<Color> {
     if (custom != null && custom >= 0 && custom <= 0xffffffff) {
       return Color(custom).withAlpha(255);
     }
-    return AppPrimaryPalette.colors[_validIndex(settings.loadPrimaryColorIndex(0))];
+    return AppPrimaryPalette.colors[_validIndex(
+      settings.loadPrimaryColorIndex(0),
+    )];
   }
 
   Future<void> setColor(Color color) async {
