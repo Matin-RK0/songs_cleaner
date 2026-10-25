@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../player/presentation/widgets/mini_player_bar.dart';
@@ -13,7 +14,7 @@ import '../widgets/telegram_feedback.dart';
 import '../widgets/telegram_overview_card.dart';
 import '../widgets/telegram_chat_tile.dart';
 import '../widgets/telegram_download_sheet.dart';
-import '../widgets/telegram_cache_controls.dart';
+import '../widgets/telegram_tab_actions.dart';
 import '../widgets/telegram_section_header.dart';
 import '../../application/telegram_preferences_controller.dart';
 
@@ -27,6 +28,7 @@ class TelegramTab extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () => ref.read(telegramProvider.notifier).refresh(),
       child: CustomScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         key: const PageStorageKey('telegram-chats'),
         physics: const AlwaysScrollableScrollPhysics(
           parent: ClampingScrollPhysics(),
@@ -44,7 +46,12 @@ class TelegramTab extends ConsumerWidget {
           const SliverToBoxAdapter(child: _TelegramFoldersTile()),
           SliverToBoxAdapter(
             child: Padding(
-              padding: AppSpacing.allMd,
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -53,20 +60,7 @@ class TelegramTab extends ConsumerWidget {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
-                  const TelegramCacheButton(),
-                  if (connected) ...[
-                    IconButton(
-                      tooltip: context.l10n.telegramRefresh,
-                      onPressed: () =>
-                          ref.read(telegramProvider.notifier).refresh(),
-                      icon: const Icon(Icons.refresh_rounded),
-                    ),
-                    IconButton(
-                      tooltip: context.l10n.telegramLogout,
-                      onPressed: () => _disconnect(context, ref),
-                      icon: const Icon(Icons.link_off_rounded),
-                    ),
-                  ],
+                  const TelegramTabActions(),
                 ],
               ),
             ),
@@ -104,30 +98,6 @@ class TelegramTab extends ConsumerWidget {
       ),
     );
   }
-
-  Future<void> _disconnect(BuildContext context, WidgetRef ref) async {
-    final l10n = context.l10n;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.telegramLogoutTitle),
-        content: Text(l10n.telegramLogoutHint),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.telegramLogout),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && context.mounted) {
-      await ref.read(telegramProvider.notifier).logout();
-    }
-  }
 }
 
 class _TelegramFoldersTile extends ConsumerWidget {
@@ -135,15 +105,34 @@ class _TelegramFoldersTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final count = ref.watch(telegramUnassignedProvider.select((e) => e.length));
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: AppSpacing.screenPadding,
-      child: Card(
+      child: Material(
+        color: colors.surfaceContainerLow,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.lg,
+          side: BorderSide(color: colors.outlineVariant),
+        ),
         child: ListTile(
-          contentPadding: AppSpacing.allMd,
-          leading: const Icon(Icons.folder_open_rounded),
+          contentPadding: AppSpacing.hMdVSm,
+          leading: DecoratedBox(
+            decoration: BoxDecoration(
+              color: colors.secondaryContainer,
+              borderRadius: AppRadius.md,
+            ),
+            child: Padding(
+              padding: AppSpacing.allSm,
+              child: Icon(
+                Icons.folder_open_rounded,
+                color: colors.onSecondaryContainer,
+              ),
+            ),
+          ),
           title: Text(context.l10n.telegramFolders),
-          subtitle: Text(
-            '${context.l10n.telegramFoldersHint}\n${context.l10n.telegramLocalCount(count)}',
+          subtitle: Tooltip(
+            message: context.l10n.telegramFoldersHint,
+            child: Text(context.l10n.telegramLocalCount(count)),
           ),
           trailing: Icon(
             Directionality.of(context) == TextDirection.rtl
@@ -254,7 +243,7 @@ class _TelegramChatSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => SliverPadding(
-    padding: AppSpacing.allMd,
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
     sliver: SliverList.builder(
       itemCount: chats.length,
       itemBuilder: (context, index) {
@@ -322,6 +311,7 @@ class _TelegramChatSearchState extends ConsumerState<_TelegramChatSearch> {
           controller: _query,
           onChanged: ref.read(telegramProvider.notifier).search,
           textInputAction: TextInputAction.search,
+          onSubmitted: (_) => FocusScope.of(context).unfocus(),
           decoration: InputDecoration(
             hintText: context.l10n.telegramSearch,
             prefixIcon: const Icon(Icons.search_rounded),

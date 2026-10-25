@@ -27,23 +27,31 @@ class TelegramOverviewCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: AlignmentDirectional.topStart,
             end: AlignmentDirectional.bottomEnd,
-            colors: [colors.primaryContainer, colors.surfaceContainerHigh],
+            colors: [colors.surfaceContainerLow, colors.surfaceContainer],
           ),
+          border: Border.all(color: colors.outlineVariant),
         ),
         child: Padding(
-          padding: AppSpacing.allLg,
+          padding: AppSpacing.allMd,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   TelegramEntrance(
-                    child: Icon(
-                      Icons.telegram_rounded,
-                      size: connected
-                          ? AppSpacing.avatarSize
-                          : AppSpacing.iconHero,
-                      color: colors.onPrimaryContainer,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: colors.primaryContainer,
+                        borderRadius: AppRadius.lg,
+                      ),
+                      child: Padding(
+                        padding: AppSpacing.allSm,
+                        child: Icon(
+                          Icons.telegram_rounded,
+                          size: AppSpacing.xl,
+                          color: colors.onPrimaryContainer,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -51,25 +59,20 @@ class TelegramOverviewCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text(l10n.telegramTitle, style: text.titleLarge),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           reconnecting
                               ? l10n.telegramReconnecting
                               : connected
                               ? l10n.telegramConnected
                               : l10n.telegramOffline,
-                          style: text.titleMedium?.copyWith(
-                            color: colors.onPrimaryContainer,
+                          style: text.labelMedium?.copyWith(
+                            color: reconnecting || !connected
+                                ? colors.onSurfaceVariant
+                                : colors.primary,
                           ),
                         ),
-                        if (connected) ...[
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            l10n.telegramDescription,
-                            style: text.bodySmall?.copyWith(
-                              color: colors.onPrimaryContainer,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -79,33 +82,43 @@ class TelegramOverviewCard extends StatelessWidget {
                         : connected
                         ? Icons.check_circle_outline_rounded
                         : Icons.offline_pin_outlined,
-                    color: colors.onPrimaryContainer,
+                    color: reconnecting || !connected
+                        ? colors.onSurfaceVariant
+                        : colors.primary,
                   ),
                 ],
               ),
-              if (!connected) ...[
-                const SizedBox(height: AppSpacing.lg),
+              if (connected) ...[
+                const SizedBox(height: AppSpacing.md),
                 Text(
-                  l10n.telegramHeadline,
-                  style: text.headlineSmall?.copyWith(
-                    color: colors.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  l10n.telegramOfflineHint,
-                  style: text.bodyMedium?.copyWith(
-                    color: colors.onPrimaryContainer,
+                  l10n.telegramDescription,
+                  style: text.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
                   ),
                 ),
               ],
               if (!connected) ...[
                 const SizedBox(height: AppSpacing.lg),
-                FilledButton.icon(
-                  onPressed: () =>
-                      Navigator.of(context).pushNamed(RouteNames.telegramAuth),
-                  icon: const Icon(Icons.link_rounded),
-                  label: Text(l10n.telegramConnect),
+                Text(l10n.telegramHeadline, style: text.titleLarge),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  l10n.telegramOfflineHint,
+                  style: text.bodyMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              if (!connected) ...[
+                const SizedBox(height: AppSpacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pushNamed(RouteNames.telegramAuth),
+                    icon: const Icon(Icons.link_rounded),
+                    label: Text(l10n.telegramConnect),
+                  ),
                 ),
               ],
             ],

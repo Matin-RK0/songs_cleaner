@@ -79,12 +79,19 @@ class TelegramChatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return Material(
-      color: theme.colorScheme.surfaceContainerLow,
-      borderRadius: AppRadius.lg,
+      color: colors.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.xl,
+        side: BorderSide(
+          color: pinned ? colors.primaryContainer : colors.outlineVariant,
+        ),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.lg,
+        onLongPress: onPin,
+        borderRadius: AppRadius.xl,
         child: Padding(
           padding: AppSpacing.allMd,
           child: Row(
@@ -139,16 +146,31 @@ class TelegramChatTile extends StatelessWidget {
                           : chat.kind == 'chatTypePrivate'
                           ? context.l10n.telegramConversation
                           : context.l10n.telegramChannelOrGroup,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     if (localCount != null) ...[
                       const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        context.l10n.telegramLocalCount(localCount!),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.primary,
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.xs),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.offline_pin_outlined,
+                              size: AppSpacing.md,
+                              color: colors.primary,
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Expanded(
+                              child: Text(
+                                context.l10n.telegramLocalCount(localCount!),
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: colors.primary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -164,6 +186,7 @@ class TelegramChatTile extends StatelessWidget {
                   onPressed: onPin,
                   icon: Icon(
                     pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                    color: pinned ? colors.primary : colors.onSurfaceVariant,
                   ),
                 )
               else

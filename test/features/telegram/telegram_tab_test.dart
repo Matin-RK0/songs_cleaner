@@ -44,6 +44,35 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byIcon(Icons.telegram_rounded), findsOneWidget);
         expect(tester.takeException(), isNull);
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(TelegramTab)),
+        );
+        await tester.scrollUntilVisible(
+          find.byTooltip(l10n.moreActions),
+          150,
+          scrollable: find
+              .descendant(
+                of: find.byType(CustomScrollView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await Scrollable.ensureVisible(
+          tester.element(find.byTooltip(l10n.moreActions)),
+          alignment: 0.5,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip(l10n.moreActions));
+        await tester.pumpAndSettle();
+        expect(find.text(l10n.telegramClearCache), findsOneWidget);
+        expect(find.text(l10n.telegramLogout), findsNothing);
+        await tester.tap(find.text(l10n.telegramClearCache));
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.text(l10n.cancel));
+        await tester.pumpAndSettle();
+        expect(repository.clearCacheCalls, 0);
         await tester.scrollUntilVisible(
           find.byIcon(Icons.forum_outlined),
           150,

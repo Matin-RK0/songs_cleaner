@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 
 class TelegramSectionHeader extends StatelessWidget {
@@ -28,14 +29,27 @@ class TelegramSectionHeader extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: theme.colorScheme.primary, size: AppSpacing.lg),
+            Icon(
+              icon,
+              color: theme.colorScheme.onSurfaceVariant,
+              size: AppSpacing.md,
+            ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(child: Text(title, style: theme.textTheme.titleSmall)),
             const SizedBox(width: AppSpacing.sm),
-            Text(
-              context.l10n.telegramSectionCount(count),
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHigh,
+                borderRadius: AppRadius.pill,
+              ),
+              child: Padding(
+                padding: AppSpacing.hSmVXs,
+                child: Text(
+                  context.l10n.telegramSectionCount(count),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ),
             ),
           ],
