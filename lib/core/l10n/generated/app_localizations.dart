@@ -98,6 +98,23 @@ abstract class AppLocalizations {
     Locale('fa'),
   ];
 
+  /// No description provided for @telegramNoActiveDownloads.
+  ///
+  /// In fa, this message translates to:
+  /// **'دانلود فعالی وجود ندارد'**
+  String get telegramNoActiveDownloads;
+
+  /// No description provided for @telegramDownloadsOverview.
+  ///
+  /// In fa, this message translates to:
+  /// **'{active} فعال · {queued} در صف · {paused} متوقف · {failed} ناموفق'**
+  String telegramDownloadsOverview(
+    int active,
+    int queued,
+    int paused,
+    int failed,
+  );
+
   /// No description provided for @telegramConcurrency.
   ///
   /// In fa, this message translates to:

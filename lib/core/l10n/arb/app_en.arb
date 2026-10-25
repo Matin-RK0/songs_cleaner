@@ -1,4 +1,7 @@
 {
+  "telegramNoActiveDownloads": "No active downloads",
+  "telegramDownloadsOverview": "{active} active · {queued} queued · {paused} paused · {failed} failed",
+  "@telegramDownloadsOverview": {"placeholders": {"active": {"type": "int"}, "queued": {"type": "int"}, "paused": {"type": "int"}, "failed": {"type": "int"}}},
   "telegramConcurrency": "{count} simultaneous downloads",
   "@telegramConcurrency": {"placeholders": {"count": {"type": "int"}}},
   "telegramDownloads": "Downloads",

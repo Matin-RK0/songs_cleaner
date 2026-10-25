@@ -9,6 +9,19 @@ class AppLocalizationsFa extends AppLocalizations {
   AppLocalizationsFa([String locale = 'fa']) : super(locale);
 
   @override
+  String get telegramNoActiveDownloads => 'دانلود فعالی وجود ندارد';
+
+  @override
+  String telegramDownloadsOverview(
+    int active,
+    int queued,
+    int paused,
+    int failed,
+  ) {
+    return '$active فعال · $queued در صف · $paused متوقف · $failed ناموفق';
+  }
+
+  @override
   String telegramConcurrency(int count) {
     return '$count دانلود هم‌زمان';
   }

@@ -9,6 +9,19 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get telegramNoActiveDownloads => 'No active downloads';
+
+  @override
+  String telegramDownloadsOverview(
+    int active,
+    int queued,
+    int paused,
+    int failed,
+  ) {
+    return '$active active · $queued queued · $paused paused · $failed failed';
+  }
+
+  @override
   String telegramConcurrency(int count) {
     return '$count simultaneous downloads';
   }

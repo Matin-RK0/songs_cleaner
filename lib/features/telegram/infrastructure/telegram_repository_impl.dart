@@ -19,10 +19,14 @@ class TelegramRepositoryImpl implements TelegramRepository {
   TelegramRepositoryImpl({
     Directory? cacheDirectory,
     TelegramMusicPublisher? musicPublisher,
+    bool Function(String)? isInUse,
   }) : _directory = cacheDirectory,
-       _musicPublisher = musicPublisher ?? TelegramMusicPublisher();
+       _musicPublisher = musicPublisher ?? TelegramMusicPublisher(),
+       _isInUse = isInUse ?? ((_) => false);
 
   final TelegramMusicPublisher _musicPublisher;
+  final bool Function(String) _isInUse;
+  bool _migratingCopies = false;
   final _downloads = <int, Future<String>>{};
   final _epochs = <int, int>{};
   final _progress = <int, void Function(TelegramTransferProgress)>{};
@@ -41,6 +45,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
   late final _cache = TelegramCacheStore(_dir);
   int _imageDownloads = 0;
   int _chatLimit = 50;
+  final _loadedChatIds = <int>{};
   bool _initializing = false;
   Future<void>? _readyPreparation;
   int _sessionEpoch = 0;
@@ -173,6 +178,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
       'authorizationStateClosing' => TelegramAuth.starting,
       _ => TelegramAuth.other,
     });
+    if (type == 'authorizationStateReady') unawaited(_cleanPublishedCopies());
   }
 
   TdlibTransport get _td =>
@@ -213,12 +219,14 @@ class TelegramRepositoryImpl implements TelegramRepository {
       _chatLimit += 50;
     } else {
       _chatLimit = 50;
+      _loadedChatIds.clear();
     }
+    final previous = {for (final chat in await cachedChats()) chat.id: chat};
     for (final list in ['chatListMain', 'chatListArchive']) {
       try {
         await _td.call('loadChats', {
           'chat_list': {'@type': list},
-          'limit': _chatLimit,
+          'limit': 50,
         });
       } on TelegramException catch (e) {
         // TDLib uses 404 when the complete chat list has already been loaded.
@@ -234,8 +242,31 @@ class TelegramRepositoryImpl implements TelegramRepository {
       });
       for (final id in page['chat_ids'] as List? ?? []) {
         if (!seen.add(id as int)) continue;
+        if (more && _loadedChatIds.contains(id) && previous[id] != null) {
+          result.add(previous[id]!);
+          continue;
+        }
         final chat = await _td.call('getChat', {'chat_id': id});
         result.add(TelegramChatMapper.fromJson(chat));
+        _loadedChatIds.add(id);
+      }
+    }
+    final preferences = await loadPreferences();
+    final quick = {
+      ...(preferences['pins'] as List? ?? []).whereType<int>(),
+      ...(preferences['recent'] as List? ?? []).whereType<int>(),
+    };
+    for (final id in quick) {
+      if (!seen.add(id) || previous[id] == null) continue;
+      try {
+        result.add(
+          TelegramChatMapper.fromJson(
+            await _td.call('getChat', {'chat_id': id}),
+          ),
+        );
+        _loadedChatIds.add(id);
+      } catch (_) {
+        result.add(previous[id]!);
       }
     }
     final store = await _store();
@@ -434,6 +465,44 @@ class TelegramRepositoryImpl implements TelegramRepository {
       } catch (_) {
         /* Retry on next connection. */
       }
+    }
+  }
+
+  Future<void> _cleanPublishedCopies() async {
+    if (_migratingCopies || _disposed) return;
+    _migratingCopies = true;
+    try {
+      final published = Map<String, String>.from(
+        (await _store())['publishedFiles'] as Map? ?? {},
+      );
+      final root = await (await _dir()).resolveSymbolicLinks();
+      final prefix =
+          '$root${Platform.pathSeparator}files${Platform.pathSeparator}';
+      for (final entry in published.entries) {
+        if (_disposed || _transport == null) return;
+        final id = int.tryParse(entry.key);
+        if (id == null || _downloads.containsKey(id)) continue;
+        try {
+          final public = File(entry.value);
+          if (!await public.exists()) continue;
+          final native = await _td.call('getFile', {'file_id': id});
+          final sourcePath = TelegramAudioMapper.completedPath(native);
+          if (sourcePath.isEmpty || _disposed || _isInUse(sourcePath)) continue;
+          final source = File(sourcePath);
+          if (!await source.exists() ||
+              !(await source.resolveSymbolicLinks()).startsWith(prefix)) {
+            continue;
+          }
+          if (await source.length() != await public.length()) continue;
+          // Upgrade cleanup: older releases published the public copy but left
+          // its complete TDLib duplicate behind. Never delete the sole copy.
+          await _td.call('deleteFile', {'file_id': id});
+        } catch (_) {
+          /* A missing/active legacy copy can be retried next session. */
+        }
+      }
+    } finally {
+      _migratingCopies = false;
     }
   }
 

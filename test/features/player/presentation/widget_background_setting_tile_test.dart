@@ -60,88 +60,100 @@ void main() {
   }
 
   testWidgets('is Android-only and defaults to dynamic', (tester) async {
-    final l10n = await pumpTile(tester);
+    try {
+      final l10n = await pumpTile(tester);
 
-    expect(find.text(l10n.widgetBackgroundTitle), findsOneWidget);
-    expect(find.text(l10n.widgetBackgroundDynamic), findsOneWidget);
-    expect(preferences.containsKey(preferenceKey), isFalse);
-    expect(calls, isEmpty);
+      expect(find.text(l10n.widgetBackgroundTitle), findsOneWidget);
+      expect(find.text(l10n.widgetBackgroundDynamic), findsOneWidget);
+      expect(preferences.containsKey(preferenceKey), isFalse);
+      expect(calls, isEmpty);
 
-    await tester.pumpWidget(const SizedBox.shrink());
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    await pumpTile(tester);
+      await tester.pumpWidget(const SizedBox.shrink());
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      await pumpTile(tester);
 
-    expect(find.byType(WidgetBackgroundSettingTile), findsOneWidget);
-    expect(find.byType(ListTile), findsNothing);
-    expect(calls, isEmpty);
+      expect(find.byType(WidgetBackgroundSettingTile), findsOneWidget);
+      expect(find.byType(ListTile), findsNothing);
+      expect(calls, isEmpty);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('saves swatch changes and resets to dynamic', (tester) async {
-    final l10n = await pumpTile(tester);
-    await tester.tap(find.byType(ListTile));
-    await tester.pumpAndSettle();
+    try {
+      final l10n = await pumpTile(tester);
+      await tester.tap(find.byType(ListTile));
+      await tester.pumpAndSettle();
 
-    await tester.ensureVisible(swatch);
-    await tester.tap(swatch);
-    await tester.pump();
-    expect(tester.widget<Text>(hex).data, '#30343B');
-    expect(preferences.containsKey(preferenceKey), isFalse);
-    expect(calls, isEmpty);
-    expect(
-      find.widgetWithText(FilledButton, l10n.saveAction).hitTestable(),
-      findsOneWidget,
-    );
+      await tester.ensureVisible(swatch);
+      await tester.tap(swatch);
+      await tester.pump();
+      expect(tester.widget<Text>(hex).data, '#30343B');
+      expect(preferences.containsKey(preferenceKey), isFalse);
+      expect(calls, isEmpty);
+      expect(
+        find.widgetWithText(FilledButton, l10n.saveAction).hitTestable(),
+        findsOneWidget,
+      );
 
-    await tester.tap(find.widgetWithText(FilledButton, l10n.saveAction));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, l10n.saveAction));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(AppColorPickerSheet), findsNothing);
-    expect(find.text(l10n.widgetBackgroundCustom), findsOneWidget);
-    expect(preferences.getInt(preferenceKey), swatchColor.toARGB32());
-    expect(calls, hasLength(1));
-    expect(calls.single.method, 'setBackgroundColor');
-    expect(calls.single.arguments, {'color': swatchColor.toARGB32()});
+      expect(find.byType(AppColorPickerSheet), findsNothing);
+      expect(find.text(l10n.widgetBackgroundCustom), findsOneWidget);
+      expect(preferences.getInt(preferenceKey), swatchColor.toARGB32());
+      expect(calls, hasLength(1));
+      expect(calls.single.method, 'setBackgroundColor');
+      expect(calls.single.arguments, {'color': swatchColor.toARGB32()});
 
-    await tester.tap(find.byType(ListTile));
-    await tester.pumpAndSettle();
-    expect(tester.widget<Text>(hex).data, '#30343B');
-    await tester.tap(
-      find.widgetWithText(TextButton, l10n.widgetBackgroundUseDynamic),
-    );
-    await tester.pumpAndSettle();
+      await tester.tap(find.byType(ListTile));
+      await tester.pumpAndSettle();
+      expect(tester.widget<Text>(hex).data, '#30343B');
+      await tester.tap(
+        find.widgetWithText(TextButton, l10n.widgetBackgroundUseDynamic),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.byType(AppColorPickerSheet), findsNothing);
-    expect(find.text(l10n.widgetBackgroundDynamic), findsOneWidget);
-    expect(preferences.containsKey(preferenceKey), isFalse);
-    expect(calls, hasLength(2));
-    expect(calls.last.method, 'setBackgroundColor');
-    expect(calls.last.arguments, {'color': null});
+      expect(find.byType(AppColorPickerSheet), findsNothing);
+      expect(find.text(l10n.widgetBackgroundDynamic), findsOneWidget);
+      expect(preferences.containsKey(preferenceKey), isFalse);
+      expect(calls, hasLength(2));
+      expect(calls.last.method, 'setBackgroundColor');
+      expect(calls.last.arguments, {'color': null});
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('cancel discards swatch changes', (tester) async {
-    const originalColor = 0xff123456;
-    await preferences.setInt(preferenceKey, originalColor);
-    final l10n = await pumpTile(tester);
-    await tester.tap(find.byType(ListTile));
-    await tester.pumpAndSettle();
+    try {
+      const originalColor = 0xff123456;
+      await preferences.setInt(preferenceKey, originalColor);
+      final l10n = await pumpTile(tester);
+      await tester.tap(find.byType(ListTile));
+      await tester.pumpAndSettle();
 
-    expect(tester.widget<Text>(hex).data, '#123456');
-    await tester.ensureVisible(swatch);
-    await tester.tap(swatch);
-    await tester.pump();
-    expect(tester.widget<Text>(hex).data, '#30343B');
-    await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
-    await tester.pumpAndSettle();
+      expect(tester.widget<Text>(hex).data, '#123456');
+      await tester.ensureVisible(swatch);
+      await tester.tap(swatch);
+      await tester.pump();
+      expect(tester.widget<Text>(hex).data, '#30343B');
+      await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(AppColorPickerSheet), findsNothing);
-    expect(find.text(l10n.widgetBackgroundCustom), findsOneWidget);
-    expect(preferences.getInt(preferenceKey), originalColor);
-    expect(calls, isEmpty);
+      expect(find.byType(AppColorPickerSheet), findsNothing);
+      expect(find.text(l10n.widgetBackgroundCustom), findsOneWidget);
+      expect(preferences.getInt(preferenceKey), originalColor);
+      expect(calls, isEmpty);
 
-    await tester.tap(find.byType(ListTile));
-    await tester.pumpAndSettle();
-    expect(tester.widget<Text>(hex).data, '#123456');
-    await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byType(ListTile));
+      await tester.pumpAndSettle();
+      expect(tester.widget<Text>(hex).data, '#123456');
+      await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
+      await tester.pumpAndSettle();
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 }

@@ -44,7 +44,8 @@ two-step-verification passwords are not persisted by this app.
 - Audio thumbnails and miniatures are read from Telegram's album-cover metadata.
   Visible covers use bounded memory/disk caching and at most three concurrent
   thumbnail requests; local MediaStore album art is used as a fallback.
-- Older music messages and additional chats are loaded explicitly with **Load more**.
+- Older music messages load near the end of the list, with **Load more** as an
+  explicit fallback. Additional chats are loaded with **Load more**.
   Main and archived chat lists are included. Refresh preserves older indexed tracks.
 - The cached chat index and existing verified files remain browsable offline.
   An authorized session reconnects automatically on subsequent visits.
@@ -52,6 +53,52 @@ two-step-verification passwords are not persisted by this app.
   manages its private cache on logout; published files in Music/Telegram remain
   independently in the device library, including after uninstalling this app.
   The Telegram session, key storage and index are excluded from Android backup/transfer.
+
+### Telegram UX and download lifecycle
+
+- Device music and Telegram music share `MusicTrackCard`; playable Telegram
+  tracks use the same `SongTile` actions as the device library. Cloud messages
+  never become fake playable files.
+- Chats support pinned/recent ordering, verified local-track counts, an active
+  download badge and cached profile pictures. Query, sort, filter and scroll
+  position are retained per chat. Search explicitly covers loaded messages.
+- Long press selects tracks. Group download confirms the missing tracks' size;
+  local selections can be queued or added to playlists. Download-and-play is
+  explicit. Opening a Telegram message uses TDLib's message link when available.
+- The shared download panel shows received/total bytes, percentage, smoothed speed
+  and approximate ETA. Receiving, waiting, paused, saving, failed and complete are
+  separate states. Completion means the public file has been committed/indexed.
+- The application-level queue is independent of chat routes. It deduplicates by
+  TDLib file id, supports pause/resume/cancel/retry, defaults to two concurrent
+  transfers and allows one to three. Pending work is capped at 200 and finished
+  UI history at 40. Storage/network/rate-limit errors pause waiting work.
+- In-progress queue metadata is persisted. After process death, entries restore
+  **paused**, without claiming that old partial bytes still exist or auto-playing.
+  Registered interrupted temporary audio is pruned on the next connection.
+- TDLib still needs **temporary private audio** while receiving; a paused transfer
+  may retain partial bytes for resuming. After a verified public copy and durable
+  path index exist, its full private copy is deleted. Cancel discards the private
+  transfer. Upgrade cleanup also removes old private duplicates with a verified
+  public counterpart, excluding paths still used by the playback queue.
+- Public `Music/Telegram` files are never deleted by cache maintenance. Canonical
+  path checks constrain filesystem fallback cleanup to this installation's TDLib
+  files directory. Thumbnail/profile-photo cache optimization excludes audio.
+- Progress notifications use an Android dataSync foreground service with a bounded
+  wake lock and heartbeat watchdog. The storage bridge belongs to the Flutter
+  engine, not an Activity. Tapping the notification opens Downloads. Android
+  service restrictions/process termination still apply; process-death recovery
+  restores metadata rather than pretending a headless Dart engine was restarted.
+- Progress UI commits at most every 250ms; page/list identity subscribers do not
+  rebuild for byte packets. Disk snapshots are coalesced and JSON work is isolated.
+  Images have bounded request concurrency, queue length and an LRU; offscreen
+  queued requests are skipped. Metadata/session storage remains private.
+- Chat avatar Hero transitions, cached route slides, download-icon swaps and the
+  floating selection panel respect reduced motion. Repeating indicators stop
+  under hidden routes. Selection does not insert a header that shifts song rows.
+
+Android notification delivery, Activity recreation, background restrictions,
+real file publication and ten-minute memory/frame stability need a real-device
+Profile/Release session. Unit/widget tests cannot certify zero leaks or a frame budget.
 
 ### Boundaries
 

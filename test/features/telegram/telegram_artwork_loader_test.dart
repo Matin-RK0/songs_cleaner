@@ -13,6 +13,28 @@ void main() {
   tearDown(() => repository.dispose());
 
   test(
+    'offscreen queued thumbnails are skipped and disposed loaders stop accepting requests',
+    () async {
+      final requests = <int, Completer<String?>>{};
+      repository.loadCover = (id) =>
+          (requests[id] = Completer<String?>()).future;
+      final loader = TelegramArtworkLoader(repository);
+      final futures = [for (var i = 1; i <= 4; i++) loader.load((i, '', ''))];
+      await Future<void>.delayed(Duration.zero);
+      loader.release((4, '', ''));
+      requests[1]!.complete(null);
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.coverCalls, 3);
+      loader.dispose();
+      requests[2]!.complete(null);
+      requests[3]!.complete(null);
+      await Future.wait(futures);
+      expect(await loader.load((5, '', '')), isNull);
+      expect(repository.coverCalls, 3);
+    },
+  );
+
+  test(
     'local cover bytes are cached instead of refetched per rebuild',
     () async {
       final dir = await Directory.systemTemp.createTemp(

@@ -70,6 +70,58 @@ void main() {
   }
 
   test(
+    'logout waits for an atomic public commit and blocks new transfers until unlocked',
+    () async {
+      final audio = gated(1);
+      manager.enqueue(audio);
+      await drain();
+      repository.progressCallbacks[audio.fileId]!(
+        const TelegramTransferProgress(
+          received: 1024,
+          total: 1024,
+          saving: true,
+        ),
+      );
+      var ready = false;
+      final logout = manager.prepareLogout().then((_) {
+        ready = true;
+      });
+      await drain();
+      expect(ready, isFalse);
+      expect(manager.enqueue(testAudio(messageId: 2)), isFalse);
+      repository.transferGates[audio.fileId]!.complete();
+      await logout;
+      expect(
+        container.read(telegramDownloadsProvider)[audio.fileId]!.phase,
+        TelegramDownloadPhase.completed,
+      );
+      expect(repository.bindings[audio.key], repository.downloadedPath);
+      manager.unlock();
+      expect(manager.enqueue(gated(3)), isTrue);
+    },
+  );
+
+  test(
+    'blocked storage pauses waiting items instead of repeatedly downloading into a full destination',
+    () async {
+      final first = gated(1), second = gated(2), third = gated(3);
+      for (final audio in [first, second, third]) {
+        manager.enqueue(audio);
+      }
+      await drain();
+      repository.failure = TelegramFailure.storage;
+      repository.transferGates[first.fileId]!.complete();
+      await drain();
+      expect(repository.downloadCalls, 2);
+      expect(
+        container.read(telegramDownloadsProvider)[third.fileId]!.phase,
+        TelegramDownloadPhase.paused,
+      );
+      await manager.waitFor(third.fileId);
+    },
+  );
+
+  test(
     'queue limits concurrent requests and starts the next item after completion',
     () async {
       final first = gated(1), second = gated(2), third = gated(3);
@@ -78,7 +130,7 @@ void main() {
       }
       await drain();
       expect(repository.downloadCalls, 2);
-      expect(container.read(telegramDownloadSummaryProvider), (2, 1, 0));
+      expect(container.read(telegramDownloadSummaryProvider), (2, 1, 0, 0));
       repository.transferGates[first.fileId]!.complete();
       await drain();
       expect(repository.downloadCalls, 3);

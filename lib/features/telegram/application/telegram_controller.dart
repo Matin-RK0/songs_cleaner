@@ -14,9 +14,13 @@ import 'telegram_download_controller.dart';
 import 'telegram_preferences_controller.dart';
 import '../domain/telegram_download.dart';
 import 'telegram_artwork_provider.dart';
+import '../../player/application/providers/player_controller.dart';
 
 final telegramLocalFilesProvider = Provider<TelegramLocalFiles>(
   (ref) => TelegramLocalFiles(),
+);
+final telegramLocalMatcherProvider = Provider<TelegramLocalMatcher>(
+  (ref) => TelegramLocalMatcher(ref.watch(allSongsProvider)),
 );
 
 final telegramLibrarySyncProvider = Provider<Future<void> Function()>(
@@ -27,7 +31,11 @@ final telegramLibrarySyncProvider = Provider<Future<void> Function()>(
 );
 
 final telegramRepositoryProvider = Provider<TelegramRepository>((ref) {
-  final repository = TelegramRepositoryImpl();
+  final repository = TelegramRepositoryImpl(
+    isInUse: (path) =>
+        !ref.mounted ||
+        ref.read(playerProvider).songs.any((song) => song.path == path),
+  );
   ref.onDispose(() => unawaited(repository.dispose()));
   return repository;
 });
@@ -65,20 +73,30 @@ class TelegramState {
 }
 
 final telegramVisibleChatsProvider = Provider<List<TelegramChat>>((ref) {
-  final state = ref.watch(telegramProvider);
-  final query = state.query.trim().toLowerCase();
-  final preferences = ref.watch(telegramPreferencesProvider);
+  final browse = ref.watch(
+    telegramProvider.select((state) => (state.chats, state.query)),
+  );
+  final query = browse.$2.trim().toLowerCase();
+  ref.watch(
+    telegramPreferencesProvider.select(
+      (value) => (
+        Object.hashAll(value['pins'] as List? ?? []),
+        Object.hashAll(value['recent'] as List? ?? []),
+      ),
+    ),
+  );
+  final preferences = ref.read(telegramPreferencesProvider);
   final pins = (preferences['pins'] as List? ?? []).whereType<int>().toList();
   final recent = (preferences['recent'] as List? ?? [])
       .whereType<int>()
       .toList();
   final result = query.isEmpty
-      ? [...state.chats]
-      : state.chats
+      ? [...browse.$1]
+      : browse.$1
             .where((chat) => chat.title.toLowerCase().contains(query))
             .toList();
   final original = {
-    for (var i = 0; i < state.chats.length; i++) state.chats[i].id: i,
+    for (var i = 0; i < browse.$1.length; i++) browse.$1[i].id: i,
   };
   int rank(int id) => pins.contains(id)
       ? -100 + pins.indexOf(id)
@@ -449,7 +467,7 @@ class TelegramChatController extends Notifier<TelegramChatState> {
   Future<void> _resolve() async {
     final generation = ++_resolution;
     final repository = ref.read(telegramRepositoryProvider);
-    final matcher = TelegramLocalMatcher(ref.read(allSongsProvider));
+    final matcher = ref.read(telegramLocalMatcherProvider);
     final bindings = await repository.loadBindings();
     final paths = {
       ..._audio.map((e) => bindings[e.key]).whereType<String>(),
@@ -521,6 +539,7 @@ class TelegramChatController extends Notifier<TelegramChatState> {
   }
 
   void search(String value) {
+    _browseEdited = true;
     _search?.cancel();
     _search = Timer(const Duration(milliseconds: 250), () {
       if (!ref.mounted) return;

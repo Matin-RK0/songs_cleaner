@@ -1,4 +1,7 @@
 {
+  "telegramNoActiveDownloads": "دانلود فعالی وجود ندارد",
+  "telegramDownloadsOverview": "{active} فعال · {queued} در صف · {paused} متوقف · {failed} ناموفق",
+  "@telegramDownloadsOverview": {"placeholders": {"active": {"type": "int"}, "queued": {"type": "int"}, "paused": {"type": "int"}, "failed": {"type": "int"}}},
   "telegramConcurrency": "{count} دانلود هم‌زمان",
   "@telegramConcurrency": {"placeholders": {"count": {"type": "int"}}},
   "telegramDownloads": "دانلودها",

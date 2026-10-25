@@ -45,9 +45,16 @@ class TelegramDownloadService : Service() {
             .setSmallIcon(R.drawable.ic_notif_applogo).setContentTitle(title).setContentText(text)
             .setContentIntent(pending).setOngoing(true).setOnlyAlertOnce(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS).build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else { startForeground(NOTIFICATION, notification) }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIFICATION, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            } else { startForeground(NOTIFICATION, notification) }
+        } catch (_: Exception) {
+            // Android may reject a background restart or an exhausted dataSync
+            // quota. Stop cleanly; queue metadata remains available in the app.
+            stopSelf()
+            return START_NOT_STICKY
+        }
         // Queue metadata is restored paused after process death; never pretend a
         // headless service restart recreates the Flutter/TDLib receive isolate.
         return START_NOT_STICKY

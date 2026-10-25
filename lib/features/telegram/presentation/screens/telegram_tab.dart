@@ -210,18 +210,8 @@ class _TelegramChatList extends ConsumerWidget {
           return Padding(
             key: ValueKey(chat.id),
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: TelegramChatTile(
+            child: TelegramChatEntry(
               chat: chat,
-              pinned:
-                  (ref.watch(telegramPreferencesProvider)['pins'] as List? ??
-                          [])
-                      .contains(chat.id),
-              recent:
-                  (ref.watch(telegramPreferencesProvider)['recent'] as List? ??
-                          [])
-                      .contains(chat.id),
-              onPin: () =>
-                  ref.read(telegramPreferencesProvider.notifier).pin(chat.id),
               onTap: () {
                 final preferences = ref.read(
                   telegramPreferencesProvider.notifier,

@@ -46,11 +46,14 @@ class _TelegramDownloadDockState extends ConsumerState<TelegramDownloadDock> {
       leading: const Icon(Icons.downloading_rounded),
       title: Text(context.l10n.telegramDownloads),
       subtitle: Text(
-        context.l10n.telegramDownloadSummary(
-          summary.$1,
-          summary.$2,
-          summary.$3,
-        ),
+        summary == (0, 0, 0, 0)
+            ? context.l10n.telegramNoActiveDownloads
+            : context.l10n.telegramDownloadsOverview(
+                summary.$1,
+                summary.$2,
+                summary.$3,
+                summary.$4,
+              ),
       ),
       trailing: const Icon(Icons.expand_less_rounded),
       onTap: () => showTelegramDownloads(context),

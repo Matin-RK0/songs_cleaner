@@ -35,12 +35,15 @@ final telegramDownloadsProvider =
 
 // Stable summaries prevent every progress packet rebuilding the chat list.
 final telegramDownloadSummaryProvider =
-    Provider<(int active, int queued, int failed)>((ref) {
+    Provider<(int active, int queued, int paused, int failed)>((ref) {
       final jobs = ref.watch(telegramDownloadsProvider);
       return (
         jobs.values.where((e) => e.active).length,
         jobs.values
             .where((e) => e.phase == TelegramDownloadPhase.queued)
+            .length,
+        jobs.values
+            .where((e) => e.phase == TelegramDownloadPhase.paused)
             .length,
         jobs.values
             .where((e) => e.phase == TelegramDownloadPhase.failed)
@@ -294,6 +297,12 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
         if (failure == TelegramFailure.network ||
             failure == TelegramFailure.flood ||
             failure == TelegramFailure.storage) {
+          for (final queued in state.values.where(
+            (job) => job.phase == TelegramDownloadPhase.queued,
+          )) {
+            final waiting = _finishes.remove(queued.audio.fileId);
+            if (waiting != null && !waiting.isCompleted) waiting.complete();
+          }
           state = {
             for (final entry in state.entries)
               entry.key: entry.value.phase == TelegramDownloadPhase.queued
