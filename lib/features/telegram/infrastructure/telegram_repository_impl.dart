@@ -40,6 +40,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
   final _progress = <int, void Function(TelegramTransferProgress)>{};
   final _completedFiles = <int, Completer<String>>{};
   final _savingAudio = <int>{};
+  final _committedAudio = <int, String>{};
   final _messageOpens = <String, Future<bool>>{};
 
   static const apiId = int.fromEnvironment('TELEGRAM_API_ID');
@@ -571,7 +572,12 @@ class TelegramRepositoryImpl implements TelegramRepository {
     _downloads[audio.fileId] = future;
     try {
       return await future;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      TelegramDiagnostics.report(
+        'Receiving or publishing Telegram audio',
+        error,
+        stackTrace,
+      );
       if (_epochs[audio.fileId] == epoch && !_disposed) {
         try {
           await cancelDownload(audio.fileId, discard: true);
@@ -614,11 +620,13 @@ class TelegramRepositoryImpl implements TelegramRepository {
   Future<String> _download(TelegramAudio audio, int epoch) async {
     final fileId = audio.fileId;
     final store = await _store();
-    final published = (store['publishedFiles'] as Map?)?['$fileId'] as String?;
+    final published =
+        _committedAudio[fileId] ??
+        TelegramCacheStore.paths(store['publishedFiles'])['$fileId'];
     if (published != null && await File(published).exists()) return published;
     await _musicPublisher.ensureAccess();
     _checkEpoch(fileId, epoch);
-    final cached = (store['files'] as Map?)?['$fileId'] as String?;
+    final cached = TelegramCacheStore.paths(store['files'])['$fileId'];
     if (cached != null && await File(cached).exists()) {
       return _publishDownload(cached, audio, epoch);
     }
@@ -730,8 +738,8 @@ class TelegramRepositoryImpl implements TelegramRepository {
     if (_migratingCopies || _disposed) return;
     _migratingCopies = true;
     try {
-      final published = Map<String, String>.from(
-        (await _store())['publishedFiles'] as Map? ?? {},
+      final published = TelegramCacheStore.paths(
+        (await _store())['publishedFiles'],
       );
       final root = await (await _dir()).resolveSymbolicLinks();
       final prefix =
@@ -790,50 +798,56 @@ class TelegramRepositoryImpl implements TelegramRepository {
     if (await File(path).length() != sourceSize) {
       throw const TelegramException(TelegramFailure.storage);
     }
-    final store = await _store();
-    final paths = Map<String, String>.from(store['files'] as Map? ?? {});
-    final published = Map<String, String>.from(
-      store['publishedFiles'] as Map? ?? {},
-    );
-    paths['${audio.fileId}'] = path;
-    published['${audio.fileId}'] = path;
-    store['files'] = paths;
-    store['publishedFiles'] = published;
-    // Keep all cached messages for this file pointed at its permanent public copy.
-    final bindings = Map<String, String>.from(store['bindings'] as Map? ?? {});
-    for (final entry in store.entries) {
-      if (!entry.key.startsWith('audio:') || entry.value is! List) continue;
-      for (final value in entry.value as List) {
-        final cachedAudio = TelegramAudio.fromJson(
-          value as Map<String, dynamic>,
-        );
-        if (cachedAudio.fileId == audio.fileId) {
-          bindings[cachedAudio.key] = path;
-        }
-      }
-    }
-    bindings[audio.key] = path;
-    store['bindings'] = bindings;
+    // This is the commit boundary: native publication and byte verification
+    // succeeded. Preserve that receipt before touching any legacy metadata.
+    _committedAudio[audio.fileId] = path;
     try {
-      await _save();
+      await _indexPublishedAudio(audio, path);
+      try {
+        await _discardTemporary(audio.fileId);
+      } catch (error, stackTrace) {
+        TelegramDiagnostics.report(
+          'Cleaning a committed audio transfer',
+          error,
+          stackTrace,
+        );
+      }
+      await _removePrivateCopy(sourcePath);
     } catch (error, stackTrace) {
-      // The verified public file is already committed. Keep the private source
-      // and cleanup record until the index is durable; the in-memory snapshot
-      // will be retried by the next save.
+      // Keep the source/cleanup record if indexing is not yet durable. Neither
+      // old cache parsing nor optional cleanup can fail a verified public file.
       TelegramDiagnostics.report(
-        'Persisting a published audio file',
+        'Indexing a verified public audio file',
         error,
         stackTrace,
       );
-      return path;
     }
-    try {
-      await _discardTemporary(audio.fileId);
-    } catch (_) {
-      /* Persisted cleanup record is retried on connection. */
-    }
-    await _removePrivateCopy(sourcePath);
     return path;
+  }
+
+  Future<void> _indexPublishedAudio(TelegramAudio audio, String path) async {
+    final store = await _store();
+    final paths = TelegramCacheStore.paths(store['files']);
+    final published = TelegramCacheStore.paths(store['publishedFiles']);
+    final bindings = TelegramCacheStore.paths(store['bindings']);
+    paths['${audio.fileId}'] = path;
+    published['${audio.fileId}'] = path;
+    // Linking an existing record only needs its IDs. Do not decode unrelated
+    // cached titles/durations/cover data while committing a completed download.
+    for (final entry in store.entries) {
+      if (!entry.key.startsWith('audio:') || entry.value is! List) continue;
+      for (final value in entry.value as List) {
+        if (value is! Map || value['fileId'] != audio.fileId) continue;
+        final chat = value['chatId'];
+        final message = value['messageId'];
+        if (chat is int && message is int) bindings['$chat:$message'] = path;
+      }
+    }
+    bindings[audio.key] = path;
+    store['files'] = paths;
+    store['publishedFiles'] = published;
+    store['bindings'] = bindings;
+    await _save();
   }
 
   Future<void> _removePrivateCopy(String sourcePath) async {
@@ -981,12 +995,12 @@ class TelegramRepositoryImpl implements TelegramRepository {
 
   @override
   Future<Map<String, String>> loadBindings() async =>
-      Map<String, String>.from((await _store())['bindings'] as Map? ?? {});
+      TelegramCacheStore.paths((await _store())['bindings']);
   @override
   Future<void> bind(String key, String path) async {
     // Read/modify the shared snapshot without another await between them.
     final store = await _store();
-    final bindings = Map<String, String>.from(store['bindings'] as Map? ?? {});
+    final bindings = TelegramCacheStore.paths(store['bindings']);
     bindings[key] = path;
     store['bindings'] = bindings;
     await _save();
@@ -1000,10 +1014,10 @@ class TelegramRepositoryImpl implements TelegramRepository {
   @override
   Future<List<TelegramAudio>> cachedAudio(int chatId) async {
     final store = await _store();
-    final paths = store['files'] as Map? ?? {};
+    final paths = TelegramCacheStore.paths(store['files']);
     return (store['audio:$chatId'] as List? ?? []).map((e) {
       final audio = TelegramAudio.fromJson(e as Map<String, dynamic>);
-      final path = paths['${audio.fileId}'] as String?;
+      final path = paths['${audio.fileId}'];
       return path == null ? audio : audio.withLocalPath(path);
     }).toList();
   }
@@ -1109,6 +1123,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
     await _td.call('logOut');
     await _secure.delete(key: 'telegram.session.active');
     await _cache.clear();
+    _committedAudio.clear();
     await _subscription?.cancel();
     await _transport?.dispose();
     _transport = null;

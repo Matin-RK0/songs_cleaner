@@ -17,6 +17,7 @@ class TelegramLocalMatcher {
   }
   final Map<(String, int), List<Song>> _byFile = {};
   final Map<String, Song> _byPath = {};
+  Song? songAtPath(String path) => _byPath[path];
   static final _separator = RegExp(r'[/\\]');
   static String basename(String path) =>
       path.split(_separator).last.toLowerCase();

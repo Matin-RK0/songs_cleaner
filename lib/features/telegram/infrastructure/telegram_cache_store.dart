@@ -12,6 +12,18 @@ class TelegramCacheStore {
   Future<void>? _saving;
   int _version = 0;
 
+  /// Old/partially written index entries must not invalidate unrelated paths.
+  static Map<String, String> paths(Object? value) {
+    if (value is! Map) return {};
+    return {
+      for (final entry in value.entries)
+        if (entry.key is String &&
+            entry.value is String &&
+            (entry.value as String).isNotEmpty)
+          entry.key as String: entry.value as String,
+    };
+  }
+
   Future<Map<String, dynamic>> load() =>
       _data != null ? Future.value(_data!) : _loading ??= _read();
   Future<Map<String, dynamic>> _read() async {

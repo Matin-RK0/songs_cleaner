@@ -271,18 +271,25 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
     final repository = ref.read(telegramRepositoryProvider);
     final sync = ref.read(telegramLibrarySyncProvider);
     try {
-      final path = await repository.download(
-        initial.audio,
-        onProgress: (progress) {
-          if (!_current(id, generation)) return;
-          _pendingProgress[id] = progress;
-          if (progress.saving) {
-            _flushProgress();
-          } else {
-            _flush ??= Timer(const Duration(milliseconds: 250), _flushProgress);
-          }
-        },
-      );
+      final existing = await _existingIndexedCopy(initial.audio);
+      if (!_current(id, generation)) return;
+      final path =
+          existing ??
+          await repository.download(
+            initial.audio,
+            onProgress: (progress) {
+              if (!_current(id, generation)) return;
+              _pendingProgress[id] = progress;
+              if (progress.saving) {
+                _flushProgress();
+              } else {
+                _flush ??= Timer(
+                  const Duration(milliseconds: 250),
+                  _flushProgress,
+                );
+              }
+            },
+          );
       if (!_current(id, generation)) return;
       _pendingProgress.remove(id);
       try {
@@ -335,7 +342,12 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
       }
     } on TelegramTransferInterrupted {
       /* Pause/cancel already committed their state. */
-    } catch (e) {
+    } catch (e, stackTrace) {
+      TelegramDiagnostics.report(
+        'Completing a Telegram download',
+        e,
+        stackTrace,
+      );
       if (_current(id, generation) &&
           state[id] != null &&
           state[id]!.phase != TelegramDownloadPhase.completed) {
@@ -384,6 +396,41 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
         _persist();
         _pump();
       }
+    }
+  }
+
+  Future<String?> _existingIndexedCopy(TelegramAudio audio) async {
+    try {
+      final repository = ref.read(telegramRepositoryProvider);
+      Map<String, String> bindings;
+      try {
+        bindings = await repository.loadBindings();
+      } catch (_) {
+        bindings = const {};
+      }
+      if (!ref.mounted) return null;
+      final matcher = ref.read(telegramLocalMatcherProvider);
+      // Only reuse MediaStore-indexed music here. A completed TDLib-private
+      // source must still be published before its download counts as saved.
+      final paths = {
+        for (final candidate in matcher.candidatesFor(audio))
+          if (candidate.id >= 0) candidate.path,
+        for (final path in [bindings[audio.key], audio.localPath])
+          if (path != null && (matcher.songAtPath(path)?.id ?? -1) >= 0) path,
+      };
+      if (paths.isEmpty) return null;
+      final existing = await ref
+          .read(telegramLocalFilesProvider)
+          .existingPaths(paths);
+      if (!ref.mounted) return null;
+      return matcher.resolve(audio, bindings, existing).song?.path;
+    } catch (error, stackTrace) {
+      TelegramDiagnostics.report(
+        'Checking an existing device copy',
+        error,
+        stackTrace,
+      );
+      return null;
     }
   }
 

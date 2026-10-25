@@ -216,6 +216,46 @@ void main() {
   );
 
   test(
+    'Retry repairs a previous failed state using music found by a library refresh without downloading again',
+    () async {
+      final audio = testAudio();
+      final repository = _IndexFailureRepository()
+        ..savedAudio = [audio]
+        ..page = TelegramAudioPage([audio], 0);
+      final container = await setup(repository);
+      repository.failure = TelegramFailure.generic;
+      final manager = container.read(telegramDownloadsProvider.notifier);
+      manager.enqueue(audio);
+      await manager.waitFor(audio.fileId);
+      expect(
+        container.read(telegramDownloadsProvider)[audio.fileId]!.phase,
+        TelegramDownloadPhase.failed,
+      );
+      final library =
+          container.read(libraryProvider.notifier) as _SyncingLibrary;
+      library.nextSong = localSong(path: repository.downloadedPath, id: 321);
+      await library.syncNewSongs();
+      await _settle();
+      manager.resume(audio.fileId);
+      await manager.waitFor(audio.fileId);
+      await _settle();
+      expect(repository.downloadCalls, 1);
+      expect(
+        container.read(telegramDownloadsProvider)[audio.fileId]!.phase,
+        TelegramDownloadPhase.completed,
+      );
+      expect(
+        container.read(telegramDownloadsProvider)[audio.fileId]!.failure,
+        isNull,
+      );
+      expect(
+        container.read(telegramChatSongsProvider(123)).single.path,
+        repository.downloadedPath,
+      );
+    },
+  );
+
+  test(
     'an old local lookup failure cannot overwrite successful download availability',
     () async {
       final audio = testAudio();

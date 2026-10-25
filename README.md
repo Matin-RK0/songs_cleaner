@@ -95,6 +95,10 @@ two-step-verification passwords are not persisted by this app.
   Committed downloads become playable from their public path immediately; a
   delayed library scan or a recoverable metadata-write error does not mark a
   saved file as failed. Temporary source cleanup waits for a durable path index.
+  Publication repairs legacy path-index entries and never decodes unrelated chat
+  metadata in the commit step. Verified public paths are retained in memory so a
+  metadata/cleanup error cannot force another copy; Retry also reuses an existing
+  matching MediaStore track instead of downloading it again.
 - The application-level queue is independent of chat routes. It deduplicates by
   TDLib file id, supports pause/resume/cancel/retry, defaults to two concurrent
   transfers and allows one to three. Pending work is capped at 200 and finished
