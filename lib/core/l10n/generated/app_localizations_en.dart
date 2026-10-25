@@ -9,6 +9,129 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String telegramConcurrency(int count) {
+    return '$count simultaneous downloads';
+  }
+
+  @override
+  String get telegramDownloads => 'Downloads';
+
+  @override
+  String get telegramQueued => 'Queued';
+
+  @override
+  String get telegramReceiving => 'Downloading';
+
+  @override
+  String get telegramSaving => 'Saving to Music/Telegram…';
+
+  @override
+  String get telegramPaused => 'Paused';
+
+  @override
+  String get telegramCompleted => 'Saved to Music/Telegram';
+
+  @override
+  String get telegramCanceled => 'Canceled';
+
+  @override
+  String get telegramPause => 'Pause';
+
+  @override
+  String get telegramResume => 'Resume';
+
+  @override
+  String get telegramPauseAll => 'Pause all';
+
+  @override
+  String get telegramResumeAll => 'Resume / retry all';
+
+  @override
+  String get telegramClearFinished => 'Clear finished';
+
+  @override
+  String get telegramNoDownloads => 'No downloads yet';
+
+  @override
+  String telegramTransferBytes(String received, String total) {
+    return '$received / $total';
+  }
+
+  @override
+  String telegramTransferSpeed(String speed, int seconds) {
+    return '$speed/s · ~${seconds}s left';
+  }
+
+  @override
+  String telegramPercent(int count) {
+    return '$count%';
+  }
+
+  @override
+  String telegramDownloadSummary(int active, int queued, int failed) {
+    return '$active active · $queued queued · $failed failed';
+  }
+
+  @override
+  String get telegramDownloadAndPlay => 'Download and play';
+
+  @override
+  String get telegramSearchMusic => 'Search loaded music';
+
+  @override
+  String get telegramLoadedSearchHint =>
+      'Search covers the messages loaded so far. Load more for older music.';
+
+  @override
+  String get telegramNewest => 'Newest first';
+
+  @override
+  String get telegramOldest => 'Oldest first';
+
+  @override
+  String get telegramByTitle => 'Track name';
+
+  @override
+  String get telegramPin => 'Pin chat';
+
+  @override
+  String get telegramUnpin => 'Unpin chat';
+
+  @override
+  String get telegramRecent => 'Recently opened';
+
+  @override
+  String get telegramPinned => 'Pinned';
+
+  @override
+  String get telegramSelect => 'Select tracks';
+
+  @override
+  String telegramSelection(int count, String size) {
+    return '$count selected · $size';
+  }
+
+  @override
+  String get telegramDownloadSelected => 'Download selected';
+
+  @override
+  String get telegramQueueSelected => 'Queue local selection';
+
+  @override
+  String get telegramQueueFull =>
+      'The download queue is full. Finish or cancel some items first.';
+
+  @override
+  String get telegramDownloadLocation =>
+      'Downloads are saved in Music/Telegram. Completed audio is removed from this app’s private cache.';
+
+  @override
+  String get telegramDownloadNotification => 'Telegram music downloads';
+
+  @override
+  String get telegramOpenMessage => 'Open message in Telegram';
+
+  @override
   String get telegramTitle => 'Telegram';
 
   @override

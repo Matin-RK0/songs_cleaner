@@ -9,6 +9,129 @@ class AppLocalizationsFa extends AppLocalizations {
   AppLocalizationsFa([String locale = 'fa']) : super(locale);
 
   @override
+  String telegramConcurrency(int count) {
+    return '$count دانلود هم‌زمان';
+  }
+
+  @override
+  String get telegramDownloads => 'دانلودها';
+
+  @override
+  String get telegramQueued => 'در صف دانلود';
+
+  @override
+  String get telegramReceiving => 'در حال دانلود';
+
+  @override
+  String get telegramSaving => 'در حال ذخیره در Music/Telegram…';
+
+  @override
+  String get telegramPaused => 'متوقف‌شده';
+
+  @override
+  String get telegramCompleted => 'در Music/Telegram ذخیره شد';
+
+  @override
+  String get telegramCanceled => 'لغوشده';
+
+  @override
+  String get telegramPause => 'توقف';
+
+  @override
+  String get telegramResume => 'ادامه';
+
+  @override
+  String get telegramPauseAll => 'توقف همه';
+
+  @override
+  String get telegramResumeAll => 'ادامه / تلاش مجدد همه';
+
+  @override
+  String get telegramClearFinished => 'پاک‌کردن موارد تمام‌شده';
+
+  @override
+  String get telegramNoDownloads => 'هنوز دانلودی وجود ندارد';
+
+  @override
+  String telegramTransferBytes(String received, String total) {
+    return '$received از $total';
+  }
+
+  @override
+  String telegramTransferSpeed(String speed, int seconds) {
+    return '$speed/ثانیه · حدود $seconds ثانیه باقی‌مانده';
+  }
+
+  @override
+  String telegramPercent(int count) {
+    return '$count٪';
+  }
+
+  @override
+  String telegramDownloadSummary(int active, int queued, int failed) {
+    return '$active فعال · $queued در صف · $failed ناموفق';
+  }
+
+  @override
+  String get telegramDownloadAndPlay => 'دانلود و پخش';
+
+  @override
+  String get telegramSearchMusic => 'جستجوی آهنگ‌های بارگذاری‌شده';
+
+  @override
+  String get telegramLoadedSearchHint =>
+      'جستجو در پیام‌های بارگذاری‌شده انجام می‌شود. برای آهنگ‌های قدیمی‌تر، موارد بیشتری بارگذاری کن.';
+
+  @override
+  String get telegramNewest => 'جدیدترین';
+
+  @override
+  String get telegramOldest => 'قدیمی‌ترین';
+
+  @override
+  String get telegramByTitle => 'نام آهنگ';
+
+  @override
+  String get telegramPin => 'پین‌کردن چت';
+
+  @override
+  String get telegramUnpin => 'برداشتن پین چت';
+
+  @override
+  String get telegramRecent => 'اخیراً بازشده';
+
+  @override
+  String get telegramPinned => 'پین‌شده';
+
+  @override
+  String get telegramSelect => 'انتخاب آهنگ‌ها';
+
+  @override
+  String telegramSelection(int count, String size) {
+    return '$count انتخاب‌شده · $size';
+  }
+
+  @override
+  String get telegramDownloadSelected => 'دانلود انتخاب‌شده‌ها';
+
+  @override
+  String get telegramQueueSelected => 'افزودن انتخاب‌های محلی به صف';
+
+  @override
+  String get telegramQueueFull =>
+      'صف دانلود پر است. ابتدا چند مورد را تمام یا لغو کن.';
+
+  @override
+  String get telegramDownloadLocation =>
+      'محل ذخیره دانلودها Music/Telegram است. نسخه خصوصی آهنگ پس از ذخیره موفق پاک می‌شود.';
+
+  @override
+  String get telegramDownloadNotification => 'دانلود آهنگ‌های تلگرام';
+
+  @override
+  String get telegramOpenMessage => 'بازکردن پیام در تلگرام';
+
+  @override
   String get telegramTitle => 'تلگرام';
 
   @override

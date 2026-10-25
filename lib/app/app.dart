@@ -71,6 +71,17 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
         await handler.playPause();
       case 'com.example.songs_cleaner.widget.NEXT':
         await handler.next();
+      case 'com.example.songs_cleaner.OPEN_TELEGRAM_DOWNLOADS':
+        final navigator = _navigatorKey.currentState;
+        if (navigator == null) return;
+        var alreadyOpen = false;
+        navigator.popUntil((route) {
+          alreadyOpen = route.settings.name == RouteNames.telegramDownloads;
+          return true;
+        });
+        if (!alreadyOpen) {
+          unawaited(navigator.pushNamed(RouteNames.telegramDownloads));
+        }
     }
   }
 

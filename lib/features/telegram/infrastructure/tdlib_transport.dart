@@ -132,6 +132,13 @@ Future<void> _tdWorker(SendPort output) async {
         if (raw == null) break;
         final event = jsonDecode(raw) as Map<String, dynamic>;
         if (event['@client_id'] != client) continue;
+        // TDLib maintains unrelated cached updates internally; keep presence,
+        // typing and unrelated message events away from Flutter's UI isolate.
+        if (event['@extra'] == null &&
+            event['@type'] != 'updateAuthorizationState' &&
+            event['@type'] != 'updateFile') {
+          continue;
+        }
         output.send(event);
         if (event['@type'] == 'updateAuthorizationState' &&
             (event['authorization_state'] as Map?)?['@type'] ==

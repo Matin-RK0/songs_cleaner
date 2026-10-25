@@ -7,9 +7,19 @@ import '../../domain/telegram_models.dart';
 import 'telegram_chat_avatar.dart';
 
 class TelegramChatTile extends StatelessWidget {
-  const TelegramChatTile({super.key, required this.chat, required this.onTap});
+  const TelegramChatTile({
+    super.key,
+    required this.chat,
+    required this.onTap,
+    this.onPin,
+    this.pinned = false,
+    this.recent = false,
+  });
   final TelegramChat chat;
   final VoidCallback onTap;
+  final VoidCallback? onPin;
+  final bool pinned;
+  final bool recent;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +34,13 @@ class TelegramChatTile extends StatelessWidget {
           padding: AppSpacing.allMd,
           child: Row(
             children: [
-              TelegramChatAvatar(chat: chat),
+              HeroMode(
+                enabled: !MediaQuery.disableAnimationsOf(context),
+                child: Hero(
+                  tag: 'telegram-chat-${chat.id}',
+                  child: TelegramChatAvatar(chat: chat),
+                ),
+              ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -38,7 +54,11 @@ class TelegramChatTile extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      chat.kind == 'chatTypePrivate'
+                      pinned
+                          ? context.l10n.telegramPinned
+                          : recent
+                          ? context.l10n.telegramRecent
+                          : chat.kind == 'chatTypePrivate'
                           ? context.l10n.telegramConversation
                           : context.l10n.telegramChannelOrGroup,
                       style: theme.textTheme.bodyMedium?.copyWith(
@@ -49,7 +69,18 @@ class TelegramChatTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Icon(Icons.chevron_right_rounded),
+              if (onPin != null)
+                IconButton(
+                  tooltip: pinned
+                      ? context.l10n.telegramUnpin
+                      : context.l10n.telegramPin,
+                  onPressed: onPin,
+                  icon: Icon(
+                    pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                  ),
+                )
+              else
+                const Icon(Icons.chevron_right_rounded),
             ],
           ),
         ),

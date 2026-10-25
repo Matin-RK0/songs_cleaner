@@ -10,6 +10,10 @@ import '../domain/telegram_models.dart';
 import '../domain/telegram_repository.dart';
 import '../infrastructure/telegram_repository_impl.dart';
 import '../infrastructure/telegram_local_files.dart';
+import 'telegram_download_controller.dart';
+import 'telegram_preferences_controller.dart';
+import '../domain/telegram_download.dart';
+import 'telegram_artwork_provider.dart';
 
 final telegramLocalFilesProvider = Provider<TelegramLocalFiles>(
   (ref) => TelegramLocalFiles(),
@@ -63,11 +67,26 @@ class TelegramState {
 final telegramVisibleChatsProvider = Provider<List<TelegramChat>>((ref) {
   final state = ref.watch(telegramProvider);
   final query = state.query.trim().toLowerCase();
-  return query.isEmpty
-      ? state.chats
+  final preferences = ref.watch(telegramPreferencesProvider);
+  final pins = (preferences['pins'] as List? ?? []).whereType<int>().toList();
+  final recent = (preferences['recent'] as List? ?? [])
+      .whereType<int>()
+      .toList();
+  final result = query.isEmpty
+      ? [...state.chats]
       : state.chats
             .where((chat) => chat.title.toLowerCase().contains(query))
             .toList();
+  final original = {
+    for (var i = 0; i < state.chats.length; i++) state.chats[i].id: i,
+  };
+  int rank(int id) => pins.contains(id)
+      ? -100 + pins.indexOf(id)
+      : recent.contains(id)
+      ? recent.indexOf(id) - 50
+      : original[id] ?? 0;
+  result.sort((a, b) => rank(a.id).compareTo(rank(b.id)));
+  return result;
 });
 
 final telegramUnassignedProvider = Provider<List<Song>>(
@@ -165,10 +184,22 @@ class TelegramController extends Notifier<TelegramState> {
   }
 
   Future<void> logout() => _run(() async {
-    await ref.read(telegramRepositoryProvider).logout();
+    final downloads = ref.read(telegramDownloadsProvider.notifier);
+    final preferences = ref.read(telegramPreferencesProvider.notifier);
+    await Future.wait([downloads.prepareLogout(), preferences.prepareLogout()]);
+    try {
+      await ref.read(telegramRepositoryProvider).logout();
+    } catch (_) {
+      downloads.unlock();
+      preferences.unlock();
+      rethrow;
+    }
     if (!ref.mounted) return;
     state = const TelegramState();
     ref.invalidate(telegramChatProvider);
+    ref.invalidate(telegramDownloadsProvider);
+    ref.invalidate(telegramPreferencesProvider);
+    ref.invalidate(telegramArtworkLoaderProvider);
   });
 }
 
@@ -180,6 +211,10 @@ class TelegramChatState {
     this.failure,
     this.downloading = const {},
     this.localOnly = true,
+    this.query = '',
+    this.activeOnly = false,
+    this.selected = const {},
+    this.sort = 'newest',
   });
   final List<TelegramTrack> tracks;
   final bool busy;
@@ -187,6 +222,10 @@ class TelegramChatState {
   final TelegramFailure? failure;
   final Set<String> downloading;
   final bool localOnly;
+  final String query;
+  final bool activeOnly;
+  final Set<String> selected;
+  final String sort;
   TelegramChatState copyWith({
     List<TelegramTrack>? tracks,
     bool? busy,
@@ -194,6 +233,10 @@ class TelegramChatState {
     TelegramFailure? failure,
     Set<String>? downloading,
     bool? localOnly,
+    String? query,
+    bool? activeOnly,
+    Set<String>? selected,
+    String? sort,
   }) => TelegramChatState(
     tracks: tracks ?? this.tracks,
     busy: busy ?? this.busy,
@@ -201,6 +244,10 @@ class TelegramChatState {
     failure: failure,
     downloading: downloading ?? this.downloading,
     localOnly: localOnly ?? this.localOnly,
+    query: query ?? this.query,
+    activeOnly: activeOnly ?? this.activeOnly,
+    selected: selected ?? this.selected,
+    sort: sort ?? this.sort,
   );
 }
 
@@ -211,14 +258,42 @@ final telegramChatProvider = NotifierProvider.autoDispose
 final telegramChatTracksProvider = Provider.autoDispose
     .family<List<TelegramTrack>, int>((ref, id) {
       final state = ref.watch(telegramChatProvider(id));
-      return state.localOnly
-          ? state.tracks.where((e) => e.hasLocalFile).toList(growable: false)
-          : state.tracks;
+      final query = state.query.trim().toLowerCase();
+      ref.watch(
+        telegramDownloadsProvider.select(
+          (jobs) => Object.hashAll(
+            jobs.entries.where((e) => e.value.unfinished).map((e) => e.key),
+          ),
+        ),
+      );
+      final jobs = ref.read(telegramDownloadsProvider);
+      final tracks = state.tracks
+          .where(
+            (e) =>
+                (!state.localOnly || e.hasLocalFile) &&
+                (!state.activeOnly ||
+                    jobs[e.audio.fileId]?.unfinished == true) &&
+                (query.isEmpty ||
+                    '${e.audio.title} ${e.audio.artist} ${e.audio.fileName}'
+                        .toLowerCase()
+                        .contains(query)),
+          )
+          .toList();
+      if (state.sort == 'title') {
+        tracks.sort(
+          (a, b) => a.audio.title.toLowerCase().compareTo(
+            b.audio.title.toLowerCase(),
+          ),
+        );
+      }
+      if (state.sort == 'oldest') {
+        tracks.sort((a, b) => a.audio.messageId.compareTo(b.audio.messageId));
+      }
+      return tracks;
     });
 final telegramChatSongsProvider = Provider.autoDispose.family<List<Song>, int>(
   (ref, id) => ref
-      .watch(telegramChatProvider(id))
-      .tracks
+      .watch(telegramChatTracksProvider(id))
       .map((e) => e.song)
       .whereType<Song>()
       .toList(growable: false),
@@ -232,6 +307,36 @@ final telegramLocalMatchCountProvider = Provider.autoDispose.family<int, int>(
       .length,
 );
 
+final telegramSelectionProvider = Provider.autoDispose
+    .family<(List<TelegramTrack>, int), int>((ref, id) {
+      final state = ref.watch(telegramChatProvider(id));
+      final selected = state.tracks
+          .where((e) => state.selected.contains(e.audio.key))
+          .toList();
+      return (selected, selected.fold<int>(0, (sum, e) => sum + e.audio.size));
+    });
+
+final telegramSelectionDetailsProvider = Provider.autoDispose
+    .family<
+      ({
+        List<Song> local,
+        List<Song> indexed,
+        int remoteCount,
+        int remoteBytes,
+      }),
+      int
+    >((ref, id) {
+      final selected = ref.watch(telegramSelectionProvider(id)).$1;
+      final local = selected.map((e) => e.song).whereType<Song>().toList();
+      final remote = selected.where((e) => e.song == null).toList();
+      return (
+        local: local,
+        indexed: local.where((e) => e.id >= 0).toList(),
+        remoteCount: remote.length,
+        remoteBytes: remote.fold<int>(0, (sum, e) => sum + e.audio.size),
+      );
+    });
+
 class TelegramChatController extends Notifier<TelegramChatState> {
   TelegramChatController(this.chatId);
   final int chatId;
@@ -239,7 +344,9 @@ class TelegramChatController extends Notifier<TelegramChatState> {
   int _resolution = 0;
   bool _initialized = false;
   bool _loading = false;
+  bool _browseEdited = false;
   Timer? _fileRefresh;
+  Timer? _search;
 
   @override
   TelegramChatState build() {
@@ -248,12 +355,18 @@ class TelegramChatController extends Notifier<TelegramChatState> {
         .fileUpdates
         .listen((file) {
           if (!ref.mounted) return;
+          if (file.path.isEmpty && file.received > 0) return;
           var changed = false;
           _audio = _audio
               .map((audio) {
                 // A completed cache file is not the completed public download:
                 // wait for Music/Telegram publishing before changing this row.
-                if (state.downloading.contains(audio.key)) return audio;
+                if (ref
+                        .read(telegramDownloadsProvider)[audio.fileId]
+                        ?.unfinished ==
+                    true) {
+                  return audio;
+                }
                 if (audio.fileId != file.id || audio.localPath == file.path) {
                   return audio;
                 }
@@ -269,18 +382,45 @@ class TelegramChatController extends Notifier<TelegramChatState> {
         });
     ref.onDispose(() {
       _fileRefresh?.cancel();
+      _search?.cancel();
       unawaited(fileSubscription.cancel());
     });
     ref.listen(allSongsProvider, (_, _) => unawaited(_resolveSafely()));
+    ref.listen(
+      telegramDownloadsProvider.select(
+        (jobs) => Object.hashAll(
+          jobs.values
+              .where((job) => job.phase == TelegramDownloadPhase.completed)
+              .map((job) => Object.hash(job.audio.fileId, job.path)),
+        ),
+      ),
+      (_, _) => unawaited(_resolveSafely()),
+    );
     ref.listen(telegramProvider.select((s) => s.auth), (_, auth) {
       if (_initialized && auth == TelegramAuth.ready) unawaited(refresh());
     });
     Future.microtask(_initialize);
-    return const TelegramChatState();
+    final saved = ref.read(telegramPreferencesProvider.notifier).chat(chatId);
+    return TelegramChatState(
+      localOnly: saved['localOnly'] as bool? ?? true,
+      query: saved['query'] as String? ?? '',
+      sort: saved['sort'] as String? ?? 'newest',
+    );
   }
 
   Future<void> _initialize() async {
     try {
+      final preferences = ref.read(telegramPreferencesProvider.notifier);
+      await preferences.ready;
+      if (!ref.mounted) return;
+      if (!_browseEdited) {
+        final saved = preferences.chat(chatId);
+        state = state.copyWith(
+          localOnly: saved['localOnly'] as bool? ?? true,
+          query: saved['query'] as String? ?? '',
+          sort: saved['sort'] as String? ?? 'newest',
+        );
+      }
       _audio = await ref.read(telegramRepositoryProvider).cachedAudio(chatId);
       if (!ref.mounted) return;
       await _resolve();
@@ -321,9 +461,16 @@ class TelegramChatController extends Notifier<TelegramChatState> {
         .read(telegramLocalFilesProvider)
         .existingPaths(paths);
     if (!ref.mounted || generation != _resolution) return;
+    final jobs = ref.read(telegramDownloadsProvider);
     state = state.copyWith(
       tracks: _audio
-          .map((e) => matcher.resolve(e, bindings, existing))
+          .map(
+            (e) => matcher.resolve(
+              jobs[e.fileId]?.unfinished == true ? e.withLocalPath('') : e,
+              bindings,
+              existing,
+            ),
+          )
           .toList(),
     );
   }
@@ -360,7 +507,45 @@ class TelegramChatController extends Notifier<TelegramChatState> {
     }
   }
 
-  void setLocalOnly(bool value) => state = state.copyWith(localOnly: value);
+  void setLocalOnly(bool value) {
+    _browseEdited = true;
+    state = state.copyWith(localOnly: value, activeOnly: false);
+    ref.read(telegramPreferencesProvider.notifier).updateChat(chatId, {
+      'localOnly': value,
+    });
+  }
+
+  void setActiveOnly() {
+    _browseEdited = true;
+    state = state.copyWith(localOnly: false, activeOnly: true);
+  }
+
+  void search(String value) {
+    _search?.cancel();
+    _search = Timer(const Duration(milliseconds: 250), () {
+      if (!ref.mounted) return;
+      state = state.copyWith(query: value);
+      ref.read(telegramPreferencesProvider.notifier).updateChat(chatId, {
+        'query': value,
+      });
+    });
+  }
+
+  void setSort(String value) {
+    _browseEdited = true;
+    state = state.copyWith(sort: value);
+    ref.read(telegramPreferencesProvider.notifier).updateChat(chatId, {
+      'sort': value,
+    });
+  }
+
+  void toggleSelection(String key) {
+    final selected = {...state.selected};
+    if (!selected.remove(key)) selected.add(key);
+    state = state.copyWith(selected: selected);
+  }
+
+  void clearSelection() => state = state.copyWith(selected: {});
 
   Future<void> bind(TelegramAudio audio, Song song) async {
     try {
@@ -378,44 +563,17 @@ class TelegramChatController extends Notifier<TelegramChatState> {
   }
 
   Future<void> download(TelegramAudio audio) async {
-    if (state.downloading.contains(audio.key)) return;
-    // Keep this controller alive until the operation finishes when navigating back.
-    final keepAlive = ref.keepAlive();
-    state = state.copyWith(downloading: {...state.downloading, audio.key});
-    try {
-      final repository = ref.read(telegramRepositoryProvider);
-      final syncLibrary = ref.read(telegramLibrarySyncProvider);
-      final path = await repository.download(audio);
-      await repository.bind(audio.key, path);
-      if (ref.mounted) {
-        _audio = _audio
-            .map(
-              (item) =>
-                  item.fileId == audio.fileId ? item.withLocalPath(path) : item,
-            )
-            .toList(growable: false);
-        await _resolve();
-      }
-      // The public file is already saved even if library read access is unavailable.
-      try {
-        await syncLibrary();
-      } catch (_) {
-        /* A later library sync can retry. */
-      }
-    } catch (e) {
-      if (ref.mounted) {
-        state = state.copyWith(
-          failure: e is TelegramException ? e.failure : TelegramFailure.generic,
-        );
-      }
-    } finally {
-      if (ref.mounted) {
-        state = state.copyWith(
-          downloading: {...state.downloading}..remove(audio.key),
-          failure: state.failure,
-        );
-      }
-      keepAlive.close();
+    if (ref.read(telegramDownloadsProvider)[audio.fileId]?.unfinished == true) {
+      return;
+    }
+    final manager = ref.read(telegramDownloadsProvider.notifier);
+    if (!manager.enqueue(audio)) return;
+    await manager.waitFor(audio.fileId);
+    if (!ref.mounted) return;
+    final job = ref.read(telegramDownloadsProvider)[audio.fileId];
+    await _resolveSafely();
+    if (ref.mounted && job?.failure != null) {
+      state = state.copyWith(failure: job!.failure);
     }
   }
 }

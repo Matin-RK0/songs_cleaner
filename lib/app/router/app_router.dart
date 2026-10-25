@@ -23,6 +23,8 @@ import '../../features/playlists/presentation/screens/playlist_detail_screen.dar
 import '../../features/telegram/presentation/screens/telegram_auth_screen.dart';
 import '../../features/telegram/presentation/screens/telegram_chat_screen.dart';
 import 'route_names.dart';
+import 'telegram_route.dart';
+import '../../features/telegram/presentation/screens/telegram_downloads_screen.dart';
 
 abstract final class AppRouter {
   /// Opens the player as a singleton above the home screen.
@@ -48,6 +50,11 @@ abstract final class AppRouter {
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case RouteNames.telegramDownloads:
+        return TelegramRoute(
+          settings: settings,
+          child: const TelegramDownloadsScreen(),
+        );
       case RouteNames.home:
         return _fadeRoute(settings, const HomeShell());
       case RouteNames.player:
@@ -55,16 +62,16 @@ abstract final class AppRouter {
       case RouteNames.search:
         return _slideRoute(settings, const SearchScreen());
       case RouteNames.telegramAuth:
-        return MaterialPageRoute<void>(
+        return TelegramRoute(
           settings: settings,
-          builder: (_) => const TelegramAuthScreen(),
+          child: const TelegramAuthScreen(),
         );
       case RouteNames.telegramChat:
         final chatId = settings.arguments;
         if (chatId is int) {
-          return MaterialPageRoute<void>(
+          return TelegramRoute(
             settings: settings,
-            builder: (_) => TelegramChatScreen(chatId: chatId),
+            child: TelegramChatScreen(chatId: chatId),
           );
         }
         return _fadeRoute(settings, const HomeShell());

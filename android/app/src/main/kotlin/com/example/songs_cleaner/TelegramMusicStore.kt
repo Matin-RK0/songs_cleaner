@@ -2,6 +2,8 @@ package com.example.songs_cleaner
 
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
@@ -9,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
+import androidx.core.content.ContextCompat
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
@@ -23,6 +26,28 @@ class TelegramMusicStore(private val context: Context) : MethodChannel.MethodCal
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            "setDownloadActivity" -> {
+                try {
+                    val intent = Intent(context, TelegramDownloadService::class.java)
+                    if ((call.argument<Int>("active") ?: 0) <= 0) {
+                        context.stopService(intent)
+                    } else {
+                        intent.putExtra("title", call.argument<String>("title"))
+                        intent.putExtra("text", call.argument<String>("text"))
+                        ContextCompat.startForegroundService(context, intent)
+                    }
+                    result.success(true)
+                } catch (_: Exception) { result.error("DOWNLOAD_SERVICE_UNAVAILABLE", "Background transfer unavailable", null) }
+            }
+            "openTelegramLink" -> {
+                try {
+                    val link = call.argument<String>("link") ?: ""
+                    val uri = Uri.parse(link)
+                    if (uri.scheme != "https" || uri.host != "t.me") throw IOException("Invalid Telegram link")
+                    context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    result.success(true)
+                } catch (_: Exception) { result.success(false) }
+            }
             "requiresLegacyPermission" -> result.success(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
             "saveAudio" -> {
                 val sourcePath = call.argument<String>("sourcePath")

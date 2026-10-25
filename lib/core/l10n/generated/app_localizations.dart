@@ -98,6 +98,222 @@ abstract class AppLocalizations {
     Locale('fa'),
   ];
 
+  /// No description provided for @telegramConcurrency.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} دانلود هم‌زمان'**
+  String telegramConcurrency(int count);
+
+  /// No description provided for @telegramDownloads.
+  ///
+  /// In fa, this message translates to:
+  /// **'دانلودها'**
+  String get telegramDownloads;
+
+  /// No description provided for @telegramQueued.
+  ///
+  /// In fa, this message translates to:
+  /// **'در صف دانلود'**
+  String get telegramQueued;
+
+  /// No description provided for @telegramReceiving.
+  ///
+  /// In fa, this message translates to:
+  /// **'در حال دانلود'**
+  String get telegramReceiving;
+
+  /// No description provided for @telegramSaving.
+  ///
+  /// In fa, this message translates to:
+  /// **'در حال ذخیره در Music/Telegram…'**
+  String get telegramSaving;
+
+  /// No description provided for @telegramPaused.
+  ///
+  /// In fa, this message translates to:
+  /// **'متوقف‌شده'**
+  String get telegramPaused;
+
+  /// No description provided for @telegramCompleted.
+  ///
+  /// In fa, this message translates to:
+  /// **'در Music/Telegram ذخیره شد'**
+  String get telegramCompleted;
+
+  /// No description provided for @telegramCanceled.
+  ///
+  /// In fa, this message translates to:
+  /// **'لغوشده'**
+  String get telegramCanceled;
+
+  /// No description provided for @telegramPause.
+  ///
+  /// In fa, this message translates to:
+  /// **'توقف'**
+  String get telegramPause;
+
+  /// No description provided for @telegramResume.
+  ///
+  /// In fa, this message translates to:
+  /// **'ادامه'**
+  String get telegramResume;
+
+  /// No description provided for @telegramPauseAll.
+  ///
+  /// In fa, this message translates to:
+  /// **'توقف همه'**
+  String get telegramPauseAll;
+
+  /// No description provided for @telegramResumeAll.
+  ///
+  /// In fa, this message translates to:
+  /// **'ادامه / تلاش مجدد همه'**
+  String get telegramResumeAll;
+
+  /// No description provided for @telegramClearFinished.
+  ///
+  /// In fa, this message translates to:
+  /// **'پاک‌کردن موارد تمام‌شده'**
+  String get telegramClearFinished;
+
+  /// No description provided for @telegramNoDownloads.
+  ///
+  /// In fa, this message translates to:
+  /// **'هنوز دانلودی وجود ندارد'**
+  String get telegramNoDownloads;
+
+  /// No description provided for @telegramTransferBytes.
+  ///
+  /// In fa, this message translates to:
+  /// **'{received} از {total}'**
+  String telegramTransferBytes(String received, String total);
+
+  /// No description provided for @telegramTransferSpeed.
+  ///
+  /// In fa, this message translates to:
+  /// **'{speed}/ثانیه · حدود {seconds} ثانیه باقی‌مانده'**
+  String telegramTransferSpeed(String speed, int seconds);
+
+  /// No description provided for @telegramPercent.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count}٪'**
+  String telegramPercent(int count);
+
+  /// No description provided for @telegramDownloadSummary.
+  ///
+  /// In fa, this message translates to:
+  /// **'{active} فعال · {queued} در صف · {failed} ناموفق'**
+  String telegramDownloadSummary(int active, int queued, int failed);
+
+  /// No description provided for @telegramDownloadAndPlay.
+  ///
+  /// In fa, this message translates to:
+  /// **'دانلود و پخش'**
+  String get telegramDownloadAndPlay;
+
+  /// No description provided for @telegramSearchMusic.
+  ///
+  /// In fa, this message translates to:
+  /// **'جستجوی آهنگ‌های بارگذاری‌شده'**
+  String get telegramSearchMusic;
+
+  /// No description provided for @telegramLoadedSearchHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'جستجو در پیام‌های بارگذاری‌شده انجام می‌شود. برای آهنگ‌های قدیمی‌تر، موارد بیشتری بارگذاری کن.'**
+  String get telegramLoadedSearchHint;
+
+  /// No description provided for @telegramNewest.
+  ///
+  /// In fa, this message translates to:
+  /// **'جدیدترین'**
+  String get telegramNewest;
+
+  /// No description provided for @telegramOldest.
+  ///
+  /// In fa, this message translates to:
+  /// **'قدیمی‌ترین'**
+  String get telegramOldest;
+
+  /// No description provided for @telegramByTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'نام آهنگ'**
+  String get telegramByTitle;
+
+  /// No description provided for @telegramPin.
+  ///
+  /// In fa, this message translates to:
+  /// **'پین‌کردن چت'**
+  String get telegramPin;
+
+  /// No description provided for @telegramUnpin.
+  ///
+  /// In fa, this message translates to:
+  /// **'برداشتن پین چت'**
+  String get telegramUnpin;
+
+  /// No description provided for @telegramRecent.
+  ///
+  /// In fa, this message translates to:
+  /// **'اخیراً بازشده'**
+  String get telegramRecent;
+
+  /// No description provided for @telegramPinned.
+  ///
+  /// In fa, this message translates to:
+  /// **'پین‌شده'**
+  String get telegramPinned;
+
+  /// No description provided for @telegramSelect.
+  ///
+  /// In fa, this message translates to:
+  /// **'انتخاب آهنگ‌ها'**
+  String get telegramSelect;
+
+  /// No description provided for @telegramSelection.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} انتخاب‌شده · {size}'**
+  String telegramSelection(int count, String size);
+
+  /// No description provided for @telegramDownloadSelected.
+  ///
+  /// In fa, this message translates to:
+  /// **'دانلود انتخاب‌شده‌ها'**
+  String get telegramDownloadSelected;
+
+  /// No description provided for @telegramQueueSelected.
+  ///
+  /// In fa, this message translates to:
+  /// **'افزودن انتخاب‌های محلی به صف'**
+  String get telegramQueueSelected;
+
+  /// No description provided for @telegramQueueFull.
+  ///
+  /// In fa, this message translates to:
+  /// **'صف دانلود پر است. ابتدا چند مورد را تمام یا لغو کن.'**
+  String get telegramQueueFull;
+
+  /// No description provided for @telegramDownloadLocation.
+  ///
+  /// In fa, this message translates to:
+  /// **'محل ذخیره دانلودها Music/Telegram است. نسخه خصوصی آهنگ پس از ذخیره موفق پاک می‌شود.'**
+  String get telegramDownloadLocation;
+
+  /// No description provided for @telegramDownloadNotification.
+  ///
+  /// In fa, this message translates to:
+  /// **'دانلود آهنگ‌های تلگرام'**
+  String get telegramDownloadNotification;
+
+  /// No description provided for @telegramOpenMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'بازکردن پیام در تلگرام'**
+  String get telegramOpenMessage;
+
   /// No description provided for @telegramTitle.
   ///
   /// In fa, this message translates to:

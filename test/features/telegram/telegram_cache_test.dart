@@ -129,6 +129,58 @@ void main() {
       expect(await repository.loadBindings(), isEmpty);
     },
   );
+
+  test(
+    'only the verified private TDLib copy is removed after successful publication',
+    () async {
+      final audio = testAudio();
+      final source = File('${dir.path}/files/music/private.mp3');
+      await source.parent.create(recursive: true);
+      await source.writeAsBytes([1, 2, 3]);
+      await File('${dir.path}/library-v1.json').writeAsString(
+        jsonEncode({
+          'files': {'${audio.fileId}': source.path},
+          'audio:123': [audio.toJson()],
+        }),
+      );
+      final publisher = FakeMusicPublisher(
+        '${dir.path}/Music/Telegram/song.mp3',
+      );
+      final repository = TelegramRepositoryImpl(
+        cacheDirectory: dir,
+        musicPublisher: publisher,
+      );
+      addTearDown(repository.dispose);
+      final path = await repository.download(audio);
+      expect(await File(path).readAsBytes(), [1, 2, 3]);
+      expect(await source.exists(), isFalse);
+      expect((await repository.cachedAudio(123)).single.localPath, path);
+    },
+  );
+
+  test(
+    'cache cleanup cannot delete a public or similarly-prefixed source folder',
+    () async {
+      final audio = testAudio();
+      final source = File('${dir.path}/files-public/original.mp3');
+      await source.parent.create(recursive: true);
+      await source.writeAsBytes([1, 2, 3]);
+      await File('${dir.path}/library-v1.json').writeAsString(
+        jsonEncode({
+          'files': {'${audio.fileId}': source.path},
+        }),
+      );
+      final repository = TelegramRepositoryImpl(
+        cacheDirectory: dir,
+        musicPublisher: FakeMusicPublisher(
+          '${dir.path}/Music/Telegram/song.mp3',
+        ),
+      );
+      addTearDown(repository.dispose);
+      await repository.download(audio);
+      expect(await source.readAsBytes(), [1, 2, 3]);
+    },
+  );
 }
 
 class FakeMusicPublisher extends TelegramMusicPublisher {

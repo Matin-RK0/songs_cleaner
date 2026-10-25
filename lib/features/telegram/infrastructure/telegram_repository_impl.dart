@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
+import 'telegram_cache_store.dart';
 
 import '../domain/telegram_models.dart';
 import '../domain/telegram_repository.dart';
@@ -12,6 +13,7 @@ import 'tdlib_transport.dart';
 import 'telegram_audio_mapper.dart';
 import 'telegram_chat_mapper.dart';
 import 'telegram_music_publisher.dart';
+import '../domain/telegram_download.dart';
 
 class TelegramRepositoryImpl implements TelegramRepository {
   TelegramRepositoryImpl({
@@ -22,6 +24,10 @@ class TelegramRepositoryImpl implements TelegramRepository {
 
   final TelegramMusicPublisher _musicPublisher;
   final _downloads = <int, Future<String>>{};
+  final _epochs = <int, int>{};
+  final _progress = <int, void Function(TelegramTransferProgress)>{};
+  final _completedFiles = <int, Completer<String>>{};
+  final _savingAudio = <int>{};
 
   static const apiId = int.fromEnvironment('TELEGRAM_API_ID');
   static const apiHash = String.fromEnvironment('TELEGRAM_API_HASH');
@@ -32,11 +38,12 @@ class TelegramRepositoryImpl implements TelegramRepository {
   );
   TdlibTransport? _transport;
   StreamSubscription<Map<String, dynamic>>? _subscription;
-  Map<String, dynamic>? _cache;
-  Future<Map<String, dynamic>>? _loadingCache;
-  Future<void> _write = Future.value();
+  late final _cache = TelegramCacheStore(_dir);
+  int _imageDownloads = 0;
   int _chatLimit = 50;
   bool _initializing = false;
+  Future<void>? _readyPreparation;
+  int _sessionEpoch = 0;
   bool _disposed = false;
   String? _key;
   Directory? _directory;
@@ -58,32 +65,8 @@ class TelegramRepositoryImpl implements TelegramRepository {
     '${(await getApplicationSupportDirectory()).path}/telegram',
   ).create(recursive: true);
 
-  Future<Map<String, dynamic>> _store() {
-    if (_cache != null) return Future.value(_cache!);
-    return _loadingCache ??= _readStore();
-  }
-
-  Future<Map<String, dynamic>> _readStore() async {
-    final file = File('${(await _dir()).path}/library-v1.json');
-    try {
-      _cache = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
-    } catch (_) {
-      _cache = {};
-    }
-    return _cache!;
-  }
-
-  Future<void> _save() {
-    final snapshot = jsonEncode(_cache);
-    final next = _write.catchError((Object _) {}).then((_) async {
-      final file = File('${(await _dir()).path}/library-v1.json');
-      final temp = File('${file.path}.tmp');
-      await temp.writeAsString(snapshot, flush: true);
-      await temp.rename(file.path);
-    });
-    _write = next;
-    return next;
-  }
+  Future<Map<String, dynamic>> _store() => _cache.load();
+  Future<void> _save() => _cache.save();
 
   @override
   Future<void> connect() async {
@@ -105,6 +88,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
       _transport = null;
     }
     _emit(TelegramAuth.starting);
+    _readyPreparation = null;
     try {
       final dir = await _dir();
       _key = await _secure.read(key: 'telegram.database.key');
@@ -117,12 +101,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
       _subscription = transport.updates.listen((update) {
         if (update['@type'] == 'updateFile' && !_files.isClosed) {
           final file = update['file'] as Map<String, dynamic>;
-          _files.add(
-            TelegramLocalFile(
-              file['id'] as int,
-              TelegramAudioMapper.completedPath(file),
-            ),
-          );
+          _acceptFile(file);
         }
         if (update['@type'] == 'updateAuthorizationState') {
           unawaited(
@@ -182,7 +161,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
       return;
     }
     if (type == 'authorizationStateReady') {
-      await _secure.write(key: 'telegram.session.active', value: 'true');
+      await (_readyPreparation ??= _prepareReady());
     }
     _emit(switch (type) {
       'authorizationStateWaitPhoneNumber' => TelegramAuth.phone,
@@ -198,6 +177,13 @@ class TelegramRepositoryImpl implements TelegramRepository {
 
   TdlibTransport get _td =>
       _transport ?? (throw const TelegramException(TelegramFailure.network));
+
+  Future<void> _prepareReady() async {
+    await _secure.write(key: 'telegram.session.active', value: 'true');
+    await _pruneTemporary();
+    unawaited(_trimImageCache());
+  }
+
   @override
   Future<void> submitPhone(String phone) async {
     if (!RegExp(r'^\+[1-9]\d{6,14}$').hasMatch(phone.trim())) {
@@ -293,57 +279,189 @@ class TelegramRepositoryImpl implements TelegramRepository {
   }
 
   @override
-  Future<String> download(TelegramAudio audio) async {
+  Future<String> download(
+    TelegramAudio audio, {
+    void Function(TelegramTransferProgress)? onProgress,
+  }) async {
     final pending = _downloads[audio.fileId];
     if (pending != null) return pending;
-    final future = _download(audio);
+    final epoch = (_epochs[audio.fileId] ?? 0) + 1;
+    _epochs[audio.fileId] = epoch;
+    if (onProgress != null) _progress[audio.fileId] = onProgress;
+    final future = _download(audio, epoch);
     _downloads[audio.fileId] = future;
     try {
       return await future;
+    } catch (_) {
+      if (_epochs[audio.fileId] == epoch && !_disposed) {
+        try {
+          await cancelDownload(audio.fileId, discard: true);
+        } catch (_) {}
+      }
+      rethrow;
     } finally {
       _downloads.remove(audio.fileId);
+      _progress.remove(audio.fileId);
+      _completedFiles.remove(audio.fileId);
+      _epochs.remove(audio.fileId);
+      _savingAudio.remove(audio.fileId);
     }
   }
 
-  Future<String> _download(TelegramAudio audio) async {
+  void _acceptFile(Map<String, dynamic> file) {
+    final id = file['id'] as int;
+    final local = file['local'] as Map? ?? {};
+    final path = TelegramAudioMapper.completedPath(file);
+    final received = local['downloaded_size'] as int? ?? 0;
+    final total = file['size'] as int? ?? 0;
+    _files.add(TelegramLocalFile(id, path, received: received, total: total));
+    if (!_savingAudio.contains(id)) {
+      _progress[id]?.call(
+        TelegramTransferProgress(received: received, total: total),
+      );
+    }
+    final completion = _completedFiles[id];
+    if (path.isNotEmpty && completion != null && !completion.isCompleted) {
+      completion.complete(path);
+    }
+  }
+
+  void _checkEpoch(int id, int epoch) {
+    if (_disposed || _epochs[id] != epoch) {
+      throw const TelegramTransferInterrupted();
+    }
+  }
+
+  Future<String> _download(TelegramAudio audio, int epoch) async {
     final fileId = audio.fileId;
     final store = await _store();
     final published = (store['publishedFiles'] as Map?)?['$fileId'] as String?;
     if (published != null && await File(published).exists()) return published;
     await _musicPublisher.ensureAccess();
+    _checkEpoch(fileId, epoch);
     final cached = (store['files'] as Map?)?['$fileId'] as String?;
     if (cached != null && await File(cached).exists()) {
-      return _publishDownload(cached, audio);
+      return _publishDownload(cached, audio, epoch);
     }
-    // Request asynchronously, then query completion without blocking the UI.
-    await _td.call('downloadFile', {
+    // Register before sending: a cached/native completion can arrive immediately.
+    final completion = Completer<String>();
+    _completedFiles[fileId] = completion;
+    final completed = completion.future;
+    unawaited(completed.then<void>((_) {}, onError: (Object _) {}));
+    final storeAudio = Map<String, dynamic>.from(
+      store['temporaryAudio'] as Map? ?? {},
+    );
+    storeAudio['$fileId'] = audio.toJson();
+    store['temporaryAudio'] = storeAudio;
+    await _save();
+    _checkEpoch(fileId, epoch);
+    final first = await _td.call('downloadFile', {
       'file_id': fileId,
       'priority': 16,
       'offset': 0,
       'limit': 0,
       'synchronous': false,
     });
-    final deadline = DateTime.now().add(const Duration(minutes: 10));
-    while (DateTime.now().isBefore(deadline)) {
-      final file = await _td.call('getFile', {'file_id': fileId});
-      final local = file['local'] as Map<String, dynamic>;
-      if (local['is_downloading_completed'] == true) {
-        return _publishDownload(local['path'] as String, audio);
-      }
-      await Future<void>.delayed(const Duration(milliseconds: 600));
-    }
-    await _td.call('cancelDownloadFile', {
-      'file_id': fileId,
-      'only_if_pending': false,
+    _checkEpoch(fileId, epoch);
+    _acceptFile(first);
+    // Events drive progress; a slow watchdog only repairs missed updates.
+    final watchdog = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_epochs[fileId] != epoch || completion.isCompleted) return;
+      unawaited(
+        _td
+            .call('getFile', {'file_id': fileId})
+            .then((file) {
+              if (!_disposed) _acceptFile(file);
+            })
+            .catchError((Object _) {}),
+      );
     });
-    throw const TelegramException(TelegramFailure.network);
+    try {
+      final path = await completed.timeout(const Duration(minutes: 10));
+      _checkEpoch(fileId, epoch);
+      return await _publishDownload(path, audio, epoch);
+    } on TimeoutException {
+      await cancelDownload(fileId, discard: true);
+      throw const TelegramException(TelegramFailure.network);
+    } finally {
+      watchdog.cancel();
+    }
+  }
+
+  @override
+  Future<void> cancelDownload(int fileId, {bool discard = false}) async {
+    if (_epochs.containsKey(fileId)) _epochs[fileId] = _epochs[fileId]! + 1;
+    final completion = _completedFiles[fileId];
+    if (completion != null && !completion.isCompleted) {
+      completion.completeError(const TelegramTransferInterrupted());
+    }
+    if (_transport != null) {
+      await _td.call('cancelDownloadFile', {
+        'file_id': fileId,
+        'only_if_pending': false,
+      });
+      if (discard) await _discardTemporary(fileId);
+    }
+    if (discard) {
+      final staged =
+          ((await _store())['temporaryAudio'] as Map?)?['$fileId'] as Map?;
+      final source = staged?['localPath'] as String?;
+      if (source != null && source.isNotEmpty) await _removePrivateCopy(source);
+    }
+  }
+
+  Future<void> _discardTemporary(int id) async {
+    // TDLib owns only its private copy; this never deletes a public file path.
+    if (_transport == null) return;
+    await _td.call('deleteFile', {'file_id': id});
+    final store = await _store();
+    final staged = Map<String, dynamic>.from(
+      store['temporaryAudio'] as Map? ?? {},
+    )..remove('$id');
+    store['temporaryAudio'] = staged;
+    await _save();
+  }
+
+  Future<void> _pruneTemporary() async {
+    final staged = Map<String, dynamic>.from(
+      (await _store())['temporaryAudio'] as Map? ?? {},
+    );
+    for (final key in staged.keys) {
+      final id = int.tryParse(key);
+      if (id == null || _downloads.containsKey(id)) continue;
+      try {
+        await _discardTemporary(id);
+      } catch (_) {
+        /* Retry on next connection. */
+      }
+    }
   }
 
   Future<String> _publishDownload(
     String sourcePath,
     TelegramAudio audio,
+    int epoch,
   ) async {
+    _checkEpoch(audio.fileId, epoch);
+    _savingAudio.add(audio.fileId);
+    _progress[audio.fileId]?.call(
+      TelegramTransferProgress(
+        received: audio.size,
+        total: audio.size,
+        saving: true,
+      ),
+    );
+    final stagedStore = await _store();
+    final staged = Map<String, dynamic>.from(
+      stagedStore['temporaryAudio'] as Map? ?? {},
+    );
+    staged['${audio.fileId}'] = audio.withLocalPath(sourcePath).toJson();
+    stagedStore['temporaryAudio'] = staged;
+    await _save();
     final path = await _musicPublisher.publish(sourcePath, audio);
+    if (await File(path).length() != await File(sourcePath).length()) {
+      throw const TelegramException(TelegramFailure.storage);
+    }
     final store = await _store();
     final paths = Map<String, String>.from(store['files'] as Map? ?? {});
     final published = Map<String, String>.from(
@@ -369,11 +487,70 @@ class TelegramRepositoryImpl implements TelegramRepository {
     bindings[audio.key] = path;
     store['bindings'] = bindings;
     await _save();
+    try {
+      await _discardTemporary(audio.fileId);
+    } catch (_) {
+      /* Persisted cleanup record is retried on connection. */
+    }
+    await _removePrivateCopy(sourcePath);
     return path;
+  }
+
+  Future<void> _removePrivateCopy(String sourcePath) async {
+    // Never use a substring test or delete a path supplied by MediaStore. Resolve
+    // symlinks and require the source to be inside this installation's TDLib files.
+    try {
+      final source = File(sourcePath);
+      if (!await source.exists()) return;
+      final root = await (await _dir()).resolveSymbolicLinks();
+      final resolved = await source.resolveSymbolicLinks();
+      final prefix =
+          '$root${Platform.pathSeparator}files${Platform.pathSeparator}';
+      if (resolved.startsWith(prefix)) await source.delete();
+    } on FileSystemException {
+      /* The persisted TDLib cleanup is retried later. */
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> loadPreferences() async =>
+      Map<String, dynamic>.from((await _store())['preferences'] as Map? ?? {});
+  @override
+  Future<void> savePreferences(Map<String, dynamic> value) async {
+    (await _store())['preferences'] = value;
+    await _save();
+  }
+
+  @override
+  Future<List<TelegramAudio>> savedTransfers() async =>
+      ((await _store())['transfers'] as List? ?? [])
+          .map((e) => TelegramAudio.fromJson(e as Map<String, dynamic>))
+          .toList();
+  @override
+  Future<void> saveTransfers(List<TelegramAudio> audio) async {
+    (await _store())['transfers'] = audio.map((e) => e.toJson()).toList();
+    await _save();
+  }
+
+  @override
+  Future<bool> openMessage(TelegramAudio audio) async {
+    try {
+      final response = await _td.call('getMessageLink', {
+        'chat_id': audio.chatId,
+        'message_id': audio.messageId,
+        'media_timestamp': 0,
+        'for_album': false,
+        'in_message_thread': false,
+      });
+      return await _musicPublisher.openTelegramLink(response['link'] as String);
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
   Future<String?> coverPath(int fileId, {String localPath = ''}) async {
+    final session = _sessionEpoch;
     if (localPath.isNotEmpty && await File(localPath).exists()) {
       return localPath;
     }
@@ -389,10 +566,39 @@ class TelegramRepositoryImpl implements TelegramRepository {
       'synchronous': true,
     });
     final path = TelegramAudioMapper.completedPath(file);
+    if (session != _sessionEpoch || _disposed) return null;
     if (path.isEmpty) return null;
-    (await _store())['cover:$fileId'] = path;
+    final store = await _store();
+    store['cover:$fileId'] = path;
+    final keys = store.keys.where((key) => key.startsWith('cover:')).toList();
+    for (final key in keys.take((keys.length - 512).clamp(0, keys.length))) {
+      store.remove(key);
+    }
     await _save();
+    if (++_imageDownloads % 32 == 0) unawaited(_trimImageCache());
     return path;
+  }
+
+  Future<void> _trimImageCache() async {
+    if (_transport == null || _disposed) return;
+    try {
+      await _td.call('optimizeStorage', {
+        'size': 64 * 1024 * 1024,
+        'ttl': 7 * 24 * 3600,
+        'count': 512,
+        'immunity_delay': 0,
+        'file_types': [
+          {'@type': 'fileTypeThumbnail'},
+          {'@type': 'fileTypeProfilePhoto'},
+        ],
+        'chat_ids': [],
+        'exclude_chat_ids': [],
+        'return_deleted_file_statistics': false,
+        'chat_limit': 0,
+      });
+    } catch (_) {
+      /* Optional cache maintenance cannot block browsing. */
+    }
   }
 
   @override
@@ -426,10 +632,10 @@ class TelegramRepositoryImpl implements TelegramRepository {
 
   @override
   Future<void> logout() async {
+    _sessionEpoch++;
     await _td.call('logOut');
     await _secure.delete(key: 'telegram.session.active');
-    _cache = {};
-    await _save();
+    await _cache.clear();
     await _subscription?.cancel();
     await _transport?.dispose();
     _transport = null;
@@ -439,9 +645,14 @@ class TelegramRepositoryImpl implements TelegramRepository {
   @override
   Future<void> dispose() async {
     _disposed = true;
+    for (final completion in _completedFiles.values) {
+      if (!completion.isCompleted) {
+        completion.completeError(const TelegramTransferInterrupted());
+      }
+    }
     await _subscription?.cancel();
     await _transport?.dispose();
-    await _write.catchError((Object _) {});
+    await _cache.flush().catchError((Object _) {});
     await _auth.close();
     await _files.close();
   }

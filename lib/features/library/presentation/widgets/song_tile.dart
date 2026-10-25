@@ -11,6 +11,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../domain/entities/song.dart';
 import 'artwork_image.dart';
+import '../../../../core/widgets/music_track_card.dart';
 
 class SongTile extends ConsumerWidget {
   static const double itemExtent = 80;
@@ -30,6 +31,12 @@ class SongTile extends ConsumerWidget {
     this.selected = false,
     this.onSelectionLongPress,
     this.onPreview,
+    this.artwork,
+    this.trailing,
+    this.subtitle,
+    this.progress,
+    this.showMoreButton = false,
+    this.extraActions = const [],
   });
 
   final Song song;
@@ -45,6 +52,12 @@ class SongTile extends ConsumerWidget {
   final bool selected;
   final VoidCallback? onSelectionLongPress;
   final VoidCallback? onPreview;
+  final Widget? artwork;
+  final Widget? trailing;
+  final Widget? subtitle;
+  final Widget? progress;
+  final bool showMoreButton;
+  final List<({IconData icon, String label, VoidCallback action})> extraActions;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -55,118 +68,69 @@ class SongTile extends ConsumerWidget {
     // continuing to bob.
     final playing =
         isCurrent && ref.watch(playerProvider.select((state) => state.playing));
-    final trailing = selected
-        ? SizedBox.square(
-            dimension: kMinInteractiveDimension,
-            child: Center(
-              child: Icon(Icons.check_circle_rounded, color: colors.primary),
-            ),
-          )
-        : onPreview != null
-        ? IconButton(
-            tooltip: l10n.playTooltip,
-            onPressed: onPreview,
-            icon: const Icon(Icons.play_circle_outline_rounded),
-          )
-        : isCurrent
-        ? _FakeEqualizer(playing: playing)
-        : trailingLabel == null
-        ? null
-        : Text(
-            trailingLabel!,
-            style: AppTypography.captionSmall.copyWith(color: colors.textLow),
-          );
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(
-        start: AppSpacing.sm,
-        end: AppSpacing.sm,
-        top: AppSpacing.xs,
-        bottom: AppSpacing.xs,
-      ),
-      child: AnimatedContainer(
-        duration: AppMotion.fast,
-        curve: AppMotion.standard,
-        decoration: ShapeDecoration(
-          color: selected ? colors.surfaceHigh : Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.lg,
-            side: BorderSide(
-              color: selected
-                  ? colors.primary.withValues(alpha: 0.35)
-                  : Colors.transparent,
-            ),
-          ),
-        ),
-        child: SizedBox(
-          height: itemExtent - (AppSpacing.xs * 2),
-          child: Material(
-            color: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: onTap,
-              onLongPress:
-                  onSelectionLongPress ?? () => _showActions(context, ref),
-              splashColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-              hoverColor: Colors.transparent,
-              focusColor: Colors.transparent,
-              child: Padding(
-                padding: const EdgeInsetsDirectional.symmetric(
-                  horizontal: AppSpacing.sm,
+    final trailing =
+        this.trailing ??
+        (selected
+            ? SizedBox.square(
+                dimension: kMinInteractiveDimension,
+                child: Center(
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    color: colors.primary,
+                  ),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    if (showArtwork)
-                      _ArtworkLeading(
-                        songId: song.id,
-                        isCurrent: isCurrent,
-                        semanticLabel: song.title,
-                      )
-                    else
-                      const SizedBox(width: AppSpacing.sm),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            song.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.songTitle.copyWith(
-                              fontWeight: isCurrent
-                                  ? FontWeight.w700
-                                  : FontWeight.w600,
-                              color: isCurrent
-                                  ? colors.primary
-                                  : colors.textHigh,
-                            ),
-                          ),
-                          Text(
-                            '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.songSubtitle.copyWith(
-                              color: colors.textMedium,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (trailing != null) ...[
-                      const SizedBox(width: AppSpacing.sm),
-                      trailing,
-                    ],
-                  ],
+              )
+            : onPreview != null
+            ? IconButton(
+                tooltip: l10n.playTooltip,
+                onPressed: onPreview,
+                icon: const Icon(Icons.play_circle_outline_rounded),
+              )
+            : showMoreButton
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isCurrent) _FakeEqualizer(playing: playing),
+                  IconButton(
+                    tooltip: l10n.moreActions,
+                    onPressed: () => _showActions(context, ref),
+                    icon: const Icon(Icons.more_vert_rounded),
+                  ),
+                ],
+              )
+            : isCurrent
+            ? _FakeEqualizer(playing: playing)
+            : trailingLabel == null
+            ? null
+            : Text(
+                trailingLabel!,
+                style: AppTypography.captionSmall.copyWith(
+                  color: colors.textLow,
                 ),
-              ),
-            ),
+              ));
+    return MusicTrackCard(
+      title: song.title,
+      subtitle:
+          subtitle ??
+          Text(
+            '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ),
+      artwork: showArtwork
+          ? artwork ??
+                _ArtworkLeading(
+                  songId: song.id,
+                  isCurrent: isCurrent,
+                  semanticLabel: song.title,
+                )
+          : null,
+      trailing: trailing,
+      progress: progress,
+      isCurrent: isCurrent,
+      selected: selected,
+      onTap: onTap,
+      onLongPress: onSelectionLongPress ?? () => _showActions(context, ref),
     );
   }
 
@@ -184,6 +148,15 @@ class SongTile extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            for (final extra in extraActions)
+              ListTile(
+                leading: Icon(extra.icon),
+                title: Text(extra.label),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  extra.action();
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.play_arrow_rounded),
               title: Text(l10n.playTooltipShort),
@@ -273,7 +246,7 @@ class _ArtworkLeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const artworkSize = 56.0;
+    const artworkSize = AppSpacing.trackArtwork;
     final artwork = ArtworkImage(
       songId: songId,
       size: isCurrent ? artworkSize - (AppSpacing.xs * 2) : artworkSize,
@@ -322,14 +295,22 @@ class _FakeEqualizerState extends State<_FakeEqualizer>
   late final Animation<double> _barOne;
   late final Animation<double> _barTwo;
   late final Animation<double> _barThree;
+  late final CurvedAnimation _curve;
+  bool _startScheduled = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: AppMotion.slow);
+    _curve = CurvedAnimation(parent: _controller, curve: AppMotion.emphasized);
     _barOne = _bar(0.35, 1);
     _barTwo = _bar(0.8, 0.3);
     _barThree = _bar(0.5, 0.95);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _syncPlayback();
   }
 
@@ -344,20 +325,33 @@ class _FakeEqualizerState extends State<_FakeEqualizer>
   /// Starts the loop while playing and stops it (holding the current bar
   /// heights) while paused. Repeated forwarding is harmless.
   void _syncPlayback() {
-    if (widget.playing) {
-      _controller.repeat(reverse: true);
+    if (widget.playing &&
+        TickerMode.valuesOf(context).enabled &&
+        !MediaQuery.disableAnimationsOf(context) &&
+        ModalRoute.of(context)?.isCurrent != false) {
+      if (_controller.isAnimating || _startScheduled) return;
+      _startScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startScheduled = false;
+        if (mounted &&
+            widget.playing &&
+            TickerMode.valuesOf(context).enabled &&
+            !MediaQuery.disableAnimationsOf(context) &&
+            ModalRoute.of(context)?.isCurrent != false) {
+          _controller.repeat(reverse: true);
+        }
+      });
     } else {
       _controller.stop();
     }
   }
 
-  Animation<double> _bar(double begin, double end) => Tween<double>(
-    begin: begin,
-    end: end,
-  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  Animation<double> _bar(double begin, double end) =>
+      Tween<double>(begin: begin, end: end).animate(_curve);
 
   @override
   void dispose() {
+    _curve.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -387,9 +381,13 @@ class _FakeEqualizerState extends State<_FakeEqualizer>
     );
   }
 
-  Widget _barWidget(double factor, Color color) => Container(
-    width: 4,
-    height: 20 * factor,
-    decoration: BoxDecoration(color: color, borderRadius: AppRadius.pill),
+  Widget _barWidget(double factor, Color color) => Transform.scale(
+    scaleY: factor,
+    alignment: Alignment.bottomCenter,
+    child: Container(
+      width: AppSpacing.xs,
+      height: AppSpacing.lg - AppSpacing.xs,
+      decoration: BoxDecoration(color: color, borderRadius: AppRadius.pill),
+    ),
   );
 }

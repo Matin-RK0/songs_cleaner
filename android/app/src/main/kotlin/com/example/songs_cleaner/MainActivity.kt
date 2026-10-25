@@ -11,6 +11,7 @@ import androidx.core.content.FileProvider
 import java.io.File
 import android.net.Uri
 import java.io.IOException
+import java.util.WeakHashMap
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -18,8 +19,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : AudioServiceActivity() {
     private var pendingWidgetAction: String? = null
     private var widgetChannel: MethodChannel? = null
-    private var telegramMusicStore: TelegramMusicStore? = null
-    private var telegramMusicChannel: MethodChannel? = null
+    private var widgetEngine: FlutterEngine? = null
 
     override fun onUserInteraction() {
         super.onUserInteraction()
@@ -44,13 +44,17 @@ class MainActivity : AudioServiceActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        telegramMusicStore?.close()
-        val musicStore = TelegramMusicStore(applicationContext)
-        telegramMusicStore = musicStore
-        telegramMusicChannel = MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "com.example.songs_cleaner/telegram_music",
-        ).apply { setMethodCallHandler(musicStore) }
+        widgetEngine = flutterEngine
+        if (!readyWidgetEngines.containsKey(flutterEngine)) {
+            readyWidgetEngines[flutterEngine] = false
+            flutterEngine.addEngineLifecycleListener(object : FlutterEngine.EngineLifecycleListener {
+                override fun onPreEngineRestart() { readyWidgetEngines[flutterEngine] = false }
+                override fun onEngineWillDestroy() { readyWidgetEngines.remove(flutterEngine) }
+            })
+        }
+        if (!flutterEngine.plugins.has(TelegramMusicPlugin::class.java)) {
+            flutterEngine.plugins.add(TelegramMusicPlugin())
+        }
         LockScreenController.attach(
             this,
             MethodChannel(
@@ -216,6 +220,7 @@ class MainActivity : AudioServiceActivity() {
                     result.success(null)
                 }
                 "consumeAction" -> {
+                    widgetEngine?.let { readyWidgetEngines[it] = true }
                     result.success(pendingWidgetAction)
                     pendingWidgetAction = null
                 }
@@ -253,13 +258,12 @@ class MainActivity : AudioServiceActivity() {
     }
 
     override fun onDestroy() {
-        telegramMusicChannel?.setMethodCallHandler(null)
-        telegramMusicStore?.close()
         LockScreenController.detach(this)
         super.onDestroy()
     }
 
     private companion object {
+        val readyWidgetEngines = WeakHashMap<FlutterEngine, Boolean>()
         const val LOCK_SCREEN_CHANNEL =
             "com.example.songs_cleaner/lock_screen"
         const val TAG_EDITOR_CHANNEL =
@@ -276,11 +280,14 @@ class MainActivity : AudioServiceActivity() {
         val action = intent?.action ?: return
         if (action == NowPlayingWidgetProvider.ACTION_PREVIOUS ||
             action == NowPlayingWidgetProvider.ACTION_PLAY_PAUSE ||
-            action == NowPlayingWidgetProvider.ACTION_NEXT
+            action == NowPlayingWidgetProvider.ACTION_NEXT ||
+            action == TelegramDownloadService.OPEN_DOWNLOADS
         ) {
             pendingWidgetAction = action
-            widgetChannel?.invokeMethod("widgetAction", action)
-            if (widgetChannel != null) pendingWidgetAction = null
+            if (widgetEngine?.let { readyWidgetEngines[it] } == true && widgetChannel != null) {
+                widgetChannel?.invokeMethod("widgetAction", action)
+                pendingWidgetAction = null
+            }
         }
     }
 

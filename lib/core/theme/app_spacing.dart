@@ -9,6 +9,16 @@ abstract final class AppSpacing {
   static const double iconHero = 64;
   static const double avatarSize = 48;
   static const double avatarLarge = 64;
+  static const double trackRowHeight = 72;
+  static const double trackArtwork = 56;
+  static const double progressStroke = 2;
+  static const double sheetHeightFactor = 0.85;
+  static const double selectionMaxHeightFactor = 0.5;
+  static const double selectionBottomPadding = 192;
+  static const EdgeInsets hSmVXs = EdgeInsets.symmetric(
+    horizontal: sm,
+    vertical: xs,
+  );
   static const double contentMaxWidth = 560;
 
   static const EdgeInsets allSm = EdgeInsets.all(sm);

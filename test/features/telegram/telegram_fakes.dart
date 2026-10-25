@@ -1,9 +1,48 @@
 import 'dart:async';
 import 'package:songs_cleaner/features/telegram/domain/telegram_models.dart';
+import 'package:songs_cleaner/features/telegram/domain/telegram_download.dart';
 import 'package:songs_cleaner/features/telegram/domain/telegram_repository.dart';
 import 'package:songs_cleaner/features/telegram/infrastructure/telegram_local_files.dart';
 
 class FakeTelegramRepository implements TelegramRepository {
+  Map<String, dynamic> preferences = {};
+  List<TelegramAudio> transfers = [];
+  final progressCallbacks = <int, void Function(TelegramTransferProgress)>{};
+  final transferGates = <int, Completer<void>>{};
+  Completer<void>? cancelGate;
+  final _activeDownloads = <int>{};
+  @override
+  Future<bool> openMessage(TelegramAudio audio) async => false;
+  @override
+  Future<Map<String, dynamic>> loadPreferences() async => preferences;
+  @override
+  Future<void> savePreferences(Map<String, dynamic> value) async {
+    preferences = value;
+  }
+
+  @override
+  Future<List<TelegramAudio>> savedTransfers() async => transfers;
+  @override
+  Future<void> saveTransfers(List<TelegramAudio> value) async {
+    transfers = value;
+  }
+
+  @override
+  Future<void> cancelDownload(int fileId, {bool discard = false}) async {
+    final gate = transferGates[fileId];
+    if (gate != null &&
+        !gate.isCompleted &&
+        _activeDownloads.contains(fileId)) {
+      gate.completeError(const TelegramTransferInterrupted());
+    }
+    if (pendingDownload != null &&
+        !pendingDownload!.isCompleted &&
+        _activeDownloads.contains(fileId)) {
+      pendingDownload!.completeError(const TelegramTransferInterrupted());
+    }
+    if (cancelGate != null) await cancelGate!.future;
+  }
+
   final events = StreamController<TelegramAuth>.broadcast(sync: true);
   final files = StreamController<TelegramLocalFile>.broadcast(sync: true);
   List<TelegramChat> savedChats = const [];
@@ -62,11 +101,24 @@ class FakeTelegramRepository implements TelegramRepository {
   }
 
   @override
-  Future<String> download(TelegramAudio audio) async {
+  Future<String> download(
+    TelegramAudio audio, {
+    void Function(TelegramTransferProgress)? onProgress,
+  }) async {
     downloadCalls++;
-    if (pendingDownload != null) await pendingDownload!.future;
-    if (failure != null) throw TelegramException(failure!);
-    return downloadedPath;
+    _activeDownloads.add(audio.fileId);
+    if (onProgress != null) progressCallbacks[audio.fileId] = onProgress;
+    try {
+      if (transferGates[audio.fileId] != null) {
+        await transferGates[audio.fileId]!.future;
+      } else if (pendingDownload != null) {
+        await pendingDownload!.future;
+      }
+      if (failure != null) throw TelegramException(failure!);
+      return downloadedPath;
+    } finally {
+      _activeDownloads.remove(audio.fileId);
+    }
   }
 
   @override

@@ -54,20 +54,24 @@ class TelegramOverviewCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                l10n.telegramHeadline,
-                style: text.headlineSmall?.copyWith(
-                  color: colors.onPrimaryContainer,
+              if (!connected) ...[
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  l10n.telegramHeadline,
+                  style: text.headlineSmall?.copyWith(
+                    color: colors.onPrimaryContainer,
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                connected ? l10n.telegramDescription : l10n.telegramOfflineHint,
-                style: text.bodyMedium?.copyWith(
-                  color: colors.onPrimaryContainer,
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  connected
+                      ? l10n.telegramDescription
+                      : l10n.telegramOfflineHint,
+                  style: text.bodyMedium?.copyWith(
+                    color: colors.onPrimaryContainer,
+                  ),
                 ),
-              ),
+              ],
               if (!connected) ...[
                 const SizedBox(height: AppSpacing.lg),
                 FilledButton.icon(

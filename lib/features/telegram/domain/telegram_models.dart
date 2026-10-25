@@ -133,8 +133,15 @@ class TelegramAudio {
 }
 
 class TelegramLocalFile {
-  const TelegramLocalFile(this.id, this.path);
+  const TelegramLocalFile(
+    this.id,
+    this.path, {
+    this.received = 0,
+    this.total = 0,
+  });
   final int id;
+  final int received;
+  final int total;
 
   /// Empty unless the complete file is locally available.
   final String path;

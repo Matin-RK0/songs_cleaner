@@ -11,6 +11,8 @@ import '../../domain/telegram_models.dart';
 import '../widgets/telegram_feedback.dart';
 import '../widgets/telegram_overview_card.dart';
 import '../widgets/telegram_chat_tile.dart';
+import '../widgets/telegram_download_sheet.dart';
+import '../../application/telegram_preferences_controller.dart';
 
 class TelegramTab extends ConsumerWidget {
   const TelegramTab({super.key});
@@ -74,6 +76,7 @@ class TelegramTab extends ConsumerWidget {
             ),
           ),
           const SliverToBoxAdapter(child: _TelegramStatus()),
+          const SliverToBoxAdapter(child: TelegramDownloadDock()),
           const _TelegramChatList(),
           if (connected)
             SliverToBoxAdapter(
@@ -209,9 +212,26 @@ class _TelegramChatList extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: TelegramChatTile(
               chat: chat,
-              onTap: () => Navigator.of(
-                context,
-              ).pushNamed(RouteNames.telegramChat, arguments: chat.id),
+              pinned:
+                  (ref.watch(telegramPreferencesProvider)['pins'] as List? ??
+                          [])
+                      .contains(chat.id),
+              recent:
+                  (ref.watch(telegramPreferencesProvider)['recent'] as List? ??
+                          [])
+                      .contains(chat.id),
+              onPin: () =>
+                  ref.read(telegramPreferencesProvider.notifier).pin(chat.id),
+              onTap: () {
+                final preferences = ref.read(
+                  telegramPreferencesProvider.notifier,
+                );
+                Navigator.of(context)
+                    .pushNamed(RouteNames.telegramChat, arguments: chat.id)
+                    .then((_) {
+                      if (context.mounted) preferences.remember(chat.id);
+                    });
+              },
             ),
           );
         },

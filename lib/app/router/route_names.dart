@@ -21,6 +21,7 @@ abstract final class RouteNames {
   static const String trash = '/trash';
   static const String telegramAuth = '/telegram/auth';
   static const String telegramChat = '/telegram/chat';
+  static const String telegramDownloads = '/telegram/downloads';
 }
 
 /// Navigation payload for the playlist detail screen. Exactly one of

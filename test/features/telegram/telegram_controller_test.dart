@@ -14,6 +14,7 @@ Future<void> settle() async {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late FakeTelegramRepository repository;
   late FakeTelegramLocalFiles files;
   late ProviderContainer container;
@@ -108,9 +109,10 @@ void main() {
       );
       addTearDown(subscription.close);
       await settle();
-      final download = container
-          .read(telegramChatProvider(123).notifier)
-          .download(audio);
+      final download = container.read(telegramChatProvider(123).notifier);
+      repository.events.add(TelegramAuth.ready);
+      await settle();
+      final waiting = download.download(audio);
       files.existing.add('/private/cache.mp3');
       repository.files.add(
         TelegramLocalFile(audio.fileId, '/private/cache.mp3'),
@@ -119,7 +121,7 @@ void main() {
       expect(container.read(telegramChatSongsProvider(123)), isEmpty);
       repository.failure = TelegramFailure.storage;
       repository.pendingDownload!.complete();
-      await download;
+      await waiting;
       expect(
         container.read(telegramChatProvider(123)).failure,
         TelegramFailure.storage,
@@ -259,6 +261,8 @@ void main() {
       addTearDown(subscription.close);
       await settle();
       final controller = container.read(telegramChatProvider(123).notifier);
+      repository.events.add(TelegramAuth.ready);
+      await settle();
       final downloading = controller.download(audio);
       await controller.download(audio);
       expect(repository.downloadCalls, 1);

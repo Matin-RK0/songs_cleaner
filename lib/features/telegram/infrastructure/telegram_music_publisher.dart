@@ -9,6 +9,10 @@ class TelegramMusicPublisher {
     'com.example.songs_cleaner/telegram_music',
   );
 
+  Future<bool> openTelegramLink(String link) async =>
+      await channel.invokeMethod<bool>('openTelegramLink', {'link': link}) ??
+      false;
+
   Future<void> ensureAccess() async {
     try {
       final legacy =
