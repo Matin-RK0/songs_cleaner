@@ -77,6 +77,7 @@ class TelegramTrackTile extends ConsumerWidget {
         artwork: art,
         subtitle: subtitle,
         selected: selected,
+        trailing: selecting ? _selectionIndicator(context, selected) : null,
         onSelectionLongPress: onSelect,
         showMoreButton: !selecting,
         extraActions: [
@@ -114,11 +115,7 @@ class TelegramTrackTile extends ConsumerWidget {
       onLongPress: onSelect,
       progress: TelegramDownloadLine(id: track.audio.fileId),
       trailing: selecting
-          ? Icon(
-              selected
-                  ? Icons.check_circle_rounded
-                  : Icons.radio_button_unchecked_rounded,
-            )
+          ? _selectionIndicator(context, selected)
           : track.candidates.isNotEmpty
           ? IconButton(
               tooltip: l10n.telegramLink,
@@ -132,6 +129,21 @@ class TelegramTrackTile extends ConsumerWidget {
             ),
     );
   }
+
+  Widget _selectionIndicator(BuildContext context, bool selected) =>
+      SizedBox.square(
+        dimension: kMinInteractiveDimension,
+        child: Center(
+          child: Icon(
+            selected
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
 
   void _play(WidgetRef ref) {
     if (ref.read(playerProvider).current?.path == track.song?.path) {
@@ -258,6 +270,7 @@ class TelegramTrackTile extends ConsumerWidget {
                     title: Text(song.title),
                     subtitle: Text(
                       song.path,
+                      textDirection: TextDirection.ltr,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

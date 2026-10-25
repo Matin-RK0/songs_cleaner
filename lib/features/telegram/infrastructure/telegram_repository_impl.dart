@@ -20,7 +20,9 @@ class TelegramRepositoryImpl implements TelegramRepository {
     Directory? cacheDirectory,
     TelegramMusicPublisher? musicPublisher,
     bool Function(String)? isInUse,
+    TdlibTransport Function()? transportFactory,
   }) : _directory = cacheDirectory,
+       _transport = transportFactory?.call(),
        _musicPublisher = musicPublisher ?? TelegramMusicPublisher(),
        _isInUse = isInUse ?? ((_) => false);
 
@@ -46,9 +48,13 @@ class TelegramRepositoryImpl implements TelegramRepository {
   int _imageDownloads = 0;
   int _chatLimit = 50;
   final _loadedChatIds = <int>{};
+  final _browseVersions = <String, int>{};
   bool _initializing = false;
   Future<void>? _readyPreparation;
   int _sessionEpoch = 0;
+  int _connectVersion = 0;
+  Future<void>? _connecting;
+  Future<void>? _transportStarting;
   bool _disposed = false;
   String? _key;
   Directory? _directory;
@@ -75,6 +81,20 @@ class TelegramRepositoryImpl implements TelegramRepository {
 
   @override
   Future<void> connect() async {
+    // Database/key setup must remain single-flight even if Retry is tapped
+    // before the transport has been created.
+    if (_transport == null && _connecting != null) return _connecting!;
+    final pending = _connect();
+    _connecting = pending;
+    try {
+      await pending;
+    } finally {
+      if (identical(_connecting, pending)) _connecting = null;
+    }
+  }
+
+  Future<void> _connect() async {
+    final version = ++_connectVersion;
     if (!Platform.isAndroid) {
       _emit(TelegramAuth.unsupported);
       return;
@@ -85,7 +105,28 @@ class TelegramRepositoryImpl implements TelegramRepository {
     }
     if (_transport != null) {
       if (_state != TelegramAuth.disconnected) {
-        _emit(_state);
+        // Probe the live client rather than replaying a possibly stale starting
+        // state. TDLib owns reconnecting its existing session.
+        final transport = _td;
+        try {
+          await _transportStarting;
+          if (version != _connectVersion || _disposed) return;
+          transport.cancelReads('authorization');
+          final initial = await transport.read(
+            'authorization',
+            'getAuthorizationState',
+          );
+          if (version != _connectVersion || _disposed) return;
+          await _authorization(initial, await _dir());
+        } catch (_) {
+          if (version == _connectVersion && !_disposed) {
+            await _subscription?.cancel();
+            _transport = null;
+            await transport.dispose();
+            _emit(TelegramAuth.disconnected);
+          }
+          rethrow;
+        }
         return;
       }
       await _subscription?.cancel();
@@ -104,6 +145,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
       }
       final transport = _transport = TdlibTransport();
       _subscription = transport.updates.listen((update) {
+        if (_transport != transport || _disposed) return;
         if (update['@type'] == 'updateFile' && !_files.isClosed) {
           final file = update['file'] as Map<String, dynamic>;
           _acceptFile(file);
@@ -119,10 +161,16 @@ class TelegramRepositoryImpl implements TelegramRepository {
           );
         }
       });
-      await transport.start();
-      final initial = await transport.call('getAuthorizationState');
+      await (_transportStarting = transport.start());
+      if (version != _connectVersion || _disposed) return;
+      final initial = await transport.read(
+        'authorization',
+        'getAuthorizationState',
+      );
+      if (version != _connectVersion || _disposed) return;
       await _authorization(initial, dir);
     } catch (_) {
+      if (version != _connectVersion || _disposed) rethrow;
       await _subscription?.cancel();
       await _transport?.dispose();
       _transport = null;
@@ -214,17 +262,28 @@ class TelegramRepositoryImpl implements TelegramRepository {
   }
 
   @override
-  Future<List<TelegramChat>> chats({bool more = false}) async {
-    if (more) {
-      _chatLimit += 50;
-    } else {
-      _chatLimit = 50;
-      _loadedChatIds.clear();
+  Future<List<TelegramChat>> chats({bool more = false}) =>
+      _browse('chats', (version, session) => _chats(more, version, session));
+
+  Future<List<TelegramChat>> _chats(bool more, int version, int session) async {
+    const scope = 'chats';
+    void check() => _checkBrowse(scope, version, session);
+    Future<Map<String, dynamic>> read(
+      String type,
+      Map<String, dynamic> fields,
+    ) async {
+      check();
+      final result = await _td.read(scope, type, fields);
+      check();
+      return result;
     }
+
+    final limit = more ? _chatLimit + 50 : 50;
+    final loaded = more ? {..._loadedChatIds} : <int>{};
     final previous = {for (final chat in await cachedChats()) chat.id: chat};
     for (final list in ['chatListMain', 'chatListArchive']) {
       try {
-        await _td.call('loadChats', {
+        await read('loadChats', {
           'chat_list': {'@type': list},
           'limit': 50,
         });
@@ -236,19 +295,19 @@ class TelegramRepositoryImpl implements TelegramRepository {
     final result = <TelegramChat>[];
     final seen = <int>{};
     for (final list in ['chatListMain', 'chatListArchive']) {
-      final page = await _td.call('getChats', {
+      final page = await read('getChats', {
         'chat_list': {'@type': list},
-        'limit': _chatLimit,
+        'limit': limit,
       });
       for (final id in page['chat_ids'] as List? ?? []) {
         if (!seen.add(id as int)) continue;
-        if (more && _loadedChatIds.contains(id) && previous[id] != null) {
+        if (more && loaded.contains(id) && previous[id] != null) {
           result.add(previous[id]!);
           continue;
         }
-        final chat = await _td.call('getChat', {'chat_id': id});
+        final chat = await read('getChat', {'chat_id': id});
         result.add(TelegramChatMapper.fromJson(chat));
-        _loadedChatIds.add(id);
+        loaded.add(id);
       }
     }
     final preferences = await loadPreferences();
@@ -260,24 +319,70 @@ class TelegramRepositoryImpl implements TelegramRepository {
       if (!seen.add(id) || previous[id] == null) continue;
       try {
         result.add(
-          TelegramChatMapper.fromJson(
-            await _td.call('getChat', {'chat_id': id}),
-          ),
+          TelegramChatMapper.fromJson(await read('getChat', {'chat_id': id})),
         );
-        _loadedChatIds.add(id);
+        loaded.add(id);
       } catch (_) {
         result.add(previous[id]!);
       }
     }
     final store = await _store();
+    check();
+    _chatLimit = limit;
+    _loadedChatIds
+      ..clear()
+      ..addAll(loaded);
     store['chats'] = result.map((e) => e.toJson()).toList();
     await _save();
     return result;
   }
 
+  int _beginBrowse(String scope) {
+    final version = (_browseVersions[scope] ?? 0) + 1;
+    _browseVersions[scope] = version;
+    _td.cancelReads(scope);
+    return version;
+  }
+
+  Future<T> _browse<T>(
+    String scope,
+    Future<T> Function(int version, int session) action,
+  ) {
+    final version = _beginBrowse(scope);
+    return action(version, _sessionEpoch).timeout(
+      const Duration(seconds: 18),
+      onTimeout: () {
+        if (_browseVersions[scope] == version) {
+          _browseVersions[scope] = version + 1;
+          _transport?.cancelReads(scope);
+        }
+        throw const TelegramException(TelegramFailure.network);
+      },
+    );
+  }
+
+  void _checkBrowse(String scope, int version, int session) {
+    if (_disposed ||
+        session != _sessionEpoch ||
+        _browseVersions[scope] != version) {
+      throw const TelegramException(TelegramFailure.network);
+    }
+  }
+
   @override
-  Future<TelegramAudioPage> audio(int chatId, {int fromId = 0}) async {
-    final response = await _td.call('searchChatMessages', {
+  Future<TelegramAudioPage> audio(int chatId, {int fromId = 0}) => _browse(
+    'audio:$chatId',
+    (version, session) => _audio(chatId, fromId, version, session),
+  );
+
+  Future<TelegramAudioPage> _audio(
+    int chatId,
+    int fromId,
+    int version,
+    int session,
+  ) async {
+    final scope = 'audio:$chatId';
+    final response = await _td.read(scope, 'searchChatMessages', {
       'chat_id': chatId,
       'query': '',
       'from_message_id': fromId,
@@ -301,6 +406,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
     final merged = {
       for (final audio in [...previous, ...items]) audio.key: audio,
     };
+    _checkBrowse(scope, version, session);
     store['audio:$chatId'] = merged.values.map((e) => e.toJson()).toList();
     await _save();
     return TelegramAudioPage(

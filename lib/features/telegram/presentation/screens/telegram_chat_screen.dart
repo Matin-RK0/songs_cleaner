@@ -102,10 +102,12 @@ class _TelegramFolderSongs extends ConsumerWidget {
     final songs = ref.watch(telegramUnassignedProvider);
     final current = ref.watch(playerProvider.select((s) => s.current?.id));
     return songs.isEmpty
-        ? AppEmptyState(
-            icon: Icons.folder_off_outlined,
-            title: context.l10n.telegramNoAudio,
-            message: context.l10n.telegramPrivacy,
+        ? SingleChildScrollView(
+            child: AppEmptyState(
+              icon: Icons.folder_off_outlined,
+              title: context.l10n.emptyLibraryTitle,
+              message: context.l10n.telegramFoldersHint,
+            ),
           )
         : SongListView(
             songs: songs,

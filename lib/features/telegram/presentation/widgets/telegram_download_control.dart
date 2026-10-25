@@ -67,7 +67,9 @@ class TelegramDownloadControl extends ConsumerWidget {
                 ),
               ),
             IconButton(
-              tooltip: busy
+              tooltip: phase == TelegramDownloadPhase.completed
+                  ? l10n.telegramCompleted
+                  : busy
                   ? phase == TelegramDownloadPhase.saving
                         ? l10n.telegramSaving
                         : l10n.telegramPause

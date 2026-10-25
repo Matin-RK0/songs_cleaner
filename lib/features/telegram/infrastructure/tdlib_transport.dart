@@ -8,8 +8,18 @@ import '../domain/telegram_models.dart';
 
 /// All native polling and JSON parsing live outside Flutter's UI isolate.
 class TdlibTransport {
+  TdlibTransport({
+    this.requestTimeout = const Duration(seconds: 45),
+    this.readTimeout = const Duration(seconds: 15),
+    void Function(SendPort)? worker,
+  }) : _worker = worker ?? _tdWorker;
+
+  final Duration requestTimeout;
+  final Duration readTimeout;
+  final void Function(SendPort) _worker;
   final _updates = StreamController<Map<String, dynamic>>.broadcast();
   final _pending = <int, Completer<Map<String, dynamic>>>{};
+  final _readScopes = <int, String>{};
   final _receive = ReceivePort();
   final _nativeClosed = Completer<void>();
   SendPort? _send;
@@ -25,6 +35,8 @@ class TdlibTransport {
         ready.complete();
       } else if (event is Map<String, dynamic>) {
         if (event['@type'] == 'workerError') {
+          _send = null;
+          _failPending();
           if (!ready.isCompleted) {
             ready.completeError(
               const TelegramException(TelegramFailure.generic),
@@ -37,6 +49,8 @@ class TdlibTransport {
                 'authorizationStateClosed' &&
             !_nativeClosed.isCompleted) {
           _nativeClosed.complete();
+          _send = null;
+          _failPending();
         }
         final completer = _pending.remove(event['@extra']);
         if (completer != null) {
@@ -45,18 +59,50 @@ class TdlibTransport {
           } else {
             completer.complete(event);
           }
-        } else if (!_updates.isClosed) {
+        } else if (event['@extra'] == null && !_updates.isClosed) {
           _updates.add(event);
         }
       }
     });
-    await Isolate.spawn(_tdWorker, _receive.sendPort);
+    await Isolate.spawn(_worker, _receive.sendPort);
     await ready.future.timeout(const Duration(seconds: 20));
   }
 
   Future<Map<String, dynamic>> call(
     String type, [
     Map<String, dynamic> fields = const {},
+  ]) => _call(type, fields, requestTimeout);
+
+  /// Superseding a browse operation never cancels auth, downloads or other chats.
+  void cancelReads(String scope) {
+    for (final id in _readScopes.keys.toList()) {
+      if (_readScopes[id] != scope) continue;
+      _pending
+          .remove(id)
+          ?.completeError(const TelegramException(TelegramFailure.network));
+      _readScopes.remove(id);
+    }
+  }
+
+  Future<Map<String, dynamic>> read(
+    String scope,
+    String type, [
+    Map<String, dynamic> fields = const {},
+  ]) => _call(type, fields, readTimeout, scope);
+
+  void _failPending() {
+    for (final pending in _pending.values) {
+      pending.completeError(const TelegramException(TelegramFailure.network));
+    }
+    _pending.clear();
+    _readScopes.clear();
+  }
+
+  Future<Map<String, dynamic>> _call(
+    String type,
+    Map<String, dynamic> fields,
+    Duration timeout, [
+    String? scope,
   ]) async {
     if (_closed || _send == null) {
       throw const TelegramException(TelegramFailure.network);
@@ -64,13 +110,15 @@ class TdlibTransport {
     final id = ++_sequence;
     final completer = Completer<Map<String, dynamic>>();
     _pending[id] = completer;
+    if (scope != null) _readScopes[id] = scope;
     _send!.send({'@type': type, ...fields, '@extra': id});
     try {
-      return await completer.future.timeout(const Duration(seconds: 45));
+      return await completer.future.timeout(timeout);
     } on TimeoutException {
       throw const TelegramException(TelegramFailure.network);
     } finally {
       _pending.remove(id);
+      _readScopes.remove(id);
     }
   }
 
@@ -89,6 +137,7 @@ class TdlibTransport {
   Future<void> dispose() async {
     if (_closed) return;
     _closed = true;
+    _failPending();
     // TDLib must finish closing its database before the receive isolate exits.
     if (_send != null && !_nativeClosed.isCompleted) {
       _send!.send({'@type': 'close'});
@@ -98,10 +147,6 @@ class TdlibTransport {
         /* The worker continues polling until native storage closes. */
       }
     }
-    for (final pending in _pending.values) {
-      pending.completeError(const TelegramException(TelegramFailure.network));
-    }
-    _pending.clear();
     _receive.close();
     await _updates.close();
   }

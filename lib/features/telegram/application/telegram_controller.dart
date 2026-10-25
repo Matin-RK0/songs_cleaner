@@ -123,8 +123,13 @@ final telegramUnassignedProvider = Provider<List<Song>>(
       .toList(growable: false),
 );
 
+enum _TelegramOperation { auth, connect, refresh }
+
 class TelegramController extends Notifier<TelegramState> {
   Timer? _search;
+  int _operationVersion = 0;
+  _TelegramOperation? _operation;
+  bool _refreshOnIdle = false;
   @override
   TelegramState build() {
     final repository = ref.watch(telegramRepositoryProvider);
@@ -133,7 +138,16 @@ class TelegramController extends Notifier<TelegramState> {
       final previous = state.auth;
       state = state.copyWith(auth: auth, editingPhone: false);
       if (auth == TelegramAuth.ready && previous != auth) {
-        unawaited(_refreshAfterLogin());
+        if (state.busy) {
+          _refreshOnIdle = true;
+        } else {
+          unawaited(refresh());
+        }
+      } else if (auth != TelegramAuth.ready &&
+          _operation == _TelegramOperation.refresh) {
+        ++_operationVersion;
+        _operation = null;
+        state = state.copyWith(busy: false);
       }
     });
     ref.onDispose(() {
@@ -156,26 +170,57 @@ class TelegramController extends Notifier<TelegramState> {
     return const TelegramState();
   }
 
-  Future<void> _run(Future<void> Function() action) async {
-    if (state.busy) return;
+  Future<void> _run(
+    Future<void> Function(int version) action, {
+    _TelegramOperation operation = _TelegramOperation.auth,
+  }) async {
+    final canReplace =
+        operation != _TelegramOperation.auth &&
+        (_operation == operation ||
+            (operation == _TelegramOperation.refresh &&
+                _operation == _TelegramOperation.connect));
+    if (state.busy && !canReplace) {
+      return;
+    }
+    final version = ++_operationVersion;
+    _operation = operation;
+    if (operation == _TelegramOperation.refresh) _refreshOnIdle = false;
     state = state.copyWith(busy: true);
     try {
-      await action();
+      final pending = action(version);
+      if (operation == _TelegramOperation.auth) {
+        await pending;
+      } else {
+        await pending.timeout(const Duration(seconds: 20));
+      }
     } catch (e) {
-      if (ref.mounted) {
+      if (ref.mounted && version == _operationVersion) {
         state = state.copyWith(
-          failure: e is TelegramException ? e.failure : TelegramFailure.generic,
+          failure: e is TelegramException
+              ? e.failure
+              : e is TimeoutException
+              ? TelegramFailure.network
+              : TelegramFailure.generic,
         );
       }
     } finally {
-      if (ref.mounted) {
+      if (ref.mounted && version == _operationVersion) {
+        // Invalidate a timed-out action before it can finish in the background.
+        ++_operationVersion;
+        _operation = null;
         state = state.copyWith(busy: false, failure: state.failure);
+        if (_refreshOnIdle) {
+          _refreshOnIdle = false;
+          if (state.auth == TelegramAuth.ready) unawaited(refresh());
+        }
       }
     }
   }
 
-  Future<void> connect() =>
-      _run(() => ref.read(telegramRepositoryProvider).connect());
+  Future<void> connect() => _run(
+    (_) => ref.read(telegramRepositoryProvider).connect(),
+    operation: _TelegramOperation.connect,
+  );
   void editPhone() {
     if (state.busy || state.auth != TelegramAuth.code) return;
     state = state.copyWith(editingPhone: true);
@@ -186,7 +231,7 @@ class TelegramController extends Notifier<TelegramState> {
     state = state.copyWith(editingPhone: false);
   }
 
-  Future<void> submit(String value) => _run(() async {
+  Future<void> submit(String value) => _run((version) async {
     final repository = ref.read(telegramRepositoryProvider);
     final step = state.authStep;
     await switch (step) {
@@ -195,26 +240,30 @@ class TelegramController extends Notifier<TelegramState> {
       TelegramAuth.password => repository.submitPassword(value),
       _ => Future<void>.value(),
     };
-    if (ref.mounted && step == TelegramAuth.phone) {
+    if (ref.mounted &&
+        version == _operationVersion &&
+        step == TelegramAuth.phone) {
       state = state.copyWith(phone: value.trim(), editingPhone: false);
     }
   });
-  Future<void> _refreshAfterLogin() async {
-    while (ref.mounted && state.busy) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
-    if (ref.mounted) await refresh();
-  }
-
   Future<void> refresh({bool more = false}) async {
-    if (state.busy) return;
-    if (state.auth != TelegramAuth.ready) return;
-    await _run(() async {
+    if (state.auth != TelegramAuth.ready) {
+      if (!more &&
+          (state.auth == TelegramAuth.starting ||
+              state.auth == TelegramAuth.disconnected)) {
+        await connect();
+      }
+      return;
+    }
+    if (more && state.busy) return;
+    await _run((version) async {
       final chats = await ref
           .read(telegramRepositoryProvider)
           .chats(more: more);
-      if (ref.mounted) state = state.copyWith(chats: chats);
-    });
+      if (ref.mounted && version == _operationVersion) {
+        state = state.copyWith(chats: chats);
+      }
+    }, operation: _TelegramOperation.refresh);
   }
 
   void search(String value) {
@@ -224,7 +273,7 @@ class TelegramController extends Notifier<TelegramState> {
     });
   }
 
-  Future<void> logout() => _run(() async {
+  Future<void> logout() => _run((_) async {
     final downloads = ref.read(telegramDownloadsProvider.notifier);
     final preferences = ref.read(telegramPreferencesProvider.notifier);
     await Future.wait([downloads.prepareLogout(), preferences.prepareLogout()]);
@@ -384,7 +433,7 @@ class TelegramChatController extends Notifier<TelegramChatState> {
   List<TelegramAudio> _audio = [];
   int _resolution = 0;
   bool _initialized = false;
-  bool _loading = false;
+  int _loadVersion = 0;
   bool _browseEdited = false;
   Timer? _fileRefresh;
   Timer? _search;
@@ -438,7 +487,14 @@ class TelegramChatController extends Notifier<TelegramChatState> {
       (_, _) => unawaited(_resolveSafely()),
     );
     ref.listen(telegramProvider.select((s) => s.auth), (_, auth) {
-      if (_initialized && auth == TelegramAuth.ready) unawaited(refresh());
+      if (!_initialized) return;
+      if (auth == TelegramAuth.ready) {
+        unawaited(refresh());
+      } else {
+        ++_loadVersion;
+        ++_resolution;
+        state = state.copyWith(busy: false);
+      }
     });
     Future.microtask(_initialize);
     final saved = ref.read(telegramPreferencesProvider.notifier).chat(chatId);
@@ -462,11 +518,15 @@ class TelegramChatController extends Notifier<TelegramChatState> {
           sort: saved['sort'] as String? ?? 'newest',
         );
       }
-      _audio = await ref.read(telegramRepositoryProvider).cachedAudio(chatId);
+      final cached = await ref
+          .read(telegramRepositoryProvider)
+          .cachedAudio(chatId);
       if (!ref.mounted) return;
+      if (_loadVersion == 0) _audio = cached;
       await _resolve();
       if (!ref.mounted) return;
       _initialized = true;
+      if (_loadVersion != 0) return;
       if (ref.read(telegramProvider).auth == TelegramAuth.ready) {
         await refresh();
       } else {
@@ -520,29 +580,35 @@ class TelegramChatController extends Notifier<TelegramChatState> {
     if (!ref.mounted || ref.read(telegramProvider).auth != TelegramAuth.ready) {
       return;
     }
-    if (_loading) return;
     if (more && (state.busy || state.nextId == 0)) return;
-    _loading = true;
+    final version = ++_loadVersion;
+    // A prior local-file resolution must not publish an older page afterwards.
+    ++_resolution;
     state = state.copyWith(busy: true);
     try {
       final page = await ref
           .read(telegramRepositoryProvider)
-          .audio(chatId, fromId: more ? state.nextId : 0);
-      if (!ref.mounted) return;
+          .audio(chatId, fromId: more ? state.nextId : 0)
+          .timeout(const Duration(seconds: 20));
+      if (!ref.mounted || version != _loadVersion) return;
       _audio = {
         for (final audio in [..._audio, ...page.items]) audio.key: audio,
       }.values.toList()..sort((a, b) => b.messageId.compareTo(a.messageId));
       state = state.copyWith(nextId: page.nextId);
       await _resolve();
     } catch (e) {
-      if (ref.mounted) {
+      if (ref.mounted && version == _loadVersion) {
         state = state.copyWith(
-          failure: e is TelegramException ? e.failure : TelegramFailure.generic,
+          failure: e is TelegramException
+              ? e.failure
+              : e is TimeoutException
+              ? TelegramFailure.network
+              : TelegramFailure.generic,
         );
       }
     } finally {
-      _loading = false;
-      if (ref.mounted) {
+      if (ref.mounted && version == _loadVersion) {
+        ++_loadVersion;
         state = state.copyWith(busy: false, failure: state.failure);
       }
     }

@@ -57,6 +57,28 @@ final telegramDownloadIdsProvider = Provider<List<int>>((ref) {
   return ref.read(telegramDownloadsProvider).keys.toList();
 });
 
+final telegramDownloadBulkActionsProvider =
+    Provider<({bool pause, bool resume, bool clear})>((ref) {
+      final jobs = ref.watch(telegramDownloadsProvider).values;
+      return (
+        pause: jobs.any(
+          (job) =>
+              job.phase == TelegramDownloadPhase.receiving ||
+              job.phase == TelegramDownloadPhase.queued,
+        ),
+        resume: jobs.any(
+          (job) =>
+              job.phase == TelegramDownloadPhase.paused ||
+              job.phase == TelegramDownloadPhase.failed,
+        ),
+        clear: jobs.any(_canClearDownload),
+      );
+    });
+
+bool _canClearDownload(TelegramDownload job) =>
+    job.phase == TelegramDownloadPhase.completed ||
+    job.phase == TelegramDownloadPhase.canceled;
+
 class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
   final _running = <int>{};
   final _stopping = <int>{};
@@ -432,7 +454,11 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
     _pausingAll = true;
     try {
       for (final id in state.keys.toList()) {
-        if (state[id]!.unfinished) await pause(id);
+        final phase = state[id]!.phase;
+        if (phase == TelegramDownloadPhase.receiving ||
+            phase == TelegramDownloadPhase.queued) {
+          await pause(id);
+        }
       }
     } finally {
       _pausingAll = false;
@@ -466,11 +492,13 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
 
   void clearFinished() {
     for (final entry in state.entries) {
-      if (!entry.value.unfinished && !_running.contains(entry.key)) {
+      if (_canClearDownload(entry.value) && !_running.contains(entry.key)) {
         _generation.remove(entry.key);
       }
     }
-    state = Map.fromEntries(state.entries.where((e) => e.value.unfinished));
+    state = Map.fromEntries(
+      state.entries.where((e) => !_canClearDownload(e.value)),
+    );
     _notify();
     _persist();
   }

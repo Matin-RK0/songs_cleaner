@@ -139,94 +139,120 @@ class SongTile extends ConsumerWidget {
     final colors = context.colors;
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: true,
       showDragHandle: true,
       backgroundColor: colors.surfaceHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
       ),
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final extra in extraActions)
-              ListTile(
-                leading: Icon(extra.icon),
-                title: Text(extra.label),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  extra.action();
-                },
-              ),
-            ListTile(
-              leading: const Icon(Icons.play_arrow_rounded),
-              title: Text(l10n.playTooltipShort),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                onTap();
-              },
-            ),
-            if (onShowInfo != null)
-              ListTile(
-                leading: const Icon(Icons.info_outline_rounded),
-                title: Text(l10n.songDetailsTitle),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  onShowInfo!();
-                },
-              ),
-            ListTile(
-              leading: const Icon(Icons.playlist_play_rounded),
-              title: Text(l10n.playNext),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                ref.read(playerProvider.notifier).playNext(song);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.queue_music_rounded),
-              title: Text(l10n.addToQueue),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                ref.read(playerProvider.notifier).addToQueue(song);
-              },
-            ),
-            if (onAddToPlaylist != null)
-              ListTile(
-                leading: const Icon(Icons.playlist_add_rounded),
-                title: Text(l10n.addToPlaylist),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  onAddToPlaylist!(song);
-                },
-              ),
-            if (onToggleFavorite != null)
-              ListTile(
-                leading: Icon(
-                  isFavorite
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: AppSpacing.allMd,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      song.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(sheetContext).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      song.artist.isEmpty ? l10n.unknownArtist : song.artist,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(sheetContext).textTheme.bodyMedium
+                          ?.copyWith(color: colors.textMedium),
+                    ),
+                  ],
                 ),
-                iconColor: colors.danger,
-                title: Text(
-                  isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+              ),
+              const Divider(height: AppSpacing.xs),
+              for (final extra in extraActions)
+                ListTile(
+                  leading: Icon(extra.icon),
+                  title: Text(extra.label),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    extra.action();
+                  },
                 ),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  onToggleFavorite!();
-                },
-              ),
-            if (onDeleteDevice != null)
               ListTile(
-                leading: const Icon(Icons.delete_outline_rounded),
-                iconColor: colors.danger,
-                textColor: colors.danger,
-                title: Text(l10n.deleteAction),
+                leading: const Icon(Icons.play_arrow_rounded),
+                title: Text(l10n.playTooltipShort),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  onDeleteDevice!(song);
+                  onTap();
                 },
               ),
-          ],
+              if (onShowInfo != null)
+                ListTile(
+                  leading: const Icon(Icons.info_outline_rounded),
+                  title: Text(l10n.songDetailsTitle),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onShowInfo!();
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.playlist_play_rounded),
+                title: Text(l10n.playNext),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  ref.read(playerProvider.notifier).playNext(song);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.queue_music_rounded),
+                title: Text(l10n.addToQueue),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  ref.read(playerProvider.notifier).addToQueue(song);
+                },
+              ),
+              if (onAddToPlaylist != null)
+                ListTile(
+                  leading: const Icon(Icons.playlist_add_rounded),
+                  title: Text(l10n.addToPlaylist),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onAddToPlaylist!(song);
+                  },
+                ),
+              if (onToggleFavorite != null)
+                ListTile(
+                  leading: Icon(
+                    isFavorite
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                  ),
+                  iconColor: colors.danger,
+                  title: Text(
+                    isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onToggleFavorite!();
+                  },
+                ),
+              if (onDeleteDevice != null)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline_rounded),
+                  iconColor: colors.danger,
+                  textColor: colors.danger,
+                  title: Text(l10n.deleteAction),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onDeleteDevice!(song);
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );

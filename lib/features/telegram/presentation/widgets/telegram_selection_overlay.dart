@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_motion.dart';
-import '../../../../core/theme/app_spacing.dart';
 
 class TelegramSelectionOverlay extends StatefulWidget {
   const TelegramSelectionOverlay({
@@ -84,12 +83,8 @@ class _TelegramSelectionOverlayState extends State<TelegramSelectionOverlay>
           position: _slide,
           child: FadeTransition(
             opacity: _curve,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight:
-                    MediaQuery.sizeOf(context).height *
-                    AppSpacing.selectionMaxHeightFactor,
-              ),
+            child: SafeArea(
+              top: false,
               child: SingleChildScrollView(child: widget.child),
             ),
           ),
