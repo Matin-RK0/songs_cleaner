@@ -220,10 +220,9 @@ class _DownloadHeader extends ConsumerWidget {
                 onPressed: actions.resume ? manager.resumeAll : null,
                 child: Text(l10n.telegramResumeAll),
               ),
-              IconButton(
-                tooltip: l10n.telegramClearFinished,
+              TextButton(
                 onPressed: actions.clear ? manager.clearFinished : null,
-                icon: const Icon(Icons.cleaning_services_outlined),
+                child: Text(l10n.telegramClearFinished),
               ),
             ],
           ),
