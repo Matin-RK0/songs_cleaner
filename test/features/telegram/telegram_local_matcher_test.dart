@@ -23,21 +23,105 @@ Song localSong({
 
 void main() {
   test(
-    'same filename and size only suggest a local file, never auto-assign it',
+    'same filename and exact size automatically reuse the indexed local file',
     () {
       final song = localSong();
       final track = TelegramLocalMatcher([
         song,
       ]).resolve(testAudio(), {}, {song.path});
-      expect(track.song, isNull);
-      expect(track.candidates, [song]);
+      expect(track.song, same(song));
+      expect(track.hasLocalFile, isTrue);
     },
   );
-  test('different size cannot be suggested despite same filename', () {
+  test('different size cannot match despite same filename', () {
+    final song = localSong(size: 1);
     final track = TelegramLocalMatcher([
-      localSong(size: 1),
-    ]).resolve(testAudio(), {}, {});
-    expect(track.candidates, isEmpty);
+      song,
+    ]).resolve(testAudio(), {}, {song.path});
+    expect(track.song, isNull);
+  });
+  test('different filename does not match based on size alone', () {
+    final song = localSong(path: '/Music/another.mp3');
+    expect(
+      TelegramLocalMatcher([song]).resolve(testAudio(), {}, {song.path}).song,
+      isNull,
+    );
+  });
+  test('unknown byte size never automatically matches', () {
+    final song = localSong(size: 0);
+    expect(
+      TelegramLocalMatcher([
+        song,
+      ]).resolve(testAudio(size: 0), {}, {song.path}).song,
+      isNull,
+    );
+  });
+  test('case-insensitive filenames match outside Telegram folders', () {
+    final song = localSong(path: '/Music/SONG.MP3');
+    expect(
+      TelegramLocalMatcher([song]).resolve(testAudio(), {}, {song.path}).song,
+      same(song),
+    );
+  });
+  test(
+    'duplicate copies resolve stably and skip files which no longer exist',
+    () {
+      final first = localSong(path: '/Music/a/song.mp3', id: 1);
+      final second = localSong(path: '/Music/b/song.mp3', id: 2);
+      final paths = {first.path, second.path};
+      expect(
+        TelegramLocalMatcher([
+          second,
+          first,
+        ]).resolve(testAudio(), {}, paths).song,
+        same(first),
+      );
+      expect(
+        TelegramLocalMatcher([
+          first,
+          second,
+        ]).resolve(testAudio(), {}, paths).song,
+        same(first),
+      );
+      expect(
+        TelegramLocalMatcher([
+          first,
+          second,
+        ]).resolve(testAudio(), {}, {second.path}).song,
+        same(second),
+      );
+    },
+  );
+  test('saved bindings take priority over automatic copies', () {
+    final first = localSong(path: '/Music/a/song.mp3', id: 1);
+    final second = localSong(path: '/Music/b/song.mp3', id: 2);
+    final audio = testAudio();
+    expect(
+      TelegramLocalMatcher([first, second])
+          .resolve(audio, {audio.key: second.path}, {first.path, second.path})
+          .song,
+      same(second),
+    );
+  });
+  test('a missing saved path falls back to an existing local copy', () {
+    final song = localSong();
+    final audio = testAudio(localPath: '/deleted/native.mp3');
+    expect(
+      TelegramLocalMatcher([
+        song,
+      ]).resolve(audio, {audio.key: '/deleted/bound.mp3'}, {song.path}).song,
+      same(song),
+    );
+  });
+  test('the same local file can play in multiple chats without a binding', () {
+    final song = localSong();
+    final matcher = TelegramLocalMatcher([song]);
+    for (final id in [1, 2]) {
+      expect(
+        matcher.resolve(testAudio(chatId: id), {}, {song.path}).song,
+        same(song),
+      );
+    }
   });
   test('missing device files are not counted as local candidates', () {
     final track = TelegramLocalMatcher([

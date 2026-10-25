@@ -37,7 +37,7 @@ void main() {
   });
 
   test(
-    'existing local candidates appear on device before confirmation',
+    'existing local music is playable automatically without binding or download',
     () async {
       final song = localSong();
       container.dispose();
@@ -58,9 +58,11 @@ void main() {
       await settle();
       final tracks = container.read(telegramChatTracksProvider(123));
       expect(tracks, hasLength(1));
-      expect(tracks.single.candidates.single, song);
-      expect(container.read(telegramLocalMatchCountProvider(123)), 1);
-      expect(container.read(telegramChatSongsProvider(123)), isEmpty);
+      expect(tracks.single.song, same(song));
+      expect(container.read(telegramChatSongsProvider(123)), [song]);
+      expect(repository.bindings, isEmpty);
+      expect(repository.downloadCalls, 0);
+      expect(repository.audioCalls, 0);
     },
   );
 

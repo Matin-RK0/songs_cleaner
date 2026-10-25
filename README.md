@@ -28,17 +28,20 @@ two-step-verification passwords are not persisted by this app.
 ### User flow
 
 - Open **Telegram → Connect Telegram**, sign in, then select a chat.
-- **On this device** shows verified local files and accessible matching files
-  awaiting confirmation. Only verified tracks enter the playback queue.
-  **All music** shows the loaded music messages and offers linking or downloading.
-- Existing device files with the same filename and byte size are *suggestions*.
-  The user must confirm the correct file. Name/size alone never assigns provenance.
+- **On this device** shows existing local copies, including automatically matched
+  files, ready for playback without confirmation. **All music** shows loaded music
+  messages and offers downloading for tracks without an available local copy.
+- Files in the device library automatically match by case-insensitive filename and
+  exact nonzero byte size, after checking that the path still exists. Saved bindings
+  and existing TDLib paths take priority; otherwise duplicate matches use a stable
+  path order. The same file may serve multiple chats without copying or downloading
+  it again. This identifies a usable local copy, not the file's original source chat.
 - Downloads are received through TDLib and then saved to the shared **Music/Telegram**
   folder under their original filenames. Android MediaStore publishes/indexes the
   completed audio so file managers and other music players can find it. Existing
   same-name files are not overwritten. Android 10+ uses scoped storage; older
   Android versions request the legacy storage permission when needed.
-  Downloaded/linked tracks play through the existing queue and mini player.
+  Downloaded/matched tracks play through the existing queue and mini player.
   Native file updates refresh local availability without a manual refresh, and
   completed paths are indexed for offline reopening.
 - Audio thumbnails and miniatures are read from Telegram's album-cover metadata.

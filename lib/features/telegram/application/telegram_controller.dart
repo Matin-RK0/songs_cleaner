@@ -395,14 +395,6 @@ final telegramChatSongsProvider = Provider.autoDispose.family<List<Song>, int>(
       .toList(growable: false),
 );
 
-final telegramLocalMatchCountProvider = Provider.autoDispose.family<int, int>(
-  (ref, id) => ref
-      .watch(telegramChatProvider(id))
-      .tracks
-      .where((track) => track.song == null && track.candidates.isNotEmpty)
-      .length,
-);
-
 final telegramSelectionProvider = Provider.autoDispose
     .family<(List<TelegramTrack>, int), int>((ref, id) {
       final state = ref.watch(telegramChatProvider(id));

@@ -23,9 +23,7 @@ class TelegramArtwork extends ConsumerWidget {
         audio.miniCover,
       )),
     );
-    final localSong =
-        track.song ??
-        (track.candidates.length == 1 ? track.candidates.single : null);
+    final localSong = track.song;
     final resolution =
         (AppSpacing.avatarSize * MediaQuery.devicePixelRatioOf(context))
             .round()

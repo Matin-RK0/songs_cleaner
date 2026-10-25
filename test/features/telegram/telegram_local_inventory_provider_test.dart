@@ -69,7 +69,7 @@ void main() {
         testAudio(messageId: 2, localPath: '/tdlib/song.mp3'),
         testAudio(messageId: 3, localPath: '/gone.mp3'),
         testAudio(messageId: 4),
-        testAudio(messageId: 5), // filename/size match alone is not playable
+        testAudio(messageId: 5), // matched automatically to the indexed copy
       ];
       repository.bindings = {
         '123:1': '/indexed/song.mp3', // do not double count
@@ -92,11 +92,11 @@ void main() {
       addTearDown(subscription.close);
       expect(
         await container.read(telegramChatLocalCountProvider(123).future),
-        4,
+        6,
       );
       expect(
         await container.read(telegramChatLocalCountProvider(123).future),
-        4,
+        6,
       );
       expect(repository.bindingReads, 1);
       expect(repository.audioReads, 1);
@@ -188,20 +188,20 @@ void main() {
       for (var i = 0; i < 20; i++) {
         await Future<void>.delayed(Duration.zero);
       }
-      expect(container.read(telegramChatTotalLocalCountProvider(123)), 2);
+      expect(container.read(telegramChatTotalLocalCountProvider(123)), 3);
       expect(
         await container.read(telegramChatLocalCountProvider(123).future),
-        2,
+        3,
       );
       final controller = container.read(telegramChatProvider(123).notifier);
       controller.search('no matching title');
       await Future<void>.delayed(const Duration(milliseconds: 300));
       expect(container.read(telegramChatSongsProvider(123)), isEmpty);
-      expect(container.read(telegramChatTotalLocalCountProvider(123)), 2);
+      expect(container.read(telegramChatTotalLocalCountProvider(123)), 3);
       controller.setActiveOnly();
-      expect(container.read(telegramChatTotalLocalCountProvider(123)), 2);
+      expect(container.read(telegramChatTotalLocalCountProvider(123)), 3);
       controller.setLocalOnly(false);
-      expect(container.read(telegramChatTotalLocalCountProvider(123)), 2);
+      expect(container.read(telegramChatTotalLocalCountProvider(123)), 3);
     },
   );
 }

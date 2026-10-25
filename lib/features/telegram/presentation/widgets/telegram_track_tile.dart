@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/duration_format.dart';
-import '../../../library/domain/entities/song.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../library/presentation/widgets/song_tile.dart';
 import '../../../library/application/providers/library_stats_controller.dart';
@@ -46,11 +45,7 @@ class TelegramTrackTile extends ConsumerWidget {
     );
     final l10n = context.l10n;
     final available = track.song != null;
-    final status = available
-        ? track.song!.duration.mmss
-        : track.candidates.isNotEmpty
-        ? l10n.telegramSuggested
-        : l10n.telegramCloud;
+    final status = available ? track.song!.duration.mmss : l10n.telegramCloud;
     void onSelect() => ref
         .read(telegramChatProvider(id).notifier)
         .toggleSelection(track.audio.key);
@@ -116,12 +111,6 @@ class TelegramTrackTile extends ConsumerWidget {
       progress: TelegramDownloadLine(id: track.audio.fileId),
       trailing: selecting
           ? _selectionIndicator(context, selected)
-          : track.candidates.isNotEmpty
-          ? IconButton(
-              tooltip: l10n.telegramLink,
-              onPressed: () => _link(context, ref),
-              icon: const Icon(Icons.link_rounded),
-            )
           : TelegramDownloadControl(
               audio: track.audio,
               enabled: connected,
@@ -175,15 +164,6 @@ class TelegramTrackTile extends ConsumerWidget {
                   style: Theme.of(sheet).textTheme.titleLarge,
                 ),
               ),
-              if (track.candidates.isNotEmpty)
-                ListTile(
-                  leading: const Icon(Icons.link_rounded),
-                  title: Text(context.l10n.telegramLink),
-                  onTap: () {
-                    Navigator.pop(sheet);
-                    _link(context, ref);
-                  },
-                ),
               ListTile(
                 leading: const Icon(Icons.open_in_new_rounded),
                 title: Text(context.l10n.telegramOpenMessage),
@@ -229,65 +209,6 @@ class TelegramTrackTile extends ConsumerWidget {
         .openMessage(track.audio);
     if (!opened && context.mounted) {
       showAppSnackBar(context, context.l10n.telegramErrorGeneric, error: true);
-    }
-  }
-
-  Future<void> _link(BuildContext context, WidgetRef ref) async {
-    final selected = await showModalBottomSheet<Song>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: AppSpacing.allMd,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.l10n.telegramLinkTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(context.l10n.telegramLinkHint),
-                ],
-              ),
-            ),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: track.candidates.length,
-                itemBuilder: (context, index) {
-                  final song = track.candidates[index];
-                  return ListTile(
-                    leading: const Icon(Icons.audio_file_outlined),
-                    title: Text(song.title),
-                    subtitle: Text(
-                      song.path,
-                      textDirection: TextDirection.ltr,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onTap: () => Navigator.pop(context, song),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-        ),
-      ),
-    );
-    if (selected != null && context.mounted) {
-      await ref
-          .read(telegramChatProvider(track.audio.chatId).notifier)
-          .bind(track.audio, selected);
     }
   }
 }

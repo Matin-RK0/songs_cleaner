@@ -154,9 +154,8 @@ class TelegramAudioPage {
 }
 
 class TelegramTrack {
-  const TelegramTrack(this.audio, {this.song, this.candidates = const []});
+  const TelegramTrack(this.audio, {this.song});
   final TelegramAudio audio;
   final Song? song;
-  final List<Song> candidates;
-  bool get hasLocalFile => song != null || candidates.isNotEmpty;
+  bool get hasLocalFile => song != null;
 }

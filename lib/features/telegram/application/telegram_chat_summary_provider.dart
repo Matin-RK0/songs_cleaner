@@ -36,10 +36,12 @@ final telegramChatLocalCountProvider = FutureProvider.autoDispose
       final paths = {
         ...bindings.values,
         for (final item in playableAudio.values) item.localPath,
+        for (final item in playableAudio.values)
+          ...matcher.candidatesFor(item).map((song) => song.path),
       }..remove('');
       final existing = await files.existingPaths(paths);
       // Count messages once, even when both a binding and TDLib path exist.
-      // Filename/size candidates alone are suggestions, not playable tracks.
+      // Use the same automatic local-copy matching as the open chat.
       return playableAudio.values
               .where(
                 (item) =>

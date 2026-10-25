@@ -131,17 +131,6 @@ class _TelegramChatLibraryState extends ConsumerState<TelegramChatLibrary> {
                               ),
                               style: Theme.of(context).textTheme.headlineSmall,
                             ),
-                            if (ref.watch(telegramLocalMatchCountProvider(id)) >
-                                0) ...[
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                l10n.telegramLocalMatchesCount(
-                                  ref.watch(
-                                    telegramLocalMatchCountProvider(id),
-                                  ),
-                                ),
-                              ),
-                            ],
                             const SizedBox(height: AppSpacing.md),
                             Wrap(
                               spacing: AppSpacing.sm,
