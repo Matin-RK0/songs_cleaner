@@ -269,6 +269,35 @@ class AppLocalizationsFa extends AppLocalizations {
   String get telegramClearSearch => 'پاک کردن جست‌وجو';
 
   @override
+  String get telegramClearCache => 'پاک‌کردن کش تلگرام';
+
+  @override
+  String get telegramClearCacheSubtitle =>
+      'حذف تصاویر موقت و فهرست چت‌ها و آهنگ‌ها';
+
+  @override
+  String get telegramClearCacheHint =>
+      'کاورها، تصاویر چت و فهرست آفلاین چت‌ها و آهنگ‌ها پاک می‌شوند. فایل‌های موسیقی، پیشرفت دانلودها و تنظیمات حفظ می‌شوند. نشست و دیتابیس داخلی تلگرام باقی می‌مانند، مگر گزینهٔ خروج را هم انتخاب کنی. اگر تلگرام متصل نباشد، پاک‌سازی باقی‌مانده تصاویر با اتصال بعدی تکمیل می‌شود. تصاویر و فهرست‌ها هنگام مرور یا به‌روزرسانی دوباره بارگذاری می‌شوند.';
+
+  @override
+  String get telegramClearCacheSignOut =>
+      'حذف نشست و خروج از حساب هم انجام شود';
+
+  @override
+  String get telegramClearCacheSignOutHint =>
+      'نشست تلگرام این اپ پایان می‌یابد و فهرست‌ها و تنظیمات تلگرام بازنشانی می‌شوند. دانلودهای جاری متوقف می‌شوند. فایل‌های موسیقی گوشی حفظ می‌شوند.';
+
+  @override
+  String get telegramCacheCleared => 'کش تلگرام پاک شد';
+
+  @override
+  String get telegramClearingCache => 'در حال پاک‌کردن کش تلگرام…';
+
+  @override
+  String get telegramCacheClearFailed =>
+      'پاک‌سازی کش تلگرام کامل نشد. دوباره تلاش کن.';
+
+  @override
   String get telegramPinLimit =>
       'حداکثر ۱۲ چت را می‌توانی سنجاق کنی. برای افزودن چت جدید، یکی را از سنجاق خارج کن.';
 

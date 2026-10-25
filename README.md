@@ -59,6 +59,14 @@ two-step-verification passwords are not persisted by this app.
 
 ### Telegram UX and download lifecycle
 
+- **Clear Telegram cache** is available in Settings and the Telegram chat-list
+  toolbar. It clears cached images and the app's offline chat/music index while
+  preserving public music, bindings, transfer progress, preferences and login.
+  The optional sign-out choice also ends the TDLib session and resets Telegram
+  preferences; it stops active transfers and keeps music files on the device.
+  Browsing or refreshing may populate the cache again. The native session database
+  is retained by cache-only cleanup and managed by TDLib when signing out.
+
 - Device music and Telegram music share `MusicTrackCard`; playable Telegram
   tracks use the same `SongTile` actions as the device library. Cloud messages
   never become fake playable files.

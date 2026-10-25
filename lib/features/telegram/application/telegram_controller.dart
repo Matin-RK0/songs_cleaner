@@ -15,6 +15,7 @@ import 'telegram_download_controller.dart';
 import 'telegram_preferences_controller.dart';
 import '../domain/telegram_download.dart';
 import 'telegram_artwork_provider.dart';
+import 'telegram_logout_preparation.dart';
 import '../../player/application/providers/player_controller.dart';
 
 final telegramLocalFilesProvider = Provider<TelegramLocalFiles>(
@@ -54,6 +55,8 @@ class TelegramState {
     this.query = '',
     this.phone = '',
     this.editingPhone = false,
+    this.cacheRevision = 0,
+    this.clearingCache = false,
   });
   final TelegramAuth auth;
   final List<TelegramChat> chats;
@@ -62,6 +65,8 @@ class TelegramState {
   final String query;
   final String phone;
   final bool editingPhone;
+  final int cacheRevision;
+  final bool clearingCache;
   TelegramAuth get authStep => editingPhone ? TelegramAuth.phone : auth;
   TelegramState copyWith({
     TelegramAuth? auth,
@@ -71,6 +76,8 @@ class TelegramState {
     String? query,
     String? phone,
     bool? editingPhone,
+    int? cacheRevision,
+    bool? clearingCache,
   }) => TelegramState(
     auth: auth ?? this.auth,
     chats: chats ?? this.chats,
@@ -79,6 +86,8 @@ class TelegramState {
     query: query ?? this.query,
     phone: phone ?? this.phone,
     editingPhone: editingPhone ?? this.editingPhone,
+    cacheRevision: cacheRevision ?? this.cacheRevision,
+    clearingCache: clearingCache ?? this.clearingCache,
   );
 }
 
@@ -157,8 +166,11 @@ class TelegramController extends Notifier<TelegramState> {
     });
     Future.microtask(() async {
       try {
+        final revision = state.cacheRevision;
         final chats = await repository.cachedChats();
-        if (ref.mounted && state.chats.isEmpty) {
+        if (ref.mounted &&
+            state.chats.isEmpty &&
+            state.cacheRevision == revision) {
           state = state.copyWith(chats: chats, failure: state.failure);
         }
         if (ref.mounted && await repository.hasSession() && ref.mounted) {
@@ -279,24 +291,45 @@ class TelegramController extends Notifier<TelegramState> {
     });
   }
 
-  Future<void> logout() => _run((_) async {
-    final downloads = ref.read(telegramDownloadsProvider.notifier);
-    final preferences = ref.read(telegramPreferencesProvider.notifier);
-    await Future.wait([downloads.prepareLogout(), preferences.prepareLogout()]);
+  Future<bool> clearCache({bool signOut = false}) async {
+    var cleared = false;
+    await _run((_) async {
+      _refreshOnIdle = false;
+      state = state.copyWith(clearingCache: true);
+      try {
+        await ref.read(telegramRepositoryProvider).clearCache();
+        if (!ref.mounted) return;
+        state = state.copyWith(
+          chats: [],
+          cacheRevision: state.cacheRevision + 1,
+        );
+        ref.invalidate(telegramArtworkLoaderProvider);
+        if (signOut) await _logout();
+        cleared = true;
+      } finally {
+        if (ref.mounted) {
+          state = state.copyWith(clearingCache: false, failure: state.failure);
+        }
+      }
+    });
+    return cleared;
+  }
+
+  Future<void> logout() => _run((_) => _logout());
+
+  Future<void> _logout() async {
+    final preparation = ref.read(telegramLogoutPreparationProvider);
     try {
+      await preparation.prepare();
       await ref.read(telegramRepositoryProvider).logout();
     } catch (_) {
-      downloads.unlock();
-      preferences.unlock();
+      preparation.unlock();
       rethrow;
     }
     if (!ref.mounted) return;
-    state = const TelegramState();
-    ref.invalidate(telegramChatProvider);
-    ref.invalidate(telegramDownloadsProvider);
-    ref.invalidate(telegramPreferencesProvider);
-    ref.invalidate(telegramArtworkLoaderProvider);
-  });
+    state = TelegramState(cacheRevision: state.cacheRevision + 1);
+    preparation.reset();
+  }
 }
 
 class TelegramChatState {
@@ -474,6 +507,13 @@ class TelegramChatController extends Notifier<TelegramChatState> {
       unawaited(fileSubscription.cancel());
     });
     ref.listen(allSongsProvider, (_, _) => unawaited(_resolveSafely()));
+    ref.listen(telegramProvider.select((s) => s.cacheRevision), (_, _) {
+      ++_loadVersion;
+      ++_resolution;
+      _fileRefresh?.cancel();
+      _audio = [];
+      state = state.copyWith(tracks: [], selected: {}, nextId: 0, busy: false);
+    });
     ref.listen(
       telegramDownloadsProvider.select(
         (jobs) => Object.hashAll(

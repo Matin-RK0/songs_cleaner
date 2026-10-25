@@ -46,6 +46,9 @@ class TelegramRepositoryImpl implements TelegramRepository {
   StreamSubscription<Map<String, dynamic>>? _subscription;
   late final _cache = TelegramCacheStore(_dir);
   int _imageDownloads = 0;
+  int _artworkEpoch = 0;
+  Future<void>? _cacheClearing;
+  final _coverRequests = <int>{};
   int _chatLimit = 50;
   final _loadedChatIds = <int>{};
   final _browseVersions = <String, int>{};
@@ -235,6 +238,16 @@ class TelegramRepositoryImpl implements TelegramRepository {
   Future<void> _prepareReady() async {
     await _secure.write(key: 'telegram.session.active', value: 'true');
     await _pruneTemporary();
+    final store = await _store();
+    if (store['imagePurgePending'] == true) {
+      try {
+        await _purgeImageStorage();
+        store.remove('imagePurgePending');
+        await _save();
+      } catch (_) {
+        // Keep the durable cleanup request for the next connection.
+      }
+    }
     unawaited(_trimImageCache());
   }
 
@@ -348,6 +361,9 @@ class TelegramRepositoryImpl implements TelegramRepository {
     String scope,
     Future<T> Function(int version, int session) action,
   ) {
+    if (_cacheClearing != null) {
+      return Future.error(const TelegramException(TelegramFailure.network));
+    }
     final version = _beginBrowse(scope);
     return action(version, _sessionEpoch).timeout(
       const Duration(seconds: 18),
@@ -726,6 +742,8 @@ class TelegramRepositoryImpl implements TelegramRepository {
   @override
   Future<String?> coverPath(int fileId, {String localPath = ''}) async {
     final session = _sessionEpoch;
+    final artworkEpoch = _artworkEpoch;
+    if (_cacheClearing != null) return null;
     if (localPath.isNotEmpty && await File(localPath).exists()) {
       return localPath;
     }
@@ -733,17 +751,28 @@ class TelegramRepositoryImpl implements TelegramRepository {
     final cached = (await _store())['cover:$fileId'] as String?;
     if (cached != null && await File(cached).exists()) return cached;
     if (_state != TelegramAuth.ready) return null;
-    final file = await _td.call('downloadFile', {
-      'file_id': fileId,
-      'priority': 1,
-      'offset': 0,
-      'limit': 0,
-      'synchronous': true,
-    });
+    _coverRequests.add(fileId);
+    late final Map<String, dynamic> file;
+    try {
+      file = await _td.read('covers', 'downloadFile', {
+        'file_id': fileId,
+        'priority': 1,
+        'offset': 0,
+        'limit': 0,
+        'synchronous': true,
+      });
+    } finally {
+      _coverRequests.remove(fileId);
+    }
     final path = TelegramAudioMapper.completedPath(file);
-    if (session != _sessionEpoch || _disposed) return null;
+    if (session != _sessionEpoch ||
+        artworkEpoch != _artworkEpoch ||
+        _disposed) {
+      return null;
+    }
     if (path.isEmpty) return null;
     final store = await _store();
+    if (artworkEpoch != _artworkEpoch || _cacheClearing != null) return null;
     store['cover:$fileId'] = path;
     final keys = store.keys.where((key) => key.startsWith('cover:')).toList();
     for (final key in keys.take((keys.length - 512).clamp(0, keys.length))) {
@@ -804,6 +833,101 @@ class TelegramRepositoryImpl implements TelegramRepository {
       return path == null ? audio : audio.withLocalPath(path);
     }).toList();
   }
+
+  @override
+  Future<void> clearCache() =>
+      _cacheClearing ??= _clearCache().whenComplete(() {
+        _cacheClearing = null;
+      });
+
+  Future<void> _clearCache() async {
+    ++_artworkEpoch;
+    for (final scope in _browseVersions.keys.toList()) {
+      _browseVersions[scope] = _browseVersions[scope]! + 1;
+      _transport?.cancelReads(scope);
+    }
+    final covers = _coverRequests.toList();
+    _transport?.cancelReads('covers');
+    final store = await _store();
+    final imagePaths = <String>{
+      for (final entry in store.entries)
+        if (entry.key.startsWith('cover:') && entry.value is String)
+          entry.value as String,
+      for (final chat in await cachedChats()) chat.photoPath,
+      for (final entry in store.entries)
+        if (entry.key.startsWith('audio:') && entry.value is List)
+          for (final value in entry.value as List)
+            TelegramAudio.fromJson(value as Map<String, dynamic>).coverPath,
+    }..remove('');
+    final audioPaths = <String>{
+      for (final key in ['files', 'publishedFiles', 'bindings'])
+        ...(store[key] as Map? ?? {}).values.whereType<String>(),
+      for (final value in (store['temporaryAudio'] as Map? ?? {}).values)
+        if (value is Map && value['localPath'] is String)
+          value['localPath'] as String,
+      for (final entry in store.entries)
+        if (entry.key.startsWith('audio:') && entry.value is List)
+          for (final value in entry.value as List)
+            TelegramAudio.fromJson(value as Map<String, dynamic>).localPath,
+    };
+    // Covers evicted from the small JSON index may still exist in TDLib's
+    // storage. Defer their native purge until the next connection if offline.
+    store['imagePurgePending'] = true;
+    await _save();
+    if (_transport != null) {
+      for (final id in covers) {
+        await _td.call('cancelDownloadFile', {
+          'file_id': id,
+          'only_if_pending': false,
+        });
+      }
+      await _purgeImageStorage();
+      store.remove('imagePurgePending');
+    }
+    // Also works before connecting: only indexed images inside our own TDLib
+    // directory may be deleted, never MediaStore paths or public music.
+    for (final path in imagePaths) {
+      if (audioPaths.contains(path) || _isInUse(path)) continue;
+      try {
+        final file = File(path);
+        if (!await file.exists()) continue;
+        final root = await (await _dir()).resolveSymbolicLinks();
+        final resolved = await file.resolveSymbolicLinks();
+        final prefix =
+            '$root${Platform.pathSeparator}files${Platform.pathSeparator}';
+        if (resolved.startsWith(prefix)) await file.delete();
+      } on FileSystemException {
+        throw const TelegramException(TelegramFailure.storage);
+      }
+    }
+    store.removeWhere(
+      (key, _) =>
+          key == 'chats' ||
+          key.startsWith('audio:') ||
+          key.startsWith('cover:'),
+    );
+    _loadedChatIds.clear();
+    _chatLimit = 50;
+    await _save();
+  }
+
+  // Restrict TDLib cleanup to images; audio and paused downloads are untouched.
+  Future<void> _purgeImageStorage() => _td
+      .call('optimizeStorage', {
+        'size': 0,
+        'ttl': 0,
+        'count': 0,
+        'immunity_delay': 0,
+        'file_types': [
+          {'@type': 'fileTypeThumbnail'},
+          {'@type': 'fileTypeProfilePhoto'},
+        ],
+        'chat_ids': [],
+        'exclude_chat_ids': [],
+        'return_deleted_file_statistics': false,
+        'chat_limit': 0,
+      })
+      .then((_) {});
 
   @override
   Future<void> logout() async {

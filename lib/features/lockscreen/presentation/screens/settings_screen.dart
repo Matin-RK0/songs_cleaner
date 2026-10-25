@@ -20,6 +20,7 @@ import '../../../player/application/providers/audio_focus_controller.dart';
 import '../../../player/domain/audio_focus_mode.dart';
 import '../../../library/presentation/widgets/home_tabs_setting_tile.dart';
 import '../../../player/presentation/widgets/widget_background_setting_tile.dart';
+import '../../../telegram/presentation/widgets/telegram_cache_controls.dart';
 import '../../application/providers/lock_screen_controller.dart';
 
 /// App settings. Exposes appearance, lock-screen and playback toggles.
@@ -583,6 +584,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 subtitle: l10n.hideQuickDeleteSubtitle,
                 icon: Icons.delete_outline_rounded,
               ),
+              _SectionHeader(title: l10n.telegramTitle),
+              const TelegramCacheTile(),
             ],
           ),
         ),

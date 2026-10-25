@@ -52,6 +52,20 @@ class FakeTelegramRepository implements TelegramRepository {
   TelegramFailure? failure;
   bool session = false;
   int connectCalls = 0;
+  int clearCacheCalls = 0;
+  int logoutCalls = 0;
+  bool failCacheClear = false;
+  Completer<void>? pendingCacheClear;
+
+  @override
+  Future<void> clearCache() async {
+    clearCacheCalls++;
+    await pendingCacheClear?.future;
+    if (failCacheClear) throw const TelegramException(TelegramFailure.storage);
+    savedChats = const [];
+    savedAudio = const [];
+  }
+
   final submittedPhones = <String>[];
   Completer<void>? pendingPhone;
   int audioCalls = 0;
@@ -142,6 +156,7 @@ class FakeTelegramRepository implements TelegramRepository {
   Future<List<TelegramAudio>> cachedAudio(int chatId) async => savedAudio;
   @override
   Future<void> logout() async {
+    logoutCalls++;
     bindings.clear();
     savedChats = [];
     savedAudio = [];

@@ -26,6 +26,7 @@ abstract class TelegramRepository {
   Future<void> bind(String key, String path);
   Future<List<TelegramChat>> cachedChats();
   Future<List<TelegramAudio>> cachedAudio(int chatId);
+  Future<void> clearCache();
   Future<void> logout();
   Future<void> dispose();
 }

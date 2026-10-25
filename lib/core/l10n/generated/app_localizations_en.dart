@@ -269,6 +269,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telegramClearSearch => 'Clear search';
 
   @override
+  String get telegramClearCache => 'Clear Telegram cache';
+
+  @override
+  String get telegramClearCacheSubtitle =>
+      'Remove cached images and chat/music lists';
+
+  @override
+  String get telegramClearCacheHint =>
+      'Remove cached covers, chat pictures and offline chat/music lists. Music files, download progress and settings are kept. Telegram’s session and internal database are kept unless you also choose to sign out. If Telegram is disconnected, remaining native image cleanup completes on the next connection. Images and lists can load again when you browse or refresh.';
+
+  @override
+  String get telegramClearCacheSignOut =>
+      'Also remove the session and sign out';
+
+  @override
+  String get telegramClearCacheSignOutHint =>
+      'Ends this app’s Telegram session and resets its local index and preferences. Active downloads stop. Music files on your device are kept.';
+
+  @override
+  String get telegramCacheCleared => 'Telegram cache cleared';
+
+  @override
+  String get telegramClearingCache => 'Clearing Telegram cache…';
+
+  @override
+  String get telegramCacheClearFailed =>
+      'Could not finish clearing Telegram cache. Please try again.';
+
+  @override
   String get telegramPinLimit =>
       'You can pin up to 12 chats. Unpin one to add another.';
 

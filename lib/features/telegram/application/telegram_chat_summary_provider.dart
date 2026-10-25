@@ -5,6 +5,7 @@ import 'telegram_download_controller.dart';
 
 final telegramChatLocalCountProvider = FutureProvider.autoDispose
     .family<int?, int>((ref, id) async {
+      ref.watch(telegramProvider.select((state) => state.cacheRevision));
       final matcher = ref.watch(telegramLocalMatcherProvider);
       ref.watch(
         telegramDownloadsProvider.select(

@@ -12,6 +12,7 @@ import '../widgets/telegram_feedback.dart';
 import '../widgets/telegram_overview_card.dart';
 import '../widgets/telegram_chat_tile.dart';
 import '../widgets/telegram_download_sheet.dart';
+import '../widgets/telegram_cache_controls.dart';
 import '../../application/telegram_preferences_controller.dart';
 
 class TelegramTab extends ConsumerWidget {
@@ -46,6 +47,7 @@ class TelegramTab extends ConsumerWidget {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
+                  const TelegramCacheButton(),
                   if (connected) ...[
                     IconButton(
                       tooltip: context.l10n.telegramRefresh,
