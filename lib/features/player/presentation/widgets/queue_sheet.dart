@@ -24,7 +24,7 @@ Future<void> showQueueSheet(BuildContext context) {
     constraints: BoxConstraints(
       maxHeight: MediaQuery.of(context).size.height * 0.75,
     ),
-    builder: (_) => const QueueSheetContent(),
+    builder: (_) => const SafeArea(top: false, child: QueueSheetContent()),
   );
 }
 

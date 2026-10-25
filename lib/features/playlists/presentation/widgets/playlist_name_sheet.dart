@@ -23,10 +23,15 @@ Future<String?> showPlaylistNameSheet({
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
     ),
-    builder: (_) => _PlaylistNameSheet(
-      title: title,
-      actionLabel: actionLabel,
-      initialName: initialName,
+    builder: (_) => SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        child: _PlaylistNameSheet(
+          title: title,
+          actionLabel: actionLabel,
+          initialName: initialName,
+        ),
+      ),
     ),
   );
 }

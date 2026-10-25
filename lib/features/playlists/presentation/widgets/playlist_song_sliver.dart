@@ -197,12 +197,14 @@ class PlaylistSongTile extends StatelessWidget {
     final colors = context.colors;
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: true,
       showDragHandle: true,
       backgroundColor: colors.surfaceHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
       ),
       builder: (sheetContext) => SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -23,7 +23,7 @@ Future<void> showTelegramDownloads(BuildContext context) {
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    builder: (_) => const TelegramDownloadsView(),
+    builder: (_) => const SafeArea(top: false, child: TelegramDownloadsView()),
   );
 }
 

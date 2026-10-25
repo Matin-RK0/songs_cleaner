@@ -151,54 +151,57 @@ class TelegramTrackTile extends ConsumerWidget {
         context: context,
         useSafeArea: true,
         showDragHandle: true,
-        builder: (sheet) => SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: AppSpacing.allMd,
-                child: Text(
-                  track.audio.title.isEmpty
-                      ? track.audio.fileName
-                      : track.audio.title,
-                  style: Theme.of(sheet).textTheme.titleLarge,
+        builder: (sheet) => SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: AppSpacing.allMd,
+                  child: Text(
+                    track.audio.title.isEmpty
+                        ? track.audio.fileName
+                        : track.audio.title,
+                    style: Theme.of(sheet).textTheme.titleLarge,
+                  ),
                 ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.open_in_new_rounded),
-                title: Text(context.l10n.telegramOpenMessage),
-                onTap: () {
-                  Navigator.pop(sheet);
-                  _openMessage(context, ref);
-                },
-              ),
-              for (final play in [false, true])
                 ListTile(
-                  leading: Icon(
-                    play
-                        ? Icons.play_circle_outline_rounded
-                        : Icons.download_rounded,
-                  ),
-                  title: Text(
-                    play
-                        ? context.l10n.telegramDownloadAndPlay
-                        : context.l10n.telegramDownload,
-                  ),
-                  enabled: connected,
+                  leading: const Icon(Icons.open_in_new_rounded),
+                  title: Text(context.l10n.telegramOpenMessage),
                   onTap: () {
                     Navigator.pop(sheet);
-                    if (!ref
-                        .read(telegramDownloadsProvider.notifier)
-                        .enqueue(track.audio, play: play)) {
-                      showAppSnackBar(
-                        context,
-                        context.l10n.telegramQueueFull,
-                        error: true,
-                      );
-                    }
+                    _openMessage(context, ref);
                   },
                 ),
-            ],
+                for (final play in [false, true])
+                  ListTile(
+                    leading: Icon(
+                      play
+                          ? Icons.play_circle_outline_rounded
+                          : Icons.download_rounded,
+                    ),
+                    title: Text(
+                      play
+                          ? context.l10n.telegramDownloadAndPlay
+                          : context.l10n.telegramDownload,
+                    ),
+                    enabled: connected,
+                    onTap: () {
+                      Navigator.pop(sheet);
+                      if (!ref
+                          .read(telegramDownloadsProvider.notifier)
+                          .enqueue(track.audio, play: play)) {
+                        showAppSnackBar(
+                          context,
+                          context.l10n.telegramQueueFull,
+                          error: true,
+                        );
+                      }
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       );

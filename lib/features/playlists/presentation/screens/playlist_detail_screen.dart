@@ -239,12 +239,14 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
     final colors = context.colors;
     final action = await showModalBottomSheet<_PlaylistAction>(
       context: context,
+      useSafeArea: true,
       showDragHandle: true,
       backgroundColor: colors.surfaceHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
       ),
       builder: (sheetContext) => SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

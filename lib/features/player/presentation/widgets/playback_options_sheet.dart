@@ -18,6 +18,7 @@ Future<void> showPlaybackOptionsSheet(
   final colors = context.colors;
   await showModalBottomSheet<void>(
     context: context,
+    useSafeArea: true,
     showDragHandle: true,
     backgroundColor: colors.surfaceHigh,
     shape: const RoundedRectangleBorder(
@@ -50,6 +51,7 @@ class _PlaybackOptionsSheet extends ConsumerWidget {
     final gapless = ref.watch(playerProvider.select((state) => state.gapless));
 
     return SafeArea(
+      top: false,
       child: ListView(
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(

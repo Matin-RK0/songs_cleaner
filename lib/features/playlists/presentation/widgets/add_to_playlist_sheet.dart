@@ -33,7 +33,8 @@ Future<void> showAddSongsToPlaylistSheet(
     constraints: BoxConstraints(
       maxHeight: MediaQuery.of(context).size.height * 0.6,
     ),
-    builder: (_) => _AddToPlaylistSheet(songs: songs),
+    builder: (_) =>
+        SafeArea(top: false, child: _AddToPlaylistSheet(songs: songs)),
   );
 }
 

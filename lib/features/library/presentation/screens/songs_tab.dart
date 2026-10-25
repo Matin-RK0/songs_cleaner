@@ -369,14 +369,16 @@ Future<void> showSortSheet(BuildContext context, WidgetRef ref) async {
 
   final selected = await showModalBottomSheet<SongSort>(
     context: context,
+    useSafeArea: true,
     showDragHandle: true,
     backgroundColor: colors.surfaceHigh,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
     ),
     builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      top: false,
+      child: ListView(
+        shrinkWrap: true,
         children: [
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -430,12 +432,14 @@ Future<void> showFilterSheet(BuildContext context, WidgetRef ref) async {
   final current = ref.read(libraryProvider).value?.filter ?? SongFilter.all;
   final selected = await showModalBottomSheet<SongFilter>(
     context: context,
+    useSafeArea: true,
     showDragHandle: true,
     backgroundColor: context.colors.surfaceHigh,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
     ),
     builder: (sheetContext) => SafeArea(
+      top: false,
       child: RadioGroup<SongFilter>(
         groupValue: current,
         onChanged: (value) => Navigator.of(sheetContext).pop(value),
