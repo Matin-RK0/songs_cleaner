@@ -87,130 +87,141 @@ class _TelegramChatLibraryState extends ConsumerState<TelegramChatLibrary> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) controller.clearSelection();
       },
-      child: Column(
-        children: [
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: controller.refresh,
-              child: NotificationListener<ScrollEndNotification>(
-                onNotification: (notification) {
-                  if (_scroll.hasClients) {
-                    ref.read(telegramPreferencesProvider.notifier).updateChat(
-                      id,
-                      {'offset': _scroll.offset},
-                    );
-                    if (widget.connected &&
-                        _scroll.position.extentAfter <
-                            AppSpacing.iconHero * 4 &&
-                        !state.busy &&
-                        state.nextId != 0) {
-                      controller.refresh(more: true);
+      child: LayoutBuilder(
+        builder: (context, constraints) => Column(
+          children: [
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: controller.refresh,
+                child: NotificationListener<ScrollEndNotification>(
+                  onNotification: (notification) {
+                    if (_scroll.hasClients) {
+                      ref.read(telegramPreferencesProvider.notifier).updateChat(
+                        id,
+                        {'offset': _scroll.offset},
+                      );
+                      if (widget.connected &&
+                          _scroll.position.extentAfter <
+                              AppSpacing.iconHero * 4 &&
+                          !state.busy &&
+                          state.nextId != 0) {
+                        controller.refresh(more: true);
+                      }
                     }
-                  }
-                  return false;
-                },
-                child: CustomScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  controller: _scroll,
-                  key: PageStorageKey('telegram-audio-$id'),
-                  physics: const AlwaysScrollableScrollPhysics(
-                    parent: ClampingScrollPhysics(),
-                  ),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: TelegramChatControls(
-                        chatId: id,
-                        connected: widget.connected,
-                        queryController: _query,
-                      ),
+                    return false;
+                  },
+                  child: CustomScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    controller: _scroll,
+                    key: PageStorageKey('telegram-audio-$id'),
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: ClampingScrollPhysics(),
                     ),
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _FilterHeader(
-                        extent:
-                            AppSpacing.iconHero +
-                            (MediaQuery.textScalerOf(context).scale(
-                                  Theme.of(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: TelegramChatControls(
+                          chatId: id,
+                          connected: widget.connected,
+                          queryController: _query,
+                        ),
+                      ),
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _FilterHeader(
+                          extent:
+                              AppSpacing.iconHero +
+                              (MediaQuery.textScalerOf(context).scale(
+                                    Theme.of(
+                                          context,
+                                        ).textTheme.labelLarge?.fontSize ??
+                                        kDefaultFontSize,
+                                  ) -
+                                  (Theme.of(
                                         context,
                                       ).textTheme.labelLarge?.fontSize ??
-                                      kDefaultFontSize,
-                                ) -
-                                (Theme.of(
-                                      context,
-                                    ).textTheme.labelLarge?.fontSize ??
-                                    kDefaultFontSize)),
-                        child: TelegramChatFilters(chatId: id),
-                      ),
-                    ),
-                    const SliverToBoxAdapter(child: TelegramDownloadDock()),
-                    if (state.failure != null)
-                      SliverToBoxAdapter(
-                        child: TelegramErrorBanner(
-                          failure: state.failure!,
-                          onRetry: widget.connected
-                              ? () => controller.refresh()
-                              : null,
+                                      kDefaultFontSize)),
+                          child: TelegramChatFilters(chatId: id),
                         ),
                       ),
-                    if (state.busy)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: AppSpacing.allMd,
-                          child: LinearProgressIndicator(),
-                        ),
-                      ),
-                    if (tracks.isEmpty && !state.busy && state.failure == null)
-                      SliverToBoxAdapter(
-                        child: AppEmptyState(
-                          icon: Icons.library_music_outlined,
-                          title: state.query.isNotEmpty
-                              ? l10n.noResultsTitle
-                              : state.localOnly
-                              ? l10n.telegramNoAudio
-                              : l10n.telegramEmptyChat,
-                          message: state.query.isNotEmpty
-                              ? l10n.noResultsMessage
-                              : state.localOnly
-                              ? l10n.telegramNoAudioHint
-                              : l10n.telegramLoadedSearchHint,
-                        ),
-                      ),
-                    SliverList.builder(
-                      itemCount: tracks.length,
-                      itemBuilder: (_, index) => TelegramTrackTile(
-                        key: ValueKey(tracks[index].audio.key),
-                        track: tracks[index],
-                        connected: widget.connected,
-                      ),
-                    ),
-                    if (widget.connected && state.nextId != 0)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: AppSpacing.allMd,
-                          child: OutlinedButton.icon(
-                            onPressed: state.busy
-                                ? null
-                                : () => controller.refresh(more: true),
-                            icon: const Icon(Icons.expand_more_rounded),
-                            label: Text(l10n.telegramLoadMore),
+                      const SliverToBoxAdapter(child: TelegramDownloadDock()),
+                      if (state.failure != null)
+                        SliverToBoxAdapter(
+                          child: TelegramErrorBanner(
+                            failure: state.failure!,
+                            onRetry: widget.connected
+                                ? () => controller.refresh()
+                                : null,
                           ),
                         ),
+                      if (state.busy)
+                        const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: AppSpacing.allMd,
+                            child: LinearProgressIndicator(),
+                          ),
+                        ),
+                      if (tracks.isEmpty &&
+                          !state.busy &&
+                          state.failure == null)
+                        SliverToBoxAdapter(
+                          child: AppEmptyState(
+                            icon: Icons.library_music_outlined,
+                            title: state.query.isNotEmpty
+                                ? l10n.noResultsTitle
+                                : state.localOnly
+                                ? l10n.telegramNoAudio
+                                : l10n.telegramEmptyChat,
+                            message: state.query.isNotEmpty
+                                ? l10n.noResultsMessage
+                                : state.localOnly
+                                ? l10n.telegramNoAudioHint
+                                : l10n.telegramLoadedSearchHint,
+                          ),
+                        ),
+                      SliverList.builder(
+                        itemCount: tracks.length,
+                        itemBuilder: (_, index) => TelegramTrackTile(
+                          key: ValueKey(tracks[index].audio.key),
+                          track: tracks[index],
+                          connected: widget.connected,
+                        ),
                       ),
-                    SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
-                  ],
+                      if (widget.connected && state.nextId != 0)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: AppSpacing.allMd,
+                            child: OutlinedButton.icon(
+                              onPressed: state.busy
+                                  ? null
+                                  : () => controller.refresh(more: true),
+                              icon: const Icon(Icons.expand_more_rounded),
+                              label: Text(l10n.telegramLoadMore),
+                            ),
+                          ),
+                        ),
+                      SliverToBoxAdapter(
+                        child: SizedBox(height: AppSpacing.xl),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          if (state.selected.isNotEmpty)
-            Flexible(
-              child: TelegramSelectionOverlay(
-                visible: true,
-                child: _SelectionToolbar(chatId: id),
+            if (state.selected.isNotEmpty)
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight:
+                      constraints.maxHeight *
+                      AppSpacing.selectionMaxHeightFactor,
+                ),
+                child: TelegramSelectionOverlay(
+                  visible: true,
+                  child: _SelectionToolbar(chatId: id),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -251,7 +262,7 @@ class _SelectionToolbar extends ConsumerWidget {
         top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Padding(
-        padding: AppSpacing.allMd,
+        padding: AppSpacing.hMdVSm,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -275,88 +286,135 @@ class _SelectionToolbar extends ConsumerWidget {
                 ),
               ],
             ),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.xs,
-              children: [
-                FilledButton.tonalIcon(
-                  icon: const Icon(Icons.download_rounded),
-                  label: Text(l10n.telegramDownloadSelected),
-                  onPressed: details.remoteCount == 0
-                      ? null
-                      : () async {
-                          final yes = await showDialog<bool>(
-                            context: context,
-                            builder: (dialog) => AlertDialog(
-                              title: Text(l10n.telegramDownloadSelected),
-                              content: Text(
-                                l10n.telegramSelection(
-                                  details.remoteCount,
-                                  details.remoteBytes.readableFileSize,
-                                ),
+            LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children:
+                      <Widget>[
+                            FilledButton.tonalIcon(
+                              icon: const Icon(Icons.download_rounded),
+                              label: Text(
+                                l10n.telegramDownload,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(dialog, false),
-                                  child: Text(l10n.cancel),
-                                ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(dialog, true),
-                                  child: Text(l10n.telegramContinue),
-                                ),
-                              ],
+                              onPressed: details.remoteCount == 0
+                                  ? null
+                                  : () async {
+                                      final yes = await showDialog<bool>(
+                                        context: context,
+                                        builder: (dialog) => AlertDialog(
+                                          title: Text(
+                                            l10n.telegramDownloadSelected,
+                                          ),
+                                          content: Text(
+                                            l10n.telegramSelection(
+                                              details.remoteCount,
+                                              details
+                                                  .remoteBytes
+                                                  .readableFileSize,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(dialog, false),
+                                              child: Text(l10n.cancel),
+                                            ),
+                                            FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(dialog, true),
+                                              child: Text(
+                                                l10n.telegramContinue,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (yes != true || !context.mounted) {
+                                        return;
+                                      }
+                                      final manager = ref.read(
+                                        telegramDownloadsProvider.notifier,
+                                      );
+                                      for (final track in selected) {
+                                        if (track.song == null &&
+                                            !manager.enqueue(track.audio)) {
+                                          showAppSnackBar(
+                                            context,
+                                            l10n.telegramQueueFull,
+                                            error: true,
+                                          );
+                                          break;
+                                        }
+                                      }
+                                      ref
+                                          .read(
+                                            telegramChatProvider(
+                                              chatId,
+                                            ).notifier,
+                                          )
+                                          .clearSelection();
+                                    },
                             ),
-                          );
-                          if (yes != true || !context.mounted) return;
-                          final manager = ref.read(
-                            telegramDownloadsProvider.notifier,
-                          );
-                          for (final track in selected) {
-                            if (track.song == null &&
-                                !manager.enqueue(track.audio)) {
-                              showAppSnackBar(
-                                context,
-                                l10n.telegramQueueFull,
-                                error: true,
-                              );
-                              break;
-                            }
-                          }
-                          ref
-                              .read(telegramChatProvider(chatId).notifier)
-                              .clearSelection();
-                        },
+                            const SizedBox(width: AppSpacing.sm),
+                            TextButton.icon(
+                              icon: const Icon(Icons.queue_music_rounded),
+                              label: Text(
+                                l10n.addToQueue,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              onPressed: details.local.isEmpty
+                                  ? null
+                                  : () async {
+                                      final player = ref.read(
+                                        playerProvider.notifier,
+                                      );
+                                      for (final track in selected) {
+                                        if (track.song != null) {
+                                          await player.addToQueue(track.song!);
+                                        }
+                                      }
+                                      if (context.mounted) {
+                                        ref
+                                            .read(
+                                              telegramChatProvider(
+                                                chatId,
+                                              ).notifier,
+                                            )
+                                            .clearSelection();
+                                      }
+                                    },
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            TextButton.icon(
+                              icon: const Icon(Icons.playlist_add_rounded),
+                              label: Text(
+                                l10n.addToPlaylist,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              onPressed: details.indexed.isEmpty
+                                  ? null
+                                  : () => showAddSongsToPlaylistSheet(
+                                      context,
+                                      details.indexed,
+                                    ),
+                            ),
+                          ]
+                          .map(
+                            (action) => ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: constraints.maxWidth,
+                              ),
+                              child: action,
+                            ),
+                          )
+                          .toList(),
                 ),
-                TextButton.icon(
-                  icon: const Icon(Icons.queue_music_rounded),
-                  label: Text(l10n.telegramQueueSelected),
-                  onPressed: details.local.isEmpty
-                      ? null
-                      : () async {
-                          final player = ref.read(playerProvider.notifier);
-                          for (final track in selected) {
-                            if (track.song != null) {
-                              await player.addToQueue(track.song!);
-                            }
-                          }
-                          if (context.mounted) {
-                            ref
-                                .read(telegramChatProvider(chatId).notifier)
-                                .clearSelection();
-                          }
-                        },
-                ),
-                TextButton.icon(
-                  icon: const Icon(Icons.playlist_add_rounded),
-                  label: Text(l10n.addToPlaylist),
-                  onPressed: details.indexed.isEmpty
-                      ? null
-                      : () => showAddSongsToPlaylistSheet(
-                          context,
-                          details.indexed,
-                        ),
-                ),
-              ],
+              ),
             ),
           ],
         ),

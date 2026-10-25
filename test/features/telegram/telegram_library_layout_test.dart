@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songs_cleaner/core/l10n/generated/app_localizations.dart';
+import 'package:songs_cleaner/core/theme/app_spacing.dart';
 import 'package:songs_cleaner/core/widgets/app_state_views.dart';
 import 'package:songs_cleaner/core/widgets/music_track_card.dart';
 import 'package:songs_cleaner/features/library/presentation/widgets/song_tile.dart';
@@ -206,6 +207,23 @@ void main() {
     await tester.pumpAndSettle();
     final viewport = find.byType(CustomScrollView);
     final toolbar = find.byType(TelegramSelectionOverlay);
+    expect(
+      tester.getSize(toolbar).height,
+      lessThanOrEqualTo(AppSpacing.avatarSize * 3),
+    );
+    expect(tester.getBottomLeft(toolbar).dy, 640);
+    expect(tester.getSize(viewport).height, greaterThan(640 * 0.7));
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(TelegramChatLibrary)),
+    );
+    final playlistAction = find.text(l10n.addToPlaylist);
+    await Scrollable.ensureVisible(
+      tester.element(playlistAction),
+      alignment: 0.5,
+    );
+    await tester.pumpAndSettle();
+    expect(tester.getRect(playlistAction).left, greaterThanOrEqualTo(0));
+    expect(tester.getRect(playlistAction).right, lessThanOrEqualTo(320));
     expect(
       tester.getBottomLeft(viewport).dy,
       lessThanOrEqualTo(tester.getTopLeft(toolbar).dy),
