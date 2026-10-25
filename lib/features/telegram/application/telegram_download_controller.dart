@@ -8,6 +8,7 @@ import 'telegram_controller.dart';
 import 'telegram_preferences_controller.dart';
 import '../../library/application/providers/library_providers.dart';
 import '../infrastructure/telegram_download_activity.dart';
+import '../infrastructure/telegram_diagnostics.dart';
 
 final telegramDownloadActivityProvider = Provider<TelegramDownloadActivity>(
   (ref) => TelegramDownloadActivity(),
@@ -32,6 +33,25 @@ final telegramDownloadsProvider =
     NotifierProvider<TelegramDownloadController, Map<int, TelegramDownload>>(
       TelegramDownloadController.new,
     );
+
+/// Committed public files are authoritative even while a metadata update or
+/// MediaStore library scan is still pending.
+final telegramPublishedPathsProvider = Provider<Map<int, String>>((ref) {
+  ref.watch(
+    telegramDownloadsProvider.select(
+      (jobs) => Object.hashAll(
+        jobs.values
+            .where((job) => job.phase == TelegramDownloadPhase.completed)
+            .map((job) => Object.hash(job.audio.fileId, job.path)),
+      ),
+    ),
+  );
+  return Map.unmodifiable({
+    for (final job in ref.read(telegramDownloadsProvider).values)
+      if (job.phase == TelegramDownloadPhase.completed && job.path.isNotEmpty)
+        job.audio.fileId: job.path,
+  });
+});
 
 // Stable summaries prevent every progress packet rebuilding the chat list.
 final telegramDownloadSummaryProvider =
@@ -265,7 +285,17 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
       );
       if (!_current(id, generation)) return;
       _pendingProgress.remove(id);
-      await repository.bind(initial.audio.key, path);
+      try {
+        await repository.bind(initial.audio.key, path);
+      } catch (error, stackTrace) {
+        // Publication already succeeded. An index write cannot turn a valid
+        // saved file into a failed download or make Retry download it again.
+        TelegramDiagnostics.report(
+          'Indexing a published audio file',
+          error,
+          stackTrace,
+        );
+      }
       if (!_current(id, generation)) return;
       final latest = state[id]!;
       _put(
@@ -279,7 +309,13 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
       );
       try {
         await sync();
-      } catch (_) {}
+      } catch (error, stackTrace) {
+        TelegramDiagnostics.report(
+          'Refreshing the device music library',
+          error,
+          stackTrace,
+        );
+      }
       if (_current(id, generation) && initial.playWhenReady) {
         final audio = initial.audio;
         await ref.read(telegramDownloadPlayerProvider)(

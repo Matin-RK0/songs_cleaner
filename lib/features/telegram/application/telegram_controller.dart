@@ -11,9 +11,9 @@ import '../domain/telegram_repository.dart';
 import '../domain/telegram_auth_input.dart';
 import '../infrastructure/telegram_repository_impl.dart';
 import '../infrastructure/telegram_local_files.dart';
+import '../infrastructure/telegram_diagnostics.dart';
 import 'telegram_download_controller.dart';
 import 'telegram_preferences_controller.dart';
-import '../domain/telegram_download.dart';
 import 'telegram_artwork_provider.dart';
 import 'telegram_logout_preparation.dart';
 import '../../player/application/providers/player_controller.dart';
@@ -506,7 +506,12 @@ class TelegramChatController extends Notifier<TelegramChatState> {
       _search?.cancel();
       unawaited(fileSubscription.cancel());
     });
-    ref.listen(allSongsProvider, (_, _) => unawaited(_resolveSafely()));
+    // Wait for the derived matcher itself, not its source list: a source-list
+    // listener can still read the previous matcher during provider propagation.
+    ref.listen(
+      telegramLocalMatcherProvider,
+      (_, _) => unawaited(_resolveSafely()),
+    );
     ref.listen(telegramProvider.select((s) => s.cacheRevision), (_, _) {
       ++_loadVersion;
       ++_resolution;
@@ -515,13 +520,7 @@ class TelegramChatController extends Notifier<TelegramChatState> {
       state = state.copyWith(tracks: [], selected: {}, nextId: 0, busy: false);
     });
     ref.listen(
-      telegramDownloadsProvider.select(
-        (jobs) => Object.hashAll(
-          jobs.values
-              .where((job) => job.phase == TelegramDownloadPhase.completed)
-              .map((job) => Object.hash(job.audio.fileId, job.path)),
-        ),
-      ),
+      telegramPublishedPathsProvider,
       (_, _) => unawaited(_resolveSafely()),
     );
     ref.listen(telegramProvider.select((s) => s.auth), (_, auth) {
@@ -577,41 +576,77 @@ class TelegramChatController extends Notifier<TelegramChatState> {
     }
   }
 
-  Future<void> _resolveSafely() async {
-    try {
-      await _resolve();
-    } catch (_) {
-      if (ref.mounted) state = state.copyWith(failure: TelegramFailure.generic);
-    }
-  }
+  Future<void> _resolveSafely() => _resolve(reportErrors: true);
 
-  Future<void> _resolve() async {
-    final generation = ++_resolution;
-    final repository = ref.read(telegramRepositoryProvider);
-    final matcher = ref.read(telegramLocalMatcherProvider);
-    final bindings = await repository.loadBindings();
-    final paths = {
-      ..._audio.map((e) => bindings[e.key]).whereType<String>(),
-      ..._audio.map((e) => e.localPath),
-      for (final audio in _audio)
-        ...matcher.candidatesFor(audio).map((song) => song.path),
-    }..remove('');
-    final existing = await ref
-        .read(telegramLocalFilesProvider)
-        .existingPaths(paths);
-    if (!ref.mounted || generation != _resolution) return;
-    final jobs = ref.read(telegramDownloadsProvider);
-    state = state.copyWith(
-      tracks: _audio
-          .map(
-            (e) => matcher.resolve(
-              jobs[e.fileId]?.unfinished == true ? e.withLocalPath('') : e,
-              bindings,
-              existing,
-            ),
-          )
-          .toList(),
-    );
+  Future<void> _resolve({bool reportErrors = false}) async {
+    int? generation;
+    try {
+      final repository = ref.read(telegramRepositoryProvider);
+      final matcher = ref.read(telegramLocalMatcherProvider);
+      final published = ref.read(telegramPublishedPathsProvider);
+      // Reading a derived provider can synchronously deliver its listener.
+      // Reserve this generation afterwards so an awaited resolution owns its
+      // snapshot instead of returning before a nested listener has finished.
+      generation = ++_resolution;
+      final audio = _audio
+          .map((item) {
+            final path = published[item.fileId];
+            return path == null ? item : item.withLocalPath(path);
+          })
+          .toList(growable: false);
+      Map<String, String> savedBindings;
+      try {
+        savedBindings = await repository.loadBindings();
+      } catch (error, stackTrace) {
+        TelegramDiagnostics.report(
+          'Reading the local audio index',
+          error,
+          stackTrace,
+        );
+        savedBindings = const {};
+      }
+      if (!ref.mounted || generation != _resolution) return;
+      final bindings = {
+        ...savedBindings,
+        for (final item in audio)
+          if (published[item.fileId] != null) item.key: published[item.fileId]!,
+      };
+      final paths = {
+        ...audio.map((e) => bindings[e.key]).whereType<String>(),
+        ...audio.map((e) => e.localPath),
+        for (final item in audio)
+          ...matcher.candidatesFor(item).map((song) => song.path),
+      }..remove('');
+      final existing = await ref
+          .read(telegramLocalFilesProvider)
+          .existingPaths(paths);
+      if (!ref.mounted || generation != _resolution) return;
+      final jobs = ref.read(telegramDownloadsProvider);
+      _audio = audio;
+      state = state.copyWith(
+        tracks: audio
+            .map(
+              (item) => matcher.resolve(
+                jobs[item.fileId]?.unfinished == true
+                    ? item.withLocalPath('')
+                    : item,
+                bindings,
+                existing,
+              ),
+            )
+            .toList(),
+      );
+    } catch (error, stackTrace) {
+      if (!reportErrors) rethrow;
+      TelegramDiagnostics.report(
+        'Resolving local Telegram audio',
+        error,
+        stackTrace,
+      );
+      if (ref.mounted && generation == _resolution) {
+        state = state.copyWith(failure: TelegramFailure.generic);
+      }
+    }
   }
 
   Future<void> refresh({bool more = false}) async {

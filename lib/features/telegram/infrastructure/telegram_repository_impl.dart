@@ -14,6 +14,7 @@ import 'tdlib_transport.dart';
 import 'telegram_audio_mapper.dart';
 import 'telegram_chat_mapper.dart';
 import 'telegram_music_publisher.dart';
+import 'telegram_diagnostics.dart';
 import '../domain/telegram_download.dart';
 
 class TelegramRepositoryImpl implements TelegramRepository {
@@ -651,8 +652,9 @@ class TelegramRepositoryImpl implements TelegramRepository {
     staged['${audio.fileId}'] = audio.withLocalPath(sourcePath).toJson();
     stagedStore['temporaryAudio'] = staged;
     await _save();
+    final sourceSize = await File(sourcePath).length();
     final path = await _musicPublisher.publish(sourcePath, audio);
-    if (await File(path).length() != await File(sourcePath).length()) {
+    if (await File(path).length() != sourceSize) {
       throw const TelegramException(TelegramFailure.storage);
     }
     final store = await _store();
@@ -679,7 +681,19 @@ class TelegramRepositoryImpl implements TelegramRepository {
     }
     bindings[audio.key] = path;
     store['bindings'] = bindings;
-    await _save();
+    try {
+      await _save();
+    } catch (error, stackTrace) {
+      // The verified public file is already committed. Keep the private source
+      // and cleanup record until the index is durable; the in-memory snapshot
+      // will be retried by the next save.
+      TelegramDiagnostics.report(
+        'Persisting a published audio file',
+        error,
+        stackTrace,
+      );
+      return path;
+    }
     try {
       await _discardTemporary(audio.fileId);
     } catch (_) {

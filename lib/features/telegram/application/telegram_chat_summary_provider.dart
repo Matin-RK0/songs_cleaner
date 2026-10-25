@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../domain/telegram_download.dart';
 import 'telegram_controller.dart';
 import 'telegram_download_controller.dart';
 
@@ -7,15 +6,7 @@ final telegramChatLocalCountProvider = FutureProvider.autoDispose
     .family<int?, int>((ref, id) async {
       ref.watch(telegramProvider.select((state) => state.cacheRevision));
       final matcher = ref.watch(telegramLocalMatcherProvider);
-      ref.watch(
-        telegramDownloadsProvider.select(
-          (jobs) => Object.hashAll(
-            jobs.values
-                .where((job) => job.phase == TelegramDownloadPhase.completed)
-                .map((job) => Object.hash(job.audio.fileId, job.path)),
-          ),
-        ),
-      );
+      final published = ref.watch(telegramPublishedPathsProvider);
       final repository = ref.watch(telegramRepositoryProvider);
       final files = ref.watch(telegramLocalFilesProvider);
       // Cache-only reads keep browsing summaries from opening chat controllers
@@ -28,11 +19,15 @@ final telegramChatLocalCountProvider = FutureProvider.autoDispose
       if (audio.isEmpty && bindings.isEmpty) return null;
       if (!ref.mounted) return null;
       final jobs = ref.read(telegramDownloadsProvider);
+      for (final item in audio) {
+        final path = published[item.fileId];
+        if (path != null) bindings[item.key] = path;
+      }
       final playableAudio = {
         for (final item in audio)
           item.key: jobs[item.fileId]?.unfinished == true
               ? item.withLocalPath('')
-              : item,
+              : item.withLocalPath(published[item.fileId] ?? item.localPath),
       };
       final paths = {
         ...bindings.values,

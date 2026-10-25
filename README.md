@@ -84,7 +84,10 @@ two-step-verification passwords are not persisted by this app.
   explicit. Opening a Telegram message uses TDLib's message link when available.
 - The shared download panel shows received/total bytes, percentage, smoothed speed
   and approximate ETA. Receiving, waiting, paused, saving, failed and complete are
-  separate states. Completion means the public file has been committed/indexed.
+  separate states. Completion means the public file has been committed and verified.
+  Committed downloads become playable from their public path immediately; a
+  delayed library scan or a recoverable metadata-write error does not mark a
+  saved file as failed. Temporary source cleanup waits for a durable path index.
 - The application-level queue is independent of chat routes. It deduplicates by
   TDLib file id, supports pause/resume/cancel/retry, defaults to two concurrent
   transfers and allows one to three. Pending work is capped at 200 and finished
