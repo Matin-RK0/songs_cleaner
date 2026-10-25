@@ -88,9 +88,7 @@ class TelegramChatScreen extends ConsumerWidget {
             ? const _TelegramFolderSongs()
             : TelegramChatLibrary(chatId: chatId, connected: connected),
       ),
-      bottomNavigationBar: hasCurrent
-          ? const SafeArea(top: false, child: MiniPlayerBar())
-          : null,
+      bottomNavigationBar: hasCurrent ? const MiniPlayerBar() : null,
     );
   }
 }

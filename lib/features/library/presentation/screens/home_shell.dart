@@ -206,112 +206,115 @@ class _HomeShellState extends ConsumerState<HomeShell>
           tabs: [for (final tab in _tabs) Tab(text: tab.label(l10n))],
         ),
       ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              const NotificationPermissionBanner(),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    for (final tab in _tabs)
-                      KeyedSubtree(
-                        key: ValueKey(tab),
-                        child: switch (tab) {
-                          HomeTab.songs => SongsTab(
-                            scrollController: _songsScrollController,
-                          ),
-                          HomeTab.artists => GroupsTab(isArtists: true),
-                          HomeTab.albums => GroupsTab(isArtists: false),
-                          HomeTab.playlists => const PlaylistsTab(),
-                          HomeTab.telegram => const TelegramTab(),
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          AnimatedPositionedDirectional(
-            duration: AppMotion.normal,
-            curve: AppMotion.standard,
-            start: 0,
-            end: 0,
-            bottom: hasCurrent ? 0 : -MiniPlayerBar.height,
-            child: const MiniPlayerBar(),
-          ),
-          PositionedDirectional(
-            end: AppSpacing.md,
-            bottom: hasCurrent
-                ? MiniPlayerBar.height + AppSpacing.md
-                : AppSpacing.md,
-            child: HomeActionVisibility(
-              visible: onPlaylistsTab,
-              child: FloatingActionButton(
-                heroTag: 'new-playlist',
-                tooltip: l10n.newPlaylist,
-                onPressed: _createPlaylist,
-                child: const Icon(Icons.add_rounded),
-              ),
-            ),
-          ),
-          PositionedDirectional(
-            end: AppSpacing.md,
-            bottom: hasCurrent
-                ? MiniPlayerBar.height + AppSpacing.md
-                : AppSpacing.md,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+      body: SafeArea(
+        top: false,
+        child: Stack(
+          children: [
+            Column(
               children: [
-                HomeActionVisibility(
-                  visible: activeTab == HomeTab.songs,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: FloatingActionButton.small(
-                      heroTag: 'scroll-to-top',
-                      tooltip: l10n.scrollToTop,
-                      onPressed: _scrollToTop,
-                      child: const Icon(Icons.arrow_upward_rounded),
-                    ),
-                  ),
-                ),
-                HomeActionVisibility(
-                  visible: !onPlaylistsTab && !onTelegramTab,
-                  child: FloatingActionButton(
-                    heroTag: 'shuffle-all',
-                    tooltip: l10n.shuffleAll,
-                    onPressed: () async {
-                      final songs = ref.read(allSongsProvider);
-                      if (songs.isEmpty) return;
-                      await ref
-                          .read(playerProvider.notifier)
-                          .playAllShuffled(songs);
-                      if (!context.mounted) return;
-                      AppRouter.openPlayer(context);
-                    },
-                    child: const Icon(Icons.shuffle_rounded),
+                const NotificationPermissionBanner(),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      for (final tab in _tabs)
+                        KeyedSubtree(
+                          key: ValueKey(tab),
+                          child: switch (tab) {
+                            HomeTab.songs => SongsTab(
+                              scrollController: _songsScrollController,
+                            ),
+                            HomeTab.artists => GroupsTab(isArtists: true),
+                            HomeTab.albums => GroupsTab(isArtists: false),
+                            HomeTab.playlists => const PlaylistsTab(),
+                            HomeTab.telegram => const TelegramTab(),
+                          },
+                        ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-          PositionedDirectional(
-            end: AppSpacing.md + 64,
-            bottom: hasCurrent
-                ? MiniPlayerBar.height + AppSpacing.md
-                : AppSpacing.md,
-            child: HomeActionVisibility(
-              visible: !onPlaylistsTab && !onTelegramTab,
-              child: FloatingActionButton.small(
-                heroTag: 'scroll-to-current',
-                tooltip: l10n.nowPlaying,
-                onPressed: _scrollToCurrent,
-                child: const Icon(Icons.my_location_rounded),
+            AnimatedPositionedDirectional(
+              duration: AppMotion.normal,
+              curve: AppMotion.standard,
+              start: 0,
+              end: 0,
+              bottom: hasCurrent ? 0 : -MiniPlayerBar.height,
+              child: const MiniPlayerBar(),
+            ),
+            PositionedDirectional(
+              end: AppSpacing.md,
+              bottom: hasCurrent
+                  ? MiniPlayerBar.height + AppSpacing.md
+                  : AppSpacing.md,
+              child: HomeActionVisibility(
+                visible: onPlaylistsTab,
+                child: FloatingActionButton(
+                  heroTag: 'new-playlist',
+                  tooltip: l10n.newPlaylist,
+                  onPressed: _createPlaylist,
+                  child: const Icon(Icons.add_rounded),
+                ),
               ),
             ),
-          ),
-        ],
+            PositionedDirectional(
+              end: AppSpacing.md,
+              bottom: hasCurrent
+                  ? MiniPlayerBar.height + AppSpacing.md
+                  : AppSpacing.md,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  HomeActionVisibility(
+                    visible: activeTab == HomeTab.songs,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: FloatingActionButton.small(
+                        heroTag: 'scroll-to-top',
+                        tooltip: l10n.scrollToTop,
+                        onPressed: _scrollToTop,
+                        child: const Icon(Icons.arrow_upward_rounded),
+                      ),
+                    ),
+                  ),
+                  HomeActionVisibility(
+                    visible: !onPlaylistsTab && !onTelegramTab,
+                    child: FloatingActionButton(
+                      heroTag: 'shuffle-all',
+                      tooltip: l10n.shuffleAll,
+                      onPressed: () async {
+                        final songs = ref.read(allSongsProvider);
+                        if (songs.isEmpty) return;
+                        await ref
+                            .read(playerProvider.notifier)
+                            .playAllShuffled(songs);
+                        if (!context.mounted) return;
+                        AppRouter.openPlayer(context);
+                      },
+                      child: const Icon(Icons.shuffle_rounded),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            PositionedDirectional(
+              end: AppSpacing.md + 64,
+              bottom: hasCurrent
+                  ? MiniPlayerBar.height + AppSpacing.md
+                  : AppSpacing.md,
+              child: HomeActionVisibility(
+                visible: !onPlaylistsTab && !onTelegramTab,
+                child: FloatingActionButton.small(
+                  heroTag: 'scroll-to-current',
+                  tooltip: l10n.nowPlaying,
+                  onPressed: _scrollToCurrent,
+                  child: const Icon(Icons.my_location_rounded),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

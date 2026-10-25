@@ -89,65 +89,67 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
         ],
       ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: library.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => AppErrorState(
-                title: context.l10n.errorLoadFailedTitle,
-                message: context.l10n.errorLoadFailedMessage,
-              ),
-              data: (state) {
-                final query = _query.trim().toLowerCase().replaceAll(' ', '');
-                final songs = query.isEmpty
-                    ? state.songs
-                    : state.songs
-                          .where((song) {
-                            final title = song.title.toLowerCase().replaceAll(
-                              ' ',
-                              '',
-                            );
-                            final artist = song.artist.toLowerCase().replaceAll(
-                              ' ',
-                              '',
-                            );
-                            return title.contains(query) ||
-                                artist.contains(query);
-                          })
-                          .toList(growable: false);
-                if (songs.isEmpty) {
-                  return AppEmptyState(
-                    icon: Icons.search_off_rounded,
-                    title: context.l10n.noResultsTitle,
-                    message: context.l10n.noResultsMessage,
+      body: SafeArea(
+        top: false,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: library.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, _) => AppErrorState(
+                  title: context.l10n.errorLoadFailedTitle,
+                  message: context.l10n.errorLoadFailedMessage,
+                ),
+                data: (state) {
+                  final query = _query.trim().toLowerCase().replaceAll(' ', '');
+                  final songs = query.isEmpty
+                      ? state.songs
+                      : state.songs
+                            .where((song) {
+                              final title = song.title.toLowerCase().replaceAll(
+                                ' ',
+                                '',
+                              );
+                              final artist = song.artist
+                                  .toLowerCase()
+                                  .replaceAll(' ', '');
+                              return title.contains(query) ||
+                                  artist.contains(query);
+                            })
+                            .toList(growable: false);
+                  if (songs.isEmpty) {
+                    return AppEmptyState(
+                      icon: Icons.search_off_rounded,
+                      title: context.l10n.noResultsTitle,
+                      message: context.l10n.noResultsMessage,
+                    );
+                  }
+                  return AnimatedSwitcher(
+                    duration: AppMotion.fast,
+                    switchInCurve: AppMotion.standard,
+                    switchOutCurve: AppMotion.standard,
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: SongListView(
+                      key: ValueKey('${_query.trim()}-${songs.length}'),
+                      songs: songs,
+                      currentSongId: currentId,
+                      physics: const ClampingScrollPhysics(),
+                      onSongTap: (items, index) => ref
+                          .read(playerProvider.notifier)
+                          .playFromList(items, startIndex: index),
+                    ),
                   );
-                }
-                return AnimatedSwitcher(
-                  duration: AppMotion.fast,
-                  switchInCurve: AppMotion.standard,
-                  switchOutCurve: AppMotion.standard,
-                  transitionBuilder: (child, animation) =>
-                      FadeTransition(opacity: animation, child: child),
-                  child: SongListView(
-                    key: ValueKey('${_query.trim()}-${songs.length}'),
-                    songs: songs,
-                    currentSongId: currentId,
-                    physics: const ClampingScrollPhysics(),
-                    onSongTap: (items, index) => ref
-                        .read(playerProvider.notifier)
-                        .playFromList(items, startIndex: index),
-                  ),
-                );
-              },
+                },
+              ),
             ),
-          ),
-          if (currentId != null)
-            const Align(
-              alignment: Alignment.bottomCenter,
-              child: MiniPlayerBar(),
-            ),
-        ],
+            if (currentId != null)
+              const Align(
+                alignment: Alignment.bottomCenter,
+                child: MiniPlayerBar(),
+              ),
+          ],
+        ),
       ),
     );
   }

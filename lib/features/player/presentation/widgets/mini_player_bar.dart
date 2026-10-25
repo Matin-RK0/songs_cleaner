@@ -34,133 +34,138 @@ class MiniPlayerBar extends ConsumerWidget {
       }),
     );
 
-    return SizedBox(
-      width: double.infinity,
-      height: height,
-      child: _MiniPlayerGestures(
-        onPrevious: () => ref.read(playerProvider.notifier).previous(),
-        onNext: () => ref.read(playerProvider.notifier).next(),
-        child: Material(
-          color: colors.surfaceHigh,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: AppRadius.lg.topLeft),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: RepaintBoundary(
-                  child: AnimatedSwitcher(
-                    duration: AppMotion.normal,
-                    switchInCurve: AppMotion.standard,
-                    switchOutCurve: AppMotion.standard,
-                    transitionBuilder: (child, animation) =>
-                        FadeTransition(opacity: animation, child: child),
-                    child: ArtworkImage(
-                      key: ValueKey(song.id),
-                      songId: song.id,
-                      size: 300,
-                      expand: true,
-                      borderRadius: BorderRadius.vertical(
-                        top: AppRadius.lg.topLeft,
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        width: double.infinity,
+        height: height,
+        child: _MiniPlayerGestures(
+          onPrevious: () => ref.read(playerProvider.notifier).previous(),
+          onNext: () => ref.read(playerProvider.notifier).next(),
+          child: Material(
+            color: colors.surfaceHigh,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: AppRadius.lg.topLeft),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: RepaintBoundary(
+                    child: AnimatedSwitcher(
+                      duration: AppMotion.normal,
+                      switchInCurve: AppMotion.standard,
+                      switchOutCurve: AppMotion.standard,
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      child: ArtworkImage(
+                        key: ValueKey(song.id),
+                        songId: song.id,
+                        size: 300,
+                        expand: true,
+                        borderRadius: BorderRadius.vertical(
+                          top: AppRadius.lg.topLeft,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              Positioned.fill(child: ColoredBox(color: colors.scrim)),
-              Stack(
-                children: [
-                  AnimatedSwitcher(
-                    duration: AppMotion.normal,
-                    switchInCurve: AppMotion.standard,
-                    switchOutCurve: AppMotion.standard,
-                    transitionBuilder: (child, animation) =>
-                        FadeTransition(opacity: animation, child: child),
-                    child: ListTile(
-                      key: ValueKey(song.id),
-                      onTap: () => AppRouter.openPlayer(context),
-                      contentPadding: const EdgeInsetsDirectional.fromSTEB(
-                        AppSpacing.md,
-                        0,
-                        AppSpacing.sm,
-                        0,
-                      ),
-                      splashColor: Colors.transparent,
-                      leading: DecoratedBox(
-                        decoration: ShapeDecoration(
-                          color: colors.primary.withValues(alpha: 0.24),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.lg,
-                          ),
+                Positioned.fill(child: ColoredBox(color: colors.scrim)),
+                Stack(
+                  children: [
+                    AnimatedSwitcher(
+                      duration: AppMotion.normal,
+                      switchInCurve: AppMotion.standard,
+                      switchOutCurve: AppMotion.standard,
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      child: ListTile(
+                        key: ValueKey(song.id),
+                        onTap: () => AppRouter.openPlayer(context),
+                        contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                          AppSpacing.md,
+                          0,
+                          AppSpacing.sm,
+                          0,
                         ),
-                        child: Hero(
-                          tag: 'song-artwork-${song.id}',
-                          child: ArtworkImage(
-                            songId: song.id,
-                            size: 45,
-                            borderRadius: AppRadius.lg,
-                          ),
-                        ),
-                      ),
-                      title: Text(
-                        song.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.emphasisTitle.copyWith(
-                          color: colors.onScrim,
-                        ),
-                      ),
-                      subtitle: Text(
-                        song.artist.isEmpty ? l10n.unknownArtist : song.artist,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.songSubtitle.copyWith(
-                          color: colors.onScrimMuted,
-                        ),
-                      ),
-                      trailing: SizedBox(
-                        width: 50,
-                        height: 50,
-                        child: _PlayPauseProgress(
-                          progress: progress,
-                          playing: playing,
-                          onPressed: () =>
-                              ref.read(playerProvider.notifier).playPause(),
-                          tooltip: playing
-                              ? l10n.pauseTooltip
-                              : l10n.playTooltip,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 60),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                      ),
-                      title: _MiniSongProgress(
-                        value: progress,
-                        onChanged: (value) => ref
-                            .read(playerProvider.notifier)
-                            .seek(
-                              Duration(
-                                milliseconds:
-                                    (value *
-                                            ref
-                                                .read(playerProvider)
-                                                .duration
-                                                .inMilliseconds)
-                                        .round(),
-                              ),
+                        splashColor: Colors.transparent,
+                        leading: DecoratedBox(
+                          decoration: ShapeDecoration(
+                            color: colors.primary.withValues(alpha: 0.24),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AppRadius.lg,
                             ),
+                          ),
+                          child: Hero(
+                            tag: 'song-artwork-${song.id}',
+                            child: ArtworkImage(
+                              songId: song.id,
+                              size: 45,
+                              borderRadius: AppRadius.lg,
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          song.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.emphasisTitle.copyWith(
+                            color: colors.onScrim,
+                          ),
+                        ),
+                        subtitle: Text(
+                          song.artist.isEmpty
+                              ? l10n.unknownArtist
+                              : song.artist,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.songSubtitle.copyWith(
+                            color: colors.onScrimMuted,
+                          ),
+                        ),
+                        trailing: SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: _PlayPauseProgress(
+                            progress: progress,
+                            playing: playing,
+                            onPressed: () =>
+                                ref.read(playerProvider.notifier).playPause(),
+                            tooltip: playing
+                                ? l10n.pauseTooltip
+                                : l10n.playTooltip,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    Padding(
+                      padding: const EdgeInsets.only(top: 60),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                        ),
+                        title: _MiniSongProgress(
+                          value: progress,
+                          onChanged: (value) => ref
+                              .read(playerProvider.notifier)
+                              .seek(
+                                Duration(
+                                  milliseconds:
+                                      (value *
+                                              ref
+                                                  .read(playerProvider)
+                                                  .duration
+                                                  .inMilliseconds)
+                                          .round(),
+                                ),
+                              ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
