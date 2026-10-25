@@ -238,6 +238,15 @@ class AppLocalizationsFa extends AppLocalizations {
   String get telegramContinue => 'ادامه';
 
   @override
+  String get telegramEditPhone => 'ویرایش شماره تلفن';
+
+  @override
+  String get telegramSendCode => 'دریافت کد ورود';
+
+  @override
+  String get telegramReturnToCode => 'بازگشت به ورود کد';
+
+  @override
   String get telegramStarting => 'در حال برقراری اتصال امن…';
 
   @override

@@ -51,24 +51,33 @@ class TelegramState {
     this.busy = false,
     this.failure,
     this.query = '',
+    this.phone = '',
+    this.editingPhone = false,
   });
   final TelegramAuth auth;
   final List<TelegramChat> chats;
   final bool busy;
   final TelegramFailure? failure;
   final String query;
+  final String phone;
+  final bool editingPhone;
+  TelegramAuth get authStep => editingPhone ? TelegramAuth.phone : auth;
   TelegramState copyWith({
     TelegramAuth? auth,
     List<TelegramChat>? chats,
     bool? busy,
     TelegramFailure? failure,
     String? query,
+    String? phone,
+    bool? editingPhone,
   }) => TelegramState(
     auth: auth ?? this.auth,
     chats: chats ?? this.chats,
     busy: busy ?? this.busy,
     failure: failure,
     query: query ?? this.query,
+    phone: phone ?? this.phone,
+    editingPhone: editingPhone ?? this.editingPhone,
   );
 }
 
@@ -122,7 +131,7 @@ class TelegramController extends Notifier<TelegramState> {
     final subscription = repository.authorization.listen((auth) {
       if (!ref.mounted) return;
       final previous = state.auth;
-      state = state.copyWith(auth: auth);
+      state = state.copyWith(auth: auth, editingPhone: false);
       if (auth == TelegramAuth.ready && previous != auth) {
         unawaited(_refreshAfterLogin());
       }
@@ -167,14 +176,28 @@ class TelegramController extends Notifier<TelegramState> {
 
   Future<void> connect() =>
       _run(() => ref.read(telegramRepositoryProvider).connect());
-  Future<void> submit(String value) => _run(() {
+  void editPhone() {
+    if (state.busy || state.auth != TelegramAuth.code) return;
+    state = state.copyWith(editingPhone: true);
+  }
+
+  void cancelPhoneEdit() {
+    if (state.busy || !state.editingPhone) return;
+    state = state.copyWith(editingPhone: false);
+  }
+
+  Future<void> submit(String value) => _run(() async {
     final repository = ref.read(telegramRepositoryProvider);
-    return switch (state.auth) {
-      TelegramAuth.phone => repository.submitPhone(value),
-      TelegramAuth.code => repository.submitCode(value),
+    final step = state.authStep;
+    await switch (step) {
+      TelegramAuth.phone => repository.submitPhone(value.trim()),
+      TelegramAuth.code => repository.submitCode(value.trim()),
       TelegramAuth.password => repository.submitPassword(value),
       _ => Future<void>.value(),
     };
+    if (ref.mounted && step == TelegramAuth.phone) {
+      state = state.copyWith(phone: value.trim(), editingPhone: false);
+    }
   });
   Future<void> _refreshAfterLogin() async {
     while (ref.mounted && state.busy) {

@@ -32,77 +32,110 @@ class _TelegramAuthScreenState extends ConsumerState<TelegramAuthScreen> {
       TelegramAuth.phone,
       TelegramAuth.code,
       TelegramAuth.password,
-    }.contains(state.auth);
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.telegramConnect)),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: AppSpacing.contentMaxWidth,
-            ),
-            child: ListView(
-              padding: AppSpacing.allLg,
-              children: [
-                Icon(
-                  Icons.telegram_rounded,
-                  size: AppSpacing.iconHero,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                if (state.auth == TelegramAuth.starting ||
-                    state.busy && !input) ...[
-                  const Center(child: CircularProgressIndicator()),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(l10n.telegramStarting, textAlign: TextAlign.center),
-                ] else if (input)
-                  _TelegramAuthForm(
-                    key: ValueKey(state.auth),
-                    auth: state.auth,
-                    busy: state.busy,
-                  )
-                else ...[
+    }.contains(state.authStep);
+    final interceptBack =
+        state.busy || (state.auth == TelegramAuth.code && !state.editingPhone);
+    return PopScope(
+      canPop: !interceptBack,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _back(state);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.telegramConnect),
+          leading: BackButton(
+            onPressed: state.busy ? null : () => _back(state),
+          ),
+        ),
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppSpacing.contentMaxWidth,
+              ),
+              child: ListView(
+                padding: AppSpacing.allLg,
+                children: [
+                  Icon(
+                    Icons.telegram_rounded,
+                    size: AppSpacing.iconHero,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  if (state.auth == TelegramAuth.starting ||
+                      state.busy && !input) ...[
+                    const Center(child: CircularProgressIndicator()),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(l10n.telegramStarting, textAlign: TextAlign.center),
+                  ] else if (input)
+                    _TelegramAuthForm(
+                      key: ValueKey((state.authStep, state.editingPhone)),
+                      auth: state.authStep,
+                      busy: state.busy,
+                      phone: state.phone,
+                      editingPhone: state.editingPhone,
+                    )
+                  else ...[
+                    Text(
+                      switch (state.auth) {
+                        TelegramAuth.unconfigured => l10n.telegramSetup,
+                        TelegramAuth.unsupported => l10n.telegramUnsupported,
+                        TelegramAuth.other => l10n.telegramOtherAuth,
+                        _ => l10n.telegramConnect,
+                      },
+                      style: theme.textTheme.titleLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    if (state.auth == TelegramAuth.unconfigured)
+                      Text(l10n.telegramSetupHint),
+                    if (state.auth == TelegramAuth.disconnected)
+                      FilledButton.icon(
+                        onPressed: ref.read(telegramProvider.notifier).connect,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: Text(l10n.telegramReconnect),
+                      ),
+                  ],
+                  if (state.failure != null)
+                    TelegramErrorBanner(failure: state.failure!),
+                  const SizedBox(height: AppSpacing.xl),
                   Text(
-                    switch (state.auth) {
-                      TelegramAuth.unconfigured => l10n.telegramSetup,
-                      TelegramAuth.unsupported => l10n.telegramUnsupported,
-                      TelegramAuth.other => l10n.telegramOtherAuth,
-                      _ => l10n.telegramConnect,
-                    },
-                    style: theme.textTheme.titleLarge,
+                    l10n.telegramPrivacy,
+                    style: theme.textTheme.bodySmall,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  if (state.auth == TelegramAuth.unconfigured)
-                    Text(l10n.telegramSetupHint),
-                  if (state.auth == TelegramAuth.disconnected)
-                    FilledButton.icon(
-                      onPressed: ref.read(telegramProvider.notifier).connect,
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: Text(l10n.telegramReconnect),
-                    ),
                 ],
-                if (state.failure != null)
-                  TelegramErrorBanner(failure: state.failure!),
-                const SizedBox(height: AppSpacing.xl),
-                Text(
-                  l10n.telegramPrivacy,
-                  style: theme.textTheme.bodySmall,
-                  textAlign: TextAlign.center,
-                ),
-              ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
+  void _back(TelegramState state) {
+    if (state.busy) return;
+    final controller = ref.read(telegramProvider.notifier);
+    if (state.auth == TelegramAuth.code && !state.editingPhone) {
+      controller.editPhone();
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
 }
 
 class _TelegramAuthForm extends ConsumerStatefulWidget {
-  const _TelegramAuthForm({super.key, required this.auth, required this.busy});
+  const _TelegramAuthForm({
+    super.key,
+    required this.auth,
+    required this.busy,
+    required this.phone,
+    required this.editingPhone,
+  });
   final TelegramAuth auth;
   final bool busy;
+  final String phone;
+  final bool editingPhone;
   @override
   ConsumerState<_TelegramAuthForm> createState() => _TelegramAuthFormState();
 }
@@ -114,7 +147,9 @@ class _TelegramAuthFormState extends ConsumerState<_TelegramAuthForm> {
   void initState() {
     super.initState();
     final initial = widget.auth == TelegramAuth.phone
-        ? TelegramAuthDefaults.phoneCountryCode
+        ? (widget.phone.isEmpty
+              ? TelegramAuthDefaults.phoneCountryCode
+              : widget.phone)
         : '';
     _input = TextEditingController.fromValue(
       TextEditingValue(
@@ -131,7 +166,9 @@ class _TelegramAuthFormState extends ConsumerState<_TelegramAuthForm> {
   }
 
   void _submit() {
-    if (!widget.busy) ref.read(telegramProvider.notifier).submit(_input.text);
+    if (!widget.busy && _input.text.trim().isNotEmpty) {
+      ref.read(telegramProvider.notifier).submit(_input.text);
+    }
   }
 
   @override
@@ -159,6 +196,18 @@ class _TelegramAuthFormState extends ConsumerState<_TelegramAuthForm> {
               : l10n.telegramCodeHint,
         ),
         const SizedBox(height: AppSpacing.lg),
+        if (!phone && widget.phone.isNotEmpty) ...[
+          Text(widget.phone, textDirection: TextDirection.ltr),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        if (widget.auth == TelegramAuth.code)
+          TextButton.icon(
+            onPressed: widget.busy
+                ? null
+                : ref.read(telegramProvider.notifier).editPhone,
+            icon: const Icon(Icons.edit_rounded),
+            label: Text(l10n.telegramEditPhone),
+          ),
         TextField(
           controller: _input,
           autofocus: true,
@@ -190,12 +239,28 @@ class _TelegramAuthFormState extends ConsumerState<_TelegramAuthForm> {
           onSubmitted: (_) => _submit(),
         ),
         const SizedBox(height: AppSpacing.lg),
-        FilledButton(
-          onPressed: widget.busy ? null : _submit,
-          child: Text(
-            widget.busy ? l10n.telegramStarting : l10n.telegramContinue,
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: _input,
+          builder: (context, value, _) => FilledButton(
+            onPressed: widget.busy || value.text.trim().isEmpty
+                ? null
+                : _submit,
+            child: Text(
+              widget.busy
+                  ? l10n.telegramStarting
+                  : phone
+                  ? l10n.telegramSendCode
+                  : l10n.telegramContinue,
+            ),
           ),
         ),
+        if (widget.editingPhone)
+          TextButton(
+            onPressed: widget.busy
+                ? null
+                : ref.read(telegramProvider.notifier).cancelPhoneEdit,
+            child: Text(l10n.telegramReturnToCode),
+          ),
       ],
     );
   }

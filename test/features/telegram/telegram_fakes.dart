@@ -52,6 +52,8 @@ class FakeTelegramRepository implements TelegramRepository {
   TelegramFailure? failure;
   bool session = false;
   int connectCalls = 0;
+  final submittedPhones = <String>[];
+  Completer<void>? pendingPhone;
   int audioCalls = 0;
   int downloadCalls = 0;
   int lastFromId = -1;
@@ -80,7 +82,13 @@ class FakeTelegramRepository implements TelegramRepository {
   }
 
   @override
-  Future<void> submitPhone(String phone) async => events.add(TelegramAuth.code);
+  Future<void> submitPhone(String phone) async {
+    submittedPhones.add(phone);
+    await pendingPhone?.future;
+    if (failure != null) throw TelegramException(failure!);
+    events.add(TelegramAuth.code);
+  }
+
   @override
   Future<void> submitCode(String code) async {
     if (failure != null) throw TelegramException(failure!);

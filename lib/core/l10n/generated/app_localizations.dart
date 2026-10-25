@@ -499,6 +499,24 @@ abstract class AppLocalizations {
   /// **'ادامه'**
   String get telegramContinue;
 
+  /// No description provided for @telegramEditPhone.
+  ///
+  /// In fa, this message translates to:
+  /// **'ویرایش شماره تلفن'**
+  String get telegramEditPhone;
+
+  /// No description provided for @telegramSendCode.
+  ///
+  /// In fa, this message translates to:
+  /// **'دریافت کد ورود'**
+  String get telegramSendCode;
+
+  /// No description provided for @telegramReturnToCode.
+  ///
+  /// In fa, this message translates to:
+  /// **'بازگشت به ورود کد'**
+  String get telegramReturnToCode;
+
   /// No description provided for @telegramStarting.
   ///
   /// In fa, this message translates to:

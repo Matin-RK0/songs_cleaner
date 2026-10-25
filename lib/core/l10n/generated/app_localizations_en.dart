@@ -238,6 +238,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telegramContinue => 'Continue';
 
   @override
+  String get telegramEditPhone => 'Edit phone number';
+
+  @override
+  String get telegramSendCode => 'Send verification code';
+
+  @override
+  String get telegramReturnToCode => 'Back to verification code';
+
+  @override
   String get telegramStarting => 'Connecting securely…';
 
   @override
