@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../extensions/context_l10n.dart';
 import '../theme/app_color_picker_tokens.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'app_color_picker_editor.dart';
+import 'app_sheet_actions.dart';
 
 class AppColorPickerSheet extends StatefulWidget {
   const AppColorPickerSheet({
@@ -122,84 +122,17 @@ class _AppColorPickerSheetState extends State<AppColorPickerSheet> {
                           ),
                           const SizedBox(height: AppSpacing.sm),
                         ],
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: FilledButton(
-                                style: FilledButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(
-                                    AppColorPickerTokens.actionMinHeight,
-                                  ),
-                                ),
-                                onPressed: _saving
-                                    ? null
-                                    : () =>
-                                          _submit(() => widget.onSave(_draft)),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    if (_saving) ...[
-                                      SizedBox.square(
-                                        dimension:
-                                            AppColorPickerTokens.progressSize,
-                                        child: CircularProgressIndicator(
-                                          color: colors.onPrimary,
-                                          strokeWidth: AppColorPickerTokens
-                                              .progressStroke,
-                                          semanticsLabel: l10n.saveAction,
-                                        ),
-                                      ),
-                                      const SizedBox(width: AppSpacing.sm),
-                                    ],
-                                    Flexible(child: Text(l10n.saveAction)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: TextButton(
-                                style: TextButton.styleFrom(
-                                  foregroundColor: colors.textHigh,
-                                  backgroundColor: colors.surfaceHigh,
-                                  minimumSize: const Size.fromHeight(
-                                    AppColorPickerTokens.actionMinHeight,
-                                  ),
-                                  padding: AppSpacing.hMdVSm,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: AppRadius.md,
-                                  ),
-                                  textStyle: AppTypography.buttonLabel,
-                                ),
-                                onPressed: _saving
-                                    ? null
-                                    : () => Navigator.of(context).pop(),
-                                child: Text(l10n.cancel),
-                              ),
-                            ),
-                          ],
+                        AppSheetActions(
+                          primaryLabel: l10n.saveAction,
+                          onPrimary: () => _submit(() => widget.onSave(_draft)),
+                          cancelLabel: l10n.cancel,
+                          onCancel: () => Navigator.of(context).pop(),
+                          busy: _saving,
+                          resetLabel: widget.resetLabel,
+                          onReset: widget.onReset == null
+                              ? null
+                              : () => _submit(widget.onReset!),
                         ),
-                        if (widget.resetLabel != null &&
-                            widget.onReset != null) ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: colors.textMedium,
-                              minimumSize: const Size.fromHeight(
-                                AppColorPickerTokens.actionMinHeight,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: AppRadius.md,
-                              ),
-                              textStyle: AppTypography.buttonLabel,
-                            ),
-                            onPressed: _saving
-                                ? null
-                                : () => _submit(widget.onReset!),
-                            child: Text(widget.resetLabel!),
-                          ),
-                        ],
                       ],
                     ),
                   ),

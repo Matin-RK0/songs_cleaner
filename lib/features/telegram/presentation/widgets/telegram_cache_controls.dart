@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_feedback.dart';
+import '../../../../core/widgets/app_sheet_actions.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../application/telegram_controller.dart';
 import '../../domain/telegram_models.dart';
 
@@ -17,7 +19,10 @@ class TelegramCacheTile extends ConsumerWidget {
       telegramProvider.select((state) => state.clearingCache),
     );
     return ListTile(
-      leading: const Icon(Icons.cleaning_services_outlined),
+      leading: Icon(
+        Icons.cleaning_services_outlined,
+        color: context.colors.primary,
+      ),
       title: Text(context.l10n.telegramClearCache),
       subtitle: Semantics(
         liveRegion: clearing,
@@ -27,7 +32,13 @@ class TelegramCacheTile extends ConsumerWidget {
               : context.l10n.telegramClearCacheSubtitle,
         ),
       ),
-      trailing: clearing ? const _CacheProgress() : null,
+      trailing: clearing
+          ? const _CacheProgress()
+          : Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: AppSpacing.md,
+              color: context.colors.textLow,
+            ),
       enabled: !busy,
       onTap: () => showTelegramCacheDialog(context, ref),
     );
@@ -98,13 +109,15 @@ Future<void> showTelegramCacheDialog(
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(l10n.telegramClearCache),
+          SizedBox(
+            width: double.infinity,
+            child: AppSheetActions(
+              primaryLabel: l10n.telegramClearCache,
+              onPrimary: () => Navigator.pop(dialogContext, true),
+              cancelLabel: l10n.cancel,
+              onCancel: () => Navigator.pop(dialogContext, false),
+              destructive: true,
+            ),
           ),
         ],
       ),

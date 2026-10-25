@@ -139,7 +139,7 @@ void main() {
       await tester.tap(swatch);
       await tester.pump();
       expect(tester.widget<Text>(hex).data, '#30343B');
-      await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
+      await tester.tap(find.widgetWithText(OutlinedButton, l10n.cancel));
       await tester.pumpAndSettle();
 
       expect(find.byType(AppColorPickerSheet), findsNothing);
@@ -150,7 +150,7 @@ void main() {
       await tester.tap(find.byType(ListTile));
       await tester.pumpAndSettle();
       expect(tester.widget<Text>(hex).data, '#123456');
-      await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
+      await tester.tap(find.widgetWithText(OutlinedButton, l10n.cancel));
       await tester.pumpAndSettle();
     } finally {
       debugDefaultTargetPlatformOverride = null;

@@ -12,6 +12,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/primary_color_controller.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/widgets/app_color_picker_sheet.dart';
+import '../../../../core/widgets/app_choice_sheet.dart';
+import '../../../../core/widgets/app_sheet_actions.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../app/router/route_names.dart';
@@ -22,6 +24,7 @@ import '../../../library/presentation/widgets/home_tabs_setting_tile.dart';
 import '../../../player/presentation/widgets/widget_background_setting_tile.dart';
 import '../../../telegram/presentation/widgets/telegram_cache_controls.dart';
 import '../../application/providers/lock_screen_controller.dart';
+import '../widgets/settings_section.dart';
 
 /// App settings. Exposes appearance, lock-screen and playback toggles.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -34,42 +37,18 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _showLockScreenTimeoutSheet(int current) async {
     final l10n = context.l10n;
-    final selected = await showModalBottomSheet<int>(
+    final selected = await showAppChoiceSheet<int>(
       context: context,
-      showDragHandle: true,
-      backgroundColor: context.colors.surfaceHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Text(
-                l10n.lockScreenTimeoutTitle,
-                style: AppTypography.sectionTitle,
-              ),
-            ),
-            RadioGroup<int>(
-              groupValue: current,
-              onChanged: (value) => Navigator.of(sheetContext).pop(value),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final seconds
-                      in AppSettingsRepository.lockScreenTimeoutOptions)
-                    RadioListTile<int>(
-                      value: seconds,
-                      title: Text(l10n.lockScreenTimeoutSeconds(seconds)),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      title: l10n.lockScreenTimeoutTitle,
+      current: current,
+      choices: [
+        for (final seconds in AppSettingsRepository.lockScreenTimeoutOptions)
+          AppChoice(
+            value: seconds,
+            label: l10n.lockScreenTimeoutSeconds(seconds),
+            icon: Icons.timer_outlined,
+          ),
+      ],
     );
     if (selected != null && mounted) {
       await ref
@@ -141,51 +120,63 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final colors = context.colors;
     final result = await showModalBottomSheet<bool>(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       backgroundColor: colors.surfaceHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
       ),
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          AppSpacing.lg,
-          0,
-          AppSpacing.lg,
-          AppSpacing.lg,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.layers_rounded, size: 34, color: colors.primary),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              l10n.lockScreenPermissionTitle,
-              style: AppTypography.sheetTitleSmall.copyWith(
-                color: colors.textHigh,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppSpacing.contentMaxWidth,
+              ),
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.layers_rounded,
+                      size: AppSpacing.xl,
+                      color: colors.primary,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      l10n.lockScreenPermissionTitle,
+                      style: AppTypography.sheetTitleSmall.copyWith(
+                        color: colors.textHigh,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      l10n.lockScreenPermissionMessage,
+                      style: AppTypography.body.copyWith(
+                        color: colors.textMedium,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    AppSheetActions(
+                      primaryLabel: l10n.lockScreenPermissionAllow,
+                      onPrimary: () => Navigator.of(sheetContext).pop(true),
+                      cancelLabel: l10n.lockScreenPermissionNotNow,
+                      onCancel: () => Navigator.of(sheetContext).pop(false),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              l10n.lockScreenPermissionMessage,
-              style: AppTypography.body.copyWith(color: colors.textMedium),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(sheetContext).pop(false),
-                  child: Text(l10n.lockScreenPermissionNotNow),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                FilledButton(
-                  onPressed: () => Navigator.of(sheetContext).pop(true),
-                  child: Text(l10n.lockScreenPermissionAllow),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -196,45 +187,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final l10n = context.l10n;
     final current = ref.read(appThemeModeProvider);
 
-    final selected = await showModalBottomSheet<ThemeMode>(
+    final selected = await showAppChoiceSheet<ThemeMode>(
       context: context,
-      showDragHandle: true,
-      backgroundColor: context.colors.surfaceHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Text(
-                l10n.themeModeTitle,
-                style: AppTypography.sectionTitle.copyWith(
-                  color: sheetContext.colors.textHigh,
-                ),
-              ),
-            ),
-            RadioGroup<ThemeMode>(
-              groupValue: current,
-              onChanged: (value) => Navigator.of(sheetContext).pop(value),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final mode in ThemeMode.values)
-                    RadioListTile<ThemeMode>(
-                      value: mode,
-                      activeColor: sheetContext.colors.primary,
-                      title: Text(_themeModeLabel(l10n, mode)),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-        ),
-      ),
+      title: l10n.themeModeTitle,
+      current: current,
+      choices: [
+        for (final mode in ThemeMode.values)
+          AppChoice(
+            value: mode,
+            label: _themeModeLabel(l10n, mode),
+            icon: _themeModeIcon(mode),
+          ),
+      ],
     );
 
     if (selected != null) {
@@ -275,45 +239,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final l10n = context.l10n;
     final current = _languageChoice(ref.read(appLocaleProvider));
 
-    final selected = await showModalBottomSheet<_LanguageChoice>(
+    final selected = await showAppChoiceSheet<_LanguageChoice>(
       context: context,
-      showDragHandle: true,
-      backgroundColor: context.colors.surfaceHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Text(
-                l10n.languageTitle,
-                style: AppTypography.sectionTitle.copyWith(
-                  color: sheetContext.colors.textHigh,
-                ),
-              ),
-            ),
-            RadioGroup<_LanguageChoice>(
-              groupValue: current,
-              onChanged: (value) => Navigator.of(sheetContext).pop(value),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final choice in _LanguageChoice.values)
-                    RadioListTile<_LanguageChoice>(
-                      value: choice,
-                      activeColor: sheetContext.colors.primary,
-                      title: Text(_languageLabel(l10n, choice)),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-        ),
-      ),
+      title: l10n.languageTitle,
+      current: current,
+      choices: [
+        for (final choice in _LanguageChoice.values)
+          AppChoice(
+            value: choice,
+            label: _languageLabel(l10n, choice),
+            icon: Icons.translate_rounded,
+          ),
+      ],
     );
 
     if (selected != null) {
@@ -338,38 +275,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _showAudioFocusSheet() async {
     final current = ref.read(audioFocusModeProvider);
-    final selected = await showModalBottomSheet<AudioFocusMode>(
+    final selected = await showAppChoiceSheet<AudioFocusMode>(
       context: context,
-      showDragHandle: true,
-      backgroundColor: context.colors.surfaceHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: RadioGroup<AudioFocusMode>(
-          groupValue: current,
-          onChanged: (value) => Navigator.of(sheetContext).pop(value),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Text(
-                  context.l10n.audioFocusTitle,
-                  style: AppTypography.sectionTitle.copyWith(
-                    color: context.colors.textHigh,
-                  ),
-                ),
-              ),
-              for (final mode in AudioFocusMode.values)
-                RadioListTile<AudioFocusMode>(
-                  value: mode,
-                  title: Text(_audioFocusLabel(context.l10n, mode)),
-                ),
-            ],
+      title: context.l10n.audioFocusTitle,
+      current: current,
+      choices: [
+        for (final mode in AudioFocusMode.values)
+          AppChoice(
+            value: mode,
+            label: _audioFocusLabel(context.l10n, mode),
+            icon: Icons.hearing_rounded,
           ),
-        ),
-      ),
+      ],
     );
     if (selected != null) {
       await ref.read(audioFocusModeProvider.notifier).setMode(selected);
@@ -396,197 +313,238 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
-      body: ListTileTheme(
-        data: ListTileThemeData(
-          contentPadding: const EdgeInsetsDirectional.symmetric(
-            horizontal: AppSpacing.md,
-          ),
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
-          tileColor: colors.surfaceHigh.withValues(alpha: 0.22),
-        ),
-        child: Material(
-          color: colors.background,
-          child: ListView(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            children: [
-              _SectionHeader(title: l10n.settingsAppearanceSection),
-              ListTile(
-                leading: Icon(_themeModeIcon(themeMode), color: colors.primary),
-                title: Text(
-                  l10n.themeModeTitle,
-                  style: AppTypography.emphasisTitle.copyWith(
-                    color: colors.textHigh,
-                  ),
+      body: SafeArea(
+        top: false,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppSpacing.contentMaxWidth,
+            ),
+            child: ListTileTheme(
+              data: ListTileThemeData(
+                contentPadding: const EdgeInsetsDirectional.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
                 ),
-                subtitle: Text(
-                  _themeModeLabel(l10n, themeMode),
-                  style: AppTypography.songSubtitle.copyWith(
-                    color: colors.textMedium,
-                  ),
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
+                iconColor: colors.primary,
+                textColor: colors.textHigh,
+                titleTextStyle: AppTypography.emphasisTitle.copyWith(
+                  color: colors.textHigh,
                 ),
-                trailing: Icon(
-                  Icons.chevron_left_rounded,
-                  color: colors.textLow,
+                subtitleTextStyle: AppTypography.songSubtitle.copyWith(
+                  color: colors.textMedium,
                 ),
-                onTap: _showThemeSheet,
               ),
-              ListTile(
-                leading: Icon(Icons.palette_outlined, color: colors.primary),
-                title: Text(
-                  l10n.primaryColorTitle,
-                  style: AppTypography.emphasisTitle.copyWith(
-                    color: colors.textHigh,
-                  ),
-                ),
-                subtitle: Text(
-                  l10n.primaryColorSubtitle,
-                  style: AppTypography.songSubtitle.copyWith(
-                    color: colors.textMedium,
-                  ),
-                ),
-                trailing: CircleAvatar(
-                  radius: 12,
-                  backgroundColor: ref.watch(appPrimaryColorProvider),
-                ),
-                onTap: _showPrimaryColorSheet,
-              ),
-              const WidgetBackgroundSettingTile(),
-              const HomeTabsSettingTile(),
-              _SectionHeader(title: l10n.settingsLanguageSection),
-              ListTile(
-                leading: Icon(Icons.translate_rounded, color: colors.primary),
-                title: Text(
-                  l10n.languageTitle,
-                  style: AppTypography.listTitle.copyWith(
-                    color: colors.textHigh,
-                  ),
-                ),
-                subtitle: Text(
-                  _languageLabel(l10n, _languageChoice(locale)),
-                  style: AppTypography.songSubtitle.copyWith(
-                    color: colors.textMedium,
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.chevron_left_rounded,
-                  color: colors.textLow,
-                ),
-                onTap: _showLanguageSheet,
-              ),
-              _SectionHeader(title: l10n.settingsLockScreenSection),
-              lockScreenState.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(AppSpacing.lg),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (_, _) =>
-                    AppErrorState(title: l10n.errorLoadFailedTitle),
-                data: (state) => Column(
+              child: Material(
+                color: colors.background,
+                child: ListView(
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   children: [
-                    _SettingSwitchTile(
-                      value: state.enabled,
-                      onChanged: state.supported
-                          ? (value) => _onToggle(state, value)
-                          : null,
-                      title: l10n.lockScreenControlTitle,
-                      subtitle: _subtitle(l10n, state),
-                      icon: Icons.music_note_rounded,
+                    SettingsSection(
+                      title: l10n.settingsAppearanceSection,
+                      children: [
+                        ListTile(
+                          leading: Icon(
+                            _themeModeIcon(themeMode),
+                            color: colors.primary,
+                          ),
+                          title: Text(
+                            l10n.themeModeTitle,
+                            style: AppTypography.emphasisTitle.copyWith(
+                              color: colors.textHigh,
+                            ),
+                          ),
+                          subtitle: Text(
+                            _themeModeLabel(l10n, themeMode),
+                            style: AppTypography.songSubtitle.copyWith(
+                              color: colors.textMedium,
+                            ),
+                          ),
+                          trailing: const SettingsChevron(),
+                          onTap: _showThemeSheet,
+                        ),
+                        ListTile(
+                          leading: Icon(
+                            Icons.palette_outlined,
+                            color: colors.primary,
+                          ),
+                          title: Text(
+                            l10n.primaryColorTitle,
+                            style: AppTypography.emphasisTitle.copyWith(
+                              color: colors.textHigh,
+                            ),
+                          ),
+                          subtitle: Text(
+                            l10n.primaryColorSubtitle,
+                            style: AppTypography.songSubtitle.copyWith(
+                              color: colors.textMedium,
+                            ),
+                          ),
+                          trailing: CircleAvatar(
+                            radius: AppSpacing.lg / 2,
+                            backgroundColor: ref.watch(appPrimaryColorProvider),
+                          ),
+                          onTap: _showPrimaryColorSheet,
+                        ),
+                        const WidgetBackgroundSettingTile(),
+                        const HomeTabsSettingTile(),
+                      ],
                     ),
-                    ListTile(
-                      enabled: state.enabled,
-                      leading: Icon(
-                        Icons.timer_outlined,
-                        color: colors.primary,
-                      ),
-                      title: Text(l10n.lockScreenTimeoutTitle),
-                      subtitle: Text(
-                        l10n.lockScreenTimeoutSeconds(state.timeoutSeconds),
-                      ),
-                      onTap: state.enabled
-                          ? () => _showLockScreenTimeoutSheet(
-                              state.timeoutSeconds,
-                            )
-                          : null,
+                    SettingsSection(
+                      title: l10n.settingsLanguageSection,
+                      children: [
+                        ListTile(
+                          leading: Icon(
+                            Icons.translate_rounded,
+                            color: colors.primary,
+                          ),
+                          title: Text(
+                            l10n.languageTitle,
+                            style: AppTypography.listTitle.copyWith(
+                              color: colors.textHigh,
+                            ),
+                          ),
+                          subtitle: Text(
+                            _languageLabel(l10n, _languageChoice(locale)),
+                            style: AppTypography.songSubtitle.copyWith(
+                              color: colors.textMedium,
+                            ),
+                          ),
+                          trailing: const SettingsChevron(),
+                          onTap: _showLanguageSheet,
+                        ),
+                      ],
+                    ),
+                    SettingsSection(
+                      title: l10n.settingsLockScreenSection,
+                      children: [
+                        lockScreenState.when(
+                          loading: () => const Padding(
+                            padding: EdgeInsets.all(AppSpacing.lg),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          error: (_, _) =>
+                              AppErrorState(title: l10n.errorLoadFailedTitle),
+                          data: (state) => Column(
+                            children: [
+                              _SettingSwitchTile(
+                                value: state.enabled,
+                                onChanged: state.supported
+                                    ? (value) => _onToggle(state, value)
+                                    : null,
+                                title: l10n.lockScreenControlTitle,
+                                subtitle: _subtitle(l10n, state),
+                                icon: Icons.music_note_rounded,
+                              ),
+                              ListTile(
+                                enabled: state.enabled,
+                                leading: Icon(
+                                  Icons.timer_outlined,
+                                  color: colors.primary,
+                                ),
+                                title: Text(l10n.lockScreenTimeoutTitle),
+                                subtitle: Text(
+                                  l10n.lockScreenTimeoutSeconds(
+                                    state.timeoutSeconds,
+                                  ),
+                                ),
+                                trailing: const SettingsChevron(),
+                                onTap: state.enabled
+                                    ? () => _showLockScreenTimeoutSheet(
+                                        state.timeoutSeconds,
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SettingsSection(
+                      title: l10n.settingsPlaybackSection,
+                      children: [
+                        ListTile(
+                          leading: Icon(
+                            Icons.hearing_rounded,
+                            color: colors.primary,
+                          ),
+                          title: Text(
+                            l10n.audioFocusTitle,
+                            style: AppTypography.emphasisTitle.copyWith(
+                              color: colors.textHigh,
+                            ),
+                          ),
+                          subtitle: Text(
+                            _audioFocusLabel(l10n, audioFocusMode),
+                            style: AppTypography.songSubtitle.copyWith(
+                              color: colors.textMedium,
+                            ),
+                          ),
+                          trailing: const SettingsChevron(),
+                          onTap: _showAudioFocusSheet,
+                        ),
+                        ListTile(
+                          leading: Icon(
+                            Icons.history_rounded,
+                            color: colors.primary,
+                          ),
+                          title: Text(
+                            l10n.historyTitle,
+                            style: AppTypography.emphasisTitle.copyWith(
+                              color: colors.textHigh,
+                            ),
+                          ),
+                          subtitle: Text(
+                            l10n.historySettingsSubtitle,
+                            style: AppTypography.songSubtitle.copyWith(
+                              color: colors.textMedium,
+                            ),
+                          ),
+                          trailing: const SettingsChevron(),
+                          onTap: () => Navigator.of(
+                            context,
+                          ).pushNamed(RouteNames.history),
+                        ),
+                        ListTile(
+                          leading: Icon(
+                            Icons.delete_sweep_outlined,
+                            color: colors.primary,
+                          ),
+                          title: Text(l10n.trashTitle),
+                          subtitle: Text(l10n.trashSettingsSubtitle),
+                          trailing: const SettingsChevron(),
+                          onTap: () =>
+                              Navigator.of(context).pushNamed(RouteNames.trash),
+                        ),
+                        _SettingSwitchTile(
+                          value: previousGoesToPrevious,
+                          onChanged: (value) => ref
+                              .read(previousGoesToPreviousProvider.notifier)
+                              .setEnabled(value),
+                          title: l10n.previousGoesToPreviousTitle,
+                          subtitle: l10n.previousGoesToPreviousSubtitle,
+                          icon: Icons.skip_previous_rounded,
+                        ),
+                        _SettingSwitchTile(
+                          value: hideQuickDelete,
+                          onChanged: (value) => ref
+                              .read(hideQuickDeleteProvider.notifier)
+                              .setEnabled(value),
+                          title: l10n.hideQuickDeleteTitle,
+                          subtitle: l10n.hideQuickDeleteSubtitle,
+                          icon: Icons.delete_outline_rounded,
+                        ),
+                      ],
+                    ),
+                    SettingsSection(
+                      title: l10n.telegramTitle,
+                      children: [const TelegramCacheTile()],
                     ),
                   ],
                 ),
               ),
-              _SectionHeader(title: l10n.settingsPlaybackSection),
-              ListTile(
-                leading: Icon(Icons.hearing_rounded, color: colors.primary),
-                title: Text(
-                  l10n.audioFocusTitle,
-                  style: AppTypography.emphasisTitle.copyWith(
-                    color: colors.textHigh,
-                  ),
-                ),
-                subtitle: Text(
-                  _audioFocusLabel(l10n, audioFocusMode),
-                  style: AppTypography.songSubtitle.copyWith(
-                    color: colors.textMedium,
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.chevron_left_rounded,
-                  color: colors.textLow,
-                ),
-                onTap: _showAudioFocusSheet,
-              ),
-              ListTile(
-                leading: Icon(Icons.history_rounded, color: colors.primary),
-                title: Text(
-                  l10n.historyTitle,
-                  style: AppTypography.emphasisTitle.copyWith(
-                    color: colors.textHigh,
-                  ),
-                ),
-                subtitle: Text(
-                  l10n.historySettingsSubtitle,
-                  style: AppTypography.songSubtitle.copyWith(
-                    color: colors.textMedium,
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.chevron_left_rounded,
-                  color: colors.textLow,
-                ),
-                onTap: () =>
-                    Navigator.of(context).pushNamed(RouteNames.history),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.delete_sweep_outlined,
-                  color: colors.primary,
-                ),
-                title: Text(l10n.trashTitle),
-                subtitle: Text(l10n.trashSettingsSubtitle),
-                trailing: Icon(
-                  Icons.chevron_left_rounded,
-                  color: colors.textLow,
-                ),
-                onTap: () => Navigator.of(context).pushNamed(RouteNames.trash),
-              ),
-              _SettingSwitchTile(
-                value: previousGoesToPrevious,
-                onChanged: (value) => ref
-                    .read(previousGoesToPreviousProvider.notifier)
-                    .setEnabled(value),
-                title: l10n.previousGoesToPreviousTitle,
-                subtitle: l10n.previousGoesToPreviousSubtitle,
-                icon: Icons.skip_previous_rounded,
-              ),
-              _SettingSwitchTile(
-                value: hideQuickDelete,
-                onChanged: (value) => ref
-                    .read(hideQuickDeleteProvider.notifier)
-                    .setEnabled(value),
-                title: l10n.hideQuickDeleteTitle,
-                subtitle: l10n.hideQuickDeleteSubtitle,
-                icon: Icons.delete_outline_rounded,
-              ),
-              _SectionHeader(title: l10n.telegramTitle),
-              const TelegramCacheTile(),
-            ],
+            ),
           ),
         ),
       ),
@@ -643,30 +601,6 @@ class _SettingSwitchTile extends StatelessWidget {
         style: AppTypography.songSubtitle.copyWith(color: colors.textMedium),
       ),
       secondary: Icon(icon, color: value ? colors.primary : colors.textLow),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.sm,
-      ),
-      child: Text(
-        title,
-        style: AppTypography.sectionLabel.copyWith(
-          color: context.colors.primary,
-        ),
-      ),
     );
   }
 }

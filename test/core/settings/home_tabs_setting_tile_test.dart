@@ -48,7 +48,7 @@ void main() {
     final l10n = AppLocalizations.of(context);
     expect(Directionality.of(context), TextDirection.rtl);
     await tester.scrollUntilVisible(
-      find.text(l10n.artistsTab),
+      find.text(l10n.artistsTab).hitTestable(),
       80,
       scrollable: find.byType(Scrollable).last,
     );
@@ -62,7 +62,7 @@ void main() {
     await tester.tap(find.byType(HomeTabsSettingTile));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text(l10n.artistsTab),
+      find.text(l10n.artistsTab).hitTestable(),
       80,
       scrollable: find.byType(Scrollable).last,
     );

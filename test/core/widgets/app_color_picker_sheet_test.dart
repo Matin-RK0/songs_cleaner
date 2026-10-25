@@ -124,7 +124,7 @@ void main() {
     await tester.pump();
     expect(tester.widget<Text>(hex).data, '#30343B');
 
-    await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
+    await tester.tap(find.widgetWithText(OutlinedButton, l10n.cancel));
     await tester.pumpAndSettle();
 
     expect(savedColors, isEmpty);
@@ -227,7 +227,7 @@ void main() {
       expect(brightness, findsNothing);
       expect(tester.widget<Text>(hex).data, draftHex);
       expect(savedColors, isEmpty);
-      await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
+      await tester.tap(find.widgetWithText(OutlinedButton, l10n.cancel));
       await tester.pumpAndSettle();
     },
   );
@@ -243,7 +243,7 @@ void main() {
 
     expect(tester.widget<Slider>(hue).value, originalHue);
     expect(tester.widget<Text>(hex).data, '#000000');
-    await tester.tap(find.widgetWithText(TextButton, l10n.cancel));
+    await tester.tap(find.widgetWithText(OutlinedButton, l10n.cancel));
     await tester.pumpAndSettle();
   });
 
@@ -272,7 +272,9 @@ void main() {
     expect(tester.widget<FilledButton>(save).onPressed, isNull);
     expect(
       tester
-          .widget<TextButton>(find.widgetWithText(TextButton, l10n.cancel))
+          .widget<OutlinedButton>(
+            find.widgetWithText(OutlinedButton, l10n.cancel),
+          )
           .onPressed,
       isNull,
     );

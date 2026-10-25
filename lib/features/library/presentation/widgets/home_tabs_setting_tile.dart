@@ -9,6 +9,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_feedback.dart';
+import '../../../../core/widgets/app_sheet_actions.dart';
 import '../models/home_tab_presentation.dart';
 
 class HomeTabsSettingTile extends ConsumerWidget {
@@ -24,7 +25,11 @@ class HomeTabsSettingTile extends ConsumerWidget {
       subtitle: Text(
         l10n.homeTabsDefaultSummary(settings.defaultTab.label(l10n)),
       ),
-      trailing: const Icon(Icons.arrow_forward_rounded),
+      trailing: Icon(
+        Icons.arrow_forward_ios_rounded,
+        size: AppSpacing.md,
+        color: context.colors.textLow,
+      ),
       onTap: () => showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
@@ -61,7 +66,11 @@ class _HomeTabsSheetState extends ConsumerState<_HomeTabsSheet> {
     setState(() => _saving = true);
     try {
       await ref.read(homeTabSettingsProvider.notifier).save(_draft);
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      setState(() => _saving = false);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop();
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -77,131 +86,139 @@ class _HomeTabsSheetState extends ConsumerState<_HomeTabsSheet> {
       canPop: !_saving,
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height:
-              MediaQuery.sizeOf(context).height * AppSpacing.sheetHeightFactor,
-          child: Padding(
-            padding: AppSpacing.screenPadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.homeTabsTitle, style: AppTypography.sectionTitle),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  l10n.homeTabsDescription,
-                  style: AppTypography.body.copyWith(color: colors.textMedium),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Expanded(
-                  child: RadioGroup<HomeTab>(
-                    groupValue: _draft.defaultTab,
-                    onChanged: (tab) {
-                      if (!_saving && tab != null) {
-                        setState(() => _draft = _draft.withDefault(tab));
-                      }
-                    },
-                    child: ReorderableListView.builder(
-                      buildDefaultDragHandles: false,
-                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                      itemCount: _draft.order.length,
-                      onReorderItem: (oldIndex, newIndex) {
-                        if (!_saving) {
-                          setState(
-                            () => _draft = _draft.reordered(oldIndex, newIndex),
-                          );
+        child: Center(
+          heightFactor: 1,
+          child: SizedBox(
+            width: AppSpacing.contentMaxWidth,
+            height:
+                MediaQuery.sizeOf(context).height *
+                AppSpacing.sheetHeightFactor,
+            child: Padding(
+              padding: AppSpacing.screenPadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: RadioGroup<HomeTab>(
+                      groupValue: _draft.defaultTab,
+                      onChanged: (tab) {
+                        if (!_saving && tab != null) {
+                          setState(() => _draft = _draft.withDefault(tab));
                         }
                       },
-                      itemBuilder: (context, index) {
-                        final tab = _draft.order[index];
-                        final selected = tab == _draft.defaultTab;
-                        return Padding(
-                          key: ValueKey(tab),
-                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: Material(
-                            color: selected
-                                ? colors.primary.withValues(alpha: 0.12)
-                                : colors.background,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: AppRadius.md,
-                              side: BorderSide(
-                                color: selected
-                                    ? colors.primary
-                                    : colors.outline,
+                      child: ReorderableListView.builder(
+                        header: Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.homeTabsTitle,
+                                style: AppTypography.sheetTitle.copyWith(
+                                  color: colors.textHigh,
+                                ),
                               ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                l10n.homeTabsDescription,
+                                style: AppTypography.body.copyWith(
+                                  color: colors.textMedium,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        buildDefaultDragHandles: false,
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        itemCount: _draft.order.length,
+                        onReorderItem: (oldIndex, newIndex) {
+                          if (!_saving) {
+                            setState(
+                              () =>
+                                  _draft = _draft.reordered(oldIndex, newIndex),
+                            );
+                          }
+                        },
+                        itemBuilder: (context, index) {
+                          final tab = _draft.order[index];
+                          final selected = tab == _draft.defaultTab;
+                          return Padding(
+                            key: ValueKey(tab),
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.sm,
                             ),
-                            child: ListTile(
-                              enabled: !_saving,
-                              contentPadding: const EdgeInsetsDirectional.only(
-                                start: AppSpacing.sm,
-                                end: AppSpacing.sm,
+                            child: Material(
+                              color: selected
+                                  ? colors.primary.withValues(alpha: 0.12)
+                                  : colors.background,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppRadius.md,
+                                side: BorderSide(
+                                  color: selected
+                                      ? colors.primary
+                                      : colors.outline,
+                                ),
                               ),
-                              leading: Radio<HomeTab>(
-                                value: tab,
+                              child: ListTile(
                                 enabled: !_saving,
-                              ),
-                              title: Row(
-                                children: [
-                                  Icon(tab.icon, color: colors.primary),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Flexible(child: Text(tab.label(l10n))),
-                                ],
-                              ),
-                              subtitle: selected
-                                  ? Text(l10n.homeTabsDefaultBadge)
-                                  : null,
-                              onTap: () => setState(
-                                () => _draft = _draft.withDefault(tab),
-                              ),
-                              trailing: ReorderableDragStartListener(
-                                index: index,
-                                enabled: !_saving,
-                                child: Tooltip(
-                                  message: l10n.homeTabsDragHint,
-                                  child: const SizedBox.square(
-                                    dimension: AppSpacing.avatarSize,
-                                    child: Icon(Icons.drag_handle_rounded),
+                                contentPadding:
+                                    const EdgeInsetsDirectional.only(
+                                      start: AppSpacing.sm,
+                                      end: AppSpacing.sm,
+                                    ),
+                                leading: Radio<HomeTab>(
+                                  value: tab,
+                                  enabled: !_saving,
+                                ),
+                                title: Row(
+                                  children: [
+                                    Icon(tab.icon, color: colors.primary),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Flexible(child: Text(tab.label(l10n))),
+                                  ],
+                                ),
+                                subtitle: selected
+                                    ? Text(l10n.homeTabsDefaultBadge)
+                                    : null,
+                                onTap: _saving
+                                    ? null
+                                    : () => setState(
+                                        () => _draft = _draft.withDefault(tab),
+                                      ),
+                                trailing: ReorderableDragStartListener(
+                                  index: index,
+                                  enabled: !_saving,
+                                  child: Tooltip(
+                                    message: l10n.homeTabsDragHint,
+                                    child: const SizedBox.square(
+                                      dimension: AppSpacing.avatarSize,
+                                      child: Icon(Icons.drag_handle_rounded),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  alignment: WrapAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: _saving
-                          ? null
-                          : () => setState(
-                              () => _draft = const HomeTabSettings(),
-                            ),
-                      icon: const Icon(Icons.restore_rounded),
-                      label: Text(l10n.homeTabsReset),
-                    ),
-                    TextButton(
-                      onPressed: _saving
-                          ? null
-                          : () => Navigator.of(context).pop(),
-                      child: Text(l10n.cancel),
-                    ),
-                    FilledButton.icon(
-                      onPressed: _saving ? null : _save,
-                      icon: const Icon(Icons.check_rounded),
-                      label: Text(
-                        _saving ? l10n.homeTabsSaving : l10n.saveAction,
+                          );
+                        },
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-              ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  AppSheetActions(
+                    primaryLabel: _saving
+                        ? l10n.homeTabsSaving
+                        : l10n.saveAction,
+                    onPrimary: _save,
+                    cancelLabel: l10n.cancel,
+                    onCancel: () => Navigator.of(context).pop(),
+                    busy: _saving,
+                    resetLabel: l10n.homeTabsReset,
+                    onReset: () =>
+                        setState(() => _draft = const HomeTabSettings()),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              ),
             ),
           ),
         ),
