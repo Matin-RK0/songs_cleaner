@@ -12,16 +12,17 @@ import '../../application/telegram_controller.dart';
 import '../../domain/telegram_models.dart';
 import '../widgets/telegram_feedback.dart';
 import '../widgets/telegram_track_tile.dart';
+import '../widgets/telegram_chat_avatar.dart';
 
 class TelegramChatScreen extends ConsumerWidget {
   const TelegramChatScreen({super.key, required this.chatId});
   final int chatId;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final title = ref.watch(
+    final chat = ref.watch(
       telegramProvider.select((s) {
         for (final chat in s.chats) {
-          if (chat.id == chatId) return chat.title;
+          if (chat.id == chatId) return chat;
         }
         return null;
       }),
@@ -32,10 +33,22 @@ class TelegramChatScreen extends ConsumerWidget {
     );
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          chatId == 0
-              ? context.l10n.telegramFolders
-              : title ?? context.l10n.telegramTitle,
+        title: Row(
+          children: [
+            if (chat != null) ...[
+              TelegramChatAvatar(chat: chat, size: AppSpacing.avatarSize),
+              const SizedBox(width: AppSpacing.sm),
+            ],
+            Expanded(
+              child: Text(
+                chatId == 0
+                    ? context.l10n.telegramFolders
+                    : chat?.title ?? context.l10n.telegramTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
         actions: [
           if (chatId != 0)
@@ -116,6 +129,17 @@ class _TelegramChatBody extends ConsumerWidget {
                     l10n.telegramLocalCount(songs.length),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
+                  if (ref.watch(telegramLocalMatchCountProvider(chatId)) >
+                      0) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      l10n.telegramLocalMatchesCount(
+                        ref.watch(telegramLocalMatchCountProvider(chatId)),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(l10n.telegramLocalMatchesHint),
+                  ],
                   const SizedBox(height: AppSpacing.md),
                   Wrap(
                     spacing: AppSpacing.sm,

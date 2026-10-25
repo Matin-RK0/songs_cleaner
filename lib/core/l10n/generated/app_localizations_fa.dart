@@ -157,13 +157,26 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get telegramNoAudioHint =>
-      'در «همه آهنگ‌ها» فایل موجود را متصل یا آهنگی دانلود کن. برای پیام‌های قدیمی‌تر «نمایش بیشتر» را بزن.';
+      'هنوز فایل قابل‌دسترسی مطابق با آهنگ‌های بارگذاری‌شده پیدا نشده است. در «همه آهنگ‌ها» آهنگ دانلود کن یا پیام‌های قدیمی‌تر را بارگذاری کن. فایل‌های داخل کش خصوصی برنامه اصلی تلگرام اینجا قابل‌دسترسی نیستند.';
+
+  @override
+  String telegramLocalMatchesCount(int count) {
+    return '$count آهنگ محلی در انتظار اتصال';
+  }
+
+  @override
+  String get telegramLocalMatchesHint =>
+      'این فایل‌ها روی دستگاه پیدا شده‌اند. برای تأیید فایل مطابق و فعال‌شدن پخش آن در این چت، دکمه اتصال را بزن.';
 
   @override
   String get telegramEmptyChat => 'در پیام‌های بارگذاری‌شده آهنگی پیدا نشد';
 
   @override
-  String get telegramDownload => 'دانلود در این برنامه';
+  String get telegramDownload => 'دانلود در Music/Telegram';
+
+  @override
+  String get telegramErrorStorage =>
+      'ذخیره آهنگ در Music/Telegram انجام نشد. فضای خالی و دسترسی حافظه را بررسی و دوباره تلاش کن.';
 
   @override
   String get telegramDownloading => 'در حال دانلود…';

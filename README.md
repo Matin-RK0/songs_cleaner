@@ -28,18 +28,29 @@ two-step-verification passwords are not persisted by this app.
 ### User flow
 
 - Open **Telegram → Connect Telegram**, sign in, then select a chat.
-- **On this device** shows verified local files. **All music** shows the loaded
-  music messages and offers linking or downloading.
+- **On this device** shows verified local files and accessible matching files
+  awaiting confirmation. Only verified tracks enter the playback queue.
+  **All music** shows the loaded music messages and offers linking or downloading.
 - Existing device files with the same filename and byte size are *suggestions*.
   The user must confirm the correct file. Name/size alone never assigns provenance.
-- Downloading uses this app's TDLib storage, independently of the official client.
+- Downloads are received through TDLib and then saved to the shared **Music/Telegram**
+  folder under their original filenames. Android MediaStore publishes/indexes the
+  completed audio so file managers and other music players can find it. Existing
+  same-name files are not overwritten. Android 10+ uses scoped storage; older
+  Android versions request the legacy storage permission when needed.
   Downloaded/linked tracks play through the existing queue and mini player.
+  Native file updates refresh local availability without a manual refresh, and
+  completed paths are indexed for offline reopening.
+- Audio thumbnails and miniatures are read from Telegram's album-cover metadata.
+  Visible covers use bounded memory/disk caching and at most three concurrent
+  thumbnail requests; local MediaStore album art is used as a fallback.
 - Older music messages and additional chats are loaded explicitly with **Load more**.
   Main and archived chat lists are included. Refresh preserves older indexed tracks.
 - The cached chat index and existing verified files remain browsable offline.
   An authorized session reconnects automatically on subsequent visits.
 - Disconnecting logs this app out and clears its chat index and bindings. TDLib
-  manages its downloaded files on logout; files in the device library are not deleted.
+  manages its private cache on logout; published files in Music/Telegram remain
+  independently in the device library, including after uninstalling this app.
   The Telegram session, key storage and index are excluded from Android backup/transfer.
 
 ### Boundaries

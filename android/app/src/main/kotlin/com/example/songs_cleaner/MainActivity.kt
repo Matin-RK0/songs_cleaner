@@ -18,6 +18,8 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : AudioServiceActivity() {
     private var pendingWidgetAction: String? = null
     private var widgetChannel: MethodChannel? = null
+    private var telegramMusicStore: TelegramMusicStore? = null
+    private var telegramMusicChannel: MethodChannel? = null
 
     override fun onUserInteraction() {
         super.onUserInteraction()
@@ -42,6 +44,13 @@ class MainActivity : AudioServiceActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        telegramMusicStore?.close()
+        val musicStore = TelegramMusicStore(applicationContext)
+        telegramMusicStore = musicStore
+        telegramMusicChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.example.songs_cleaner/telegram_music",
+        ).apply { setMethodCallHandler(musicStore) }
         LockScreenController.attach(
             this,
             MethodChannel(
@@ -244,6 +253,8 @@ class MainActivity : AudioServiceActivity() {
     }
 
     override fun onDestroy() {
+        telegramMusicChannel?.setMethodCallHandler(null)
+        telegramMusicStore?.close()
         LockScreenController.detach(this)
         super.onDestroy()
     }

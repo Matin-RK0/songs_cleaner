@@ -158,13 +158,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get telegramNoAudioHint =>
-      'Switch to All music to link an existing file or download a track. Use Load more to search older messages.';
+      'No accessible file matches the loaded music yet. Switch to All music to download tracks, or load older messages. Downloads kept only in the official Telegram app’s private cache are not accessible here.';
+
+  @override
+  String telegramLocalMatchesCount(int count) {
+    return '$count local matches to link';
+  }
+
+  @override
+  String get telegramLocalMatchesHint =>
+      'The files below were found on your device. Tap the link button to confirm a match and enable playback in this chat.';
 
   @override
   String get telegramEmptyChat => 'No music found in the loaded messages';
 
   @override
-  String get telegramDownload => 'Download to this app';
+  String get telegramDownload => 'Download to Music/Telegram';
+
+  @override
+  String get telegramErrorStorage =>
+      'Could not save the song to Music/Telegram. Check free storage and storage access, then try again.';
 
   @override
   String get telegramDownloading => 'Downloading…';

@@ -12,6 +12,7 @@ String telegramFailureText(BuildContext context, TelegramFailure failure) {
     TelegramFailure.code => l10n.telegramErrorCode,
     TelegramFailure.password => l10n.telegramErrorPassword,
     TelegramFailure.flood => l10n.telegramErrorFlood,
+    TelegramFailure.storage => l10n.telegramErrorStorage,
     TelegramFailure.generic => l10n.telegramErrorGeneric,
   };
 }

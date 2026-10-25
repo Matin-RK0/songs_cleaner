@@ -8,6 +8,7 @@ import '../../../library/domain/entities/song.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../application/telegram_controller.dart';
 import '../../domain/telegram_models.dart';
+import 'telegram_artwork.dart';
 
 class TelegramTrackTile extends ConsumerWidget {
   const TelegramTrackTile({
@@ -31,7 +32,6 @@ class TelegramTrackTile extends ConsumerWidget {
       ),
     );
     final l10n = context.l10n;
-    final theme = Theme.of(context);
     final available = track.song != null;
     final status = available
         ? track.song!.duration.mmss
@@ -40,21 +40,7 @@ class TelegramTrackTile extends ConsumerWidget {
         : l10n.telegramCloud;
     return ListTile(
       contentPadding: AppSpacing.hMdVSm,
-      leading: CircleAvatar(
-        backgroundColor: current
-            ? theme.colorScheme.primaryContainer
-            : theme.colorScheme.surfaceContainerHigh,
-        child: Icon(
-          current
-              ? Icons.equalizer_rounded
-              : available
-              ? Icons.music_note_rounded
-              : Icons.cloud_outlined,
-          color: current
-              ? theme.colorScheme.onPrimaryContainer
-              : theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
+      leading: TelegramArtwork(track: track, current: current),
       title: Text(
         track.audio.title.isEmpty ? track.audio.fileName : track.audio.title,
         maxLines: 1,
@@ -65,7 +51,11 @@ class TelegramTrackTile extends ConsumerWidget {
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
-      onTap: available ? () => _play(ref) : null,
+      onTap: available
+          ? () => _play(ref)
+          : track.candidates.isNotEmpty
+          ? () => _link(context, ref)
+          : null,
       trailing: downloading
           ? Tooltip(
               message: l10n.telegramDownloading,

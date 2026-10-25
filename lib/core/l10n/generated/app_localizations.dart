@@ -359,8 +359,20 @@ abstract class AppLocalizations {
   /// No description provided for @telegramNoAudioHint.
   ///
   /// In fa, this message translates to:
-  /// **'در «همه آهنگ‌ها» فایل موجود را متصل یا آهنگی دانلود کن. برای پیام‌های قدیمی‌تر «نمایش بیشتر» را بزن.'**
+  /// **'هنوز فایل قابل‌دسترسی مطابق با آهنگ‌های بارگذاری‌شده پیدا نشده است. در «همه آهنگ‌ها» آهنگ دانلود کن یا پیام‌های قدیمی‌تر را بارگذاری کن. فایل‌های داخل کش خصوصی برنامه اصلی تلگرام اینجا قابل‌دسترسی نیستند.'**
   String get telegramNoAudioHint;
+
+  /// No description provided for @telegramLocalMatchesCount.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} آهنگ محلی در انتظار اتصال'**
+  String telegramLocalMatchesCount(int count);
+
+  /// No description provided for @telegramLocalMatchesHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'این فایل‌ها روی دستگاه پیدا شده‌اند. برای تأیید فایل مطابق و فعال‌شدن پخش آن در این چت، دکمه اتصال را بزن.'**
+  String get telegramLocalMatchesHint;
 
   /// No description provided for @telegramEmptyChat.
   ///
@@ -371,8 +383,14 @@ abstract class AppLocalizations {
   /// No description provided for @telegramDownload.
   ///
   /// In fa, this message translates to:
-  /// **'دانلود در این برنامه'**
+  /// **'دانلود در Music/Telegram'**
   String get telegramDownload;
+
+  /// No description provided for @telegramErrorStorage.
+  ///
+  /// In fa, this message translates to:
+  /// **'ذخیره آهنگ در Music/Telegram انجام نشد. فضای خالی و دسترسی حافظه را بررسی و دوباره تلاش کن.'**
+  String get telegramErrorStorage;
 
   /// No description provided for @telegramDownloading.
   ///

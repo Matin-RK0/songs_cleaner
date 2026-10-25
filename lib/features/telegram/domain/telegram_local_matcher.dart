@@ -26,6 +26,11 @@ class TelegramLocalMatcher {
             part == 'org.telegram.messenger.web',
       );
 
+  List<Song> candidatesFor(TelegramAudio audio) =>
+      (_byName[basename(audio.fileName)] ?? const <Song>[])
+          .where((song) => audio.size > 0 && song.sizeBytes == audio.size)
+          .toList(growable: false);
+
   TelegramTrack resolve(
     TelegramAudio audio,
     Map<String, String> bindings,
@@ -57,8 +62,8 @@ class TelegramLocalMatcher {
             ),
       );
     }
-    final candidates = (_byName[basename(audio.fileName)] ?? const <Song>[])
-        .where((song) => audio.size > 0 && song.sizeBytes == audio.size)
+    final candidates = candidatesFor(audio)
+        .where((song) => existingPaths.contains(song.path))
         .toList(growable: false);
     return TelegramTrack(audio, candidates: candidates);
   }

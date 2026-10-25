@@ -25,6 +25,7 @@ void main() {
         telegramRepositoryProvider.overrideWithValue(repository),
         telegramLocalFilesProvider.overrideWithValue(files),
         allSongsProvider.overrideWithValue([]),
+        telegramLibrarySyncProvider.overrideWithValue(() async {}),
       ],
     );
     container.read(telegramProvider);
@@ -33,6 +34,100 @@ void main() {
     container.dispose();
     await repository.dispose();
   });
+
+  test(
+    'existing local candidates appear on device before confirmation',
+    () async {
+      final song = localSong();
+      container.dispose();
+      container = ProviderContainer(
+        overrides: [
+          telegramRepositoryProvider.overrideWithValue(repository),
+          telegramLocalFilesProvider.overrideWithValue(files),
+          allSongsProvider.overrideWithValue([song]),
+        ],
+      );
+      repository.savedAudio = [testAudio()];
+      files.existing.add(song.path);
+      final subscription = container.listen(
+        telegramChatProvider(123),
+        (_, _) {},
+      );
+      addTearDown(subscription.close);
+      await settle();
+      final tracks = container.read(telegramChatTracksProvider(123));
+      expect(tracks, hasLength(1));
+      expect(tracks.single.candidates.single, song);
+      expect(container.read(telegramLocalMatchCountProvider(123)), 1);
+      expect(container.read(telegramChatSongsProvider(123)), isEmpty);
+    },
+  );
+
+  test('completed native download appears without a manual refresh', () async {
+    final audio = testAudio();
+    repository.savedAudio = [audio];
+    final subscription = container.listen(telegramChatProvider(123), (_, _) {});
+    addTearDown(subscription.close);
+    await settle();
+    expect(container.read(telegramChatTracksProvider(123)), isEmpty);
+    files.existing.add('/app/completed.mp3');
+    repository.files.add(TelegramLocalFile(audio.fileId, '/app/completed.mp3'));
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    await settle();
+    expect(
+      container.read(telegramChatSongsProvider(123)).single.path,
+      '/app/completed.mp3',
+    );
+    expect(repository.audioCalls, 0);
+  });
+
+  test('native removal of a missing file clears its local status', () async {
+    final audio = testAudio(localPath: '/app/completed.mp3');
+    repository.savedAudio = [audio];
+    files.existing.add(audio.localPath);
+    final subscription = container.listen(telegramChatProvider(123), (_, _) {});
+    addTearDown(subscription.close);
+    await settle();
+    expect(container.read(telegramChatSongsProvider(123)), hasLength(1));
+    files.existing.clear();
+    repository.files.add(TelegramLocalFile(audio.fileId, ''));
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    await settle();
+    expect(container.read(telegramChatTracksProvider(123)), isEmpty);
+  });
+
+  test(
+    'a failed public save is not shown as a completed local download',
+    () async {
+      final audio = testAudio();
+      repository.savedAudio = [audio];
+      repository.pendingDownload = Completer<void>();
+      final subscription = container.listen(
+        telegramChatProvider(123),
+        (_, _) {},
+      );
+      addTearDown(subscription.close);
+      await settle();
+      final download = container
+          .read(telegramChatProvider(123).notifier)
+          .download(audio);
+      files.existing.add('/private/cache.mp3');
+      repository.files.add(
+        TelegramLocalFile(audio.fileId, '/private/cache.mp3'),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      expect(container.read(telegramChatSongsProvider(123)), isEmpty);
+      repository.failure = TelegramFailure.storage;
+      repository.pendingDownload!.complete();
+      await download;
+      expect(
+        container.read(telegramChatProvider(123)).failure,
+        TelegramFailure.storage,
+      );
+      expect(container.read(telegramChatSongsProvider(123)), isEmpty);
+      expect(repository.bindings, isEmpty);
+    },
+  );
 
   test(
     'does not start a new Telegram login without an existing session',

@@ -26,7 +26,9 @@ void main() {
     'same filename and size only suggest a local file, never auto-assign it',
     () {
       final song = localSong();
-      final track = TelegramLocalMatcher([song]).resolve(testAudio(), {}, {});
+      final track = TelegramLocalMatcher([
+        song,
+      ]).resolve(testAudio(), {}, {song.path});
       expect(track.song, isNull);
       expect(track.candidates, [song]);
     },
@@ -36,6 +38,12 @@ void main() {
       localSong(size: 1),
     ]).resolve(testAudio(), {}, {});
     expect(track.candidates, isEmpty);
+  });
+  test('missing device files are not counted as local candidates', () {
+    final track = TelegramLocalMatcher([
+      localSong(),
+    ]).resolve(testAudio(), {}, {});
+    expect(track.hasLocalFile, isFalse);
   });
   test(
     'a confirmed existing path resolves to the original MediaStore song',

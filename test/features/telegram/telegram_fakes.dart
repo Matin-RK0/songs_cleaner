@@ -5,6 +5,7 @@ import 'package:songs_cleaner/features/telegram/infrastructure/telegram_local_fi
 
 class FakeTelegramRepository implements TelegramRepository {
   final events = StreamController<TelegramAuth>.broadcast(sync: true);
+  final files = StreamController<TelegramLocalFile>.broadcast(sync: true);
   List<TelegramChat> savedChats = const [];
   List<TelegramAudio> savedAudio = const [];
   Map<String, String> bindings = {};
@@ -15,10 +16,22 @@ class FakeTelegramRepository implements TelegramRepository {
   int audioCalls = 0;
   int downloadCalls = 0;
   int lastFromId = -1;
-  String downloadedPath = '/app/song.mp3';
+  String downloadedPath = '/storage/emulated/0/Music/Telegram/song.mp3';
   Completer<void>? pendingDownload;
   @override
   Stream<TelegramAuth> get authorization => events.stream;
+  @override
+  Stream<TelegramLocalFile> get fileUpdates => files.stream;
+  int coverCalls = 0;
+  String? cover;
+  Future<String?> Function(int)? loadCover;
+  @override
+  Future<String?> coverPath(int fileId, {String localPath = ''}) async {
+    coverCalls++;
+    if (loadCover != null) return loadCover!(fileId);
+    return cover;
+  }
+
   @override
   Future<bool> hasSession() async => session;
   @override
@@ -49,9 +62,10 @@ class FakeTelegramRepository implements TelegramRepository {
   }
 
   @override
-  Future<String> download(int fileId) async {
+  Future<String> download(TelegramAudio audio) async {
     downloadCalls++;
     if (pendingDownload != null) await pendingDownload!.future;
+    if (failure != null) throw TelegramException(failure!);
     return downloadedPath;
   }
 
@@ -75,7 +89,10 @@ class FakeTelegramRepository implements TelegramRepository {
   }
 
   @override
-  Future<void> dispose() async => events.close();
+  Future<void> dispose() async {
+    await events.close();
+    await files.close();
+  }
 }
 
 class FakeTelegramLocalFiles extends TelegramLocalFiles {

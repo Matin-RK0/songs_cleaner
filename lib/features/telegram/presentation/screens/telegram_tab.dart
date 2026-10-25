@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../player/presentation/widgets/mini_player_bar.dart';
@@ -11,6 +10,7 @@ import '../../application/telegram_controller.dart';
 import '../../domain/telegram_models.dart';
 import '../widgets/telegram_feedback.dart';
 import '../widgets/telegram_overview_card.dart';
+import '../widgets/telegram_chat_tile.dart';
 
 class TelegramTab extends ConsumerWidget {
   const TelegramTab({super.key});
@@ -204,40 +204,14 @@ class _TelegramChatList extends ConsumerWidget {
         itemCount: chats.length,
         itemBuilder: (context, index) {
           final chat = chats[index];
-          final colors = Theme.of(context).colorScheme;
-          final private = chat.kind == 'chatTypePrivate';
           return Padding(
             key: ValueKey(chat.id),
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Material(
-              color: colors.surfaceContainerLow,
-              borderRadius: AppRadius.lg,
-              child: ListTile(
-                contentPadding: AppSpacing.hMdVSm,
-                leading: CircleAvatar(
-                  backgroundColor: colors.secondaryContainer,
-                  child: Icon(
-                    private
-                        ? Icons.person_outline_rounded
-                        : Icons.forum_outlined,
-                    color: colors.onSecondaryContainer,
-                  ),
-                ),
-                title: Text(
-                  chat.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  private
-                      ? context.l10n.telegramConversation
-                      : context.l10n.telegramChannelOrGroup,
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => Navigator.of(
-                  context,
-                ).pushNamed(RouteNames.telegramChat, arguments: chat.id),
-              ),
+            child: TelegramChatTile(
+              chat: chat,
+              onTap: () => Navigator.of(
+                context,
+              ).pushNamed(RouteNames.telegramChat, arguments: chat.id),
             ),
           );
         },

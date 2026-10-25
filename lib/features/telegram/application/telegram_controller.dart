@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../library/application/providers/library_providers.dart';
+import '../../library/application/providers/library_controller.dart';
 import '../../library/domain/entities/song.dart';
 import '../domain/telegram_local_matcher.dart';
 import '../domain/telegram_models.dart';
@@ -12,6 +13,13 @@ import '../infrastructure/telegram_local_files.dart';
 
 final telegramLocalFilesProvider = Provider<TelegramLocalFiles>(
   (ref) => TelegramLocalFiles(),
+);
+
+final telegramLibrarySyncProvider = Provider<Future<void> Function()>(
+  (ref) => () async {
+    if (!ref.read(libraryProvider).hasValue) return;
+    await ref.read(libraryProvider.notifier).syncNewSongs();
+  },
 );
 
 final telegramRepositoryProvider = Provider<TelegramRepository>((ref) {
@@ -204,7 +212,7 @@ final telegramChatTracksProvider = Provider.autoDispose
     .family<List<TelegramTrack>, int>((ref, id) {
       final state = ref.watch(telegramChatProvider(id));
       return state.localOnly
-          ? state.tracks.where((e) => e.song != null).toList(growable: false)
+          ? state.tracks.where((e) => e.hasLocalFile).toList(growable: false)
           : state.tracks;
     });
 final telegramChatSongsProvider = Provider.autoDispose.family<List<Song>, int>(
@@ -216,6 +224,14 @@ final telegramChatSongsProvider = Provider.autoDispose.family<List<Song>, int>(
       .toList(growable: false),
 );
 
+final telegramLocalMatchCountProvider = Provider.autoDispose.family<int, int>(
+  (ref, id) => ref
+      .watch(telegramChatProvider(id))
+      .tracks
+      .where((track) => track.song == null && track.candidates.isNotEmpty)
+      .length,
+);
+
 class TelegramChatController extends Notifier<TelegramChatState> {
   TelegramChatController(this.chatId);
   final int chatId;
@@ -223,9 +239,38 @@ class TelegramChatController extends Notifier<TelegramChatState> {
   int _resolution = 0;
   bool _initialized = false;
   bool _loading = false;
+  Timer? _fileRefresh;
 
   @override
   TelegramChatState build() {
+    final fileSubscription = ref
+        .read(telegramRepositoryProvider)
+        .fileUpdates
+        .listen((file) {
+          if (!ref.mounted) return;
+          var changed = false;
+          _audio = _audio
+              .map((audio) {
+                // A completed cache file is not the completed public download:
+                // wait for Music/Telegram publishing before changing this row.
+                if (state.downloading.contains(audio.key)) return audio;
+                if (audio.fileId != file.id || audio.localPath == file.path) {
+                  return audio;
+                }
+                changed = true;
+                return audio.withLocalPath(file.path);
+              })
+              .toList(growable: false);
+          if (!changed) return;
+          _fileRefresh?.cancel();
+          _fileRefresh = Timer(const Duration(milliseconds: 80), () {
+            if (ref.mounted) unawaited(_resolveSafely());
+          });
+        });
+    ref.onDispose(() {
+      _fileRefresh?.cancel();
+      unawaited(fileSubscription.cancel());
+    });
     ref.listen(allSongsProvider, (_, _) => unawaited(_resolveSafely()));
     ref.listen(telegramProvider.select((s) => s.auth), (_, auth) {
       if (_initialized && auth == TelegramAuth.ready) unawaited(refresh());
@@ -269,6 +314,8 @@ class TelegramChatController extends Notifier<TelegramChatState> {
     final paths = {
       ..._audio.map((e) => bindings[e.key]).whereType<String>(),
       ..._audio.map((e) => e.localPath),
+      for (final audio in _audio)
+        ...matcher.candidatesFor(audio).map((song) => song.path),
     }..remove('');
     final existing = await ref
         .read(telegramLocalFilesProvider)
@@ -337,9 +384,24 @@ class TelegramChatController extends Notifier<TelegramChatState> {
     state = state.copyWith(downloading: {...state.downloading, audio.key});
     try {
       final repository = ref.read(telegramRepositoryProvider);
-      final path = await repository.download(audio.fileId);
+      final syncLibrary = ref.read(telegramLibrarySyncProvider);
+      final path = await repository.download(audio);
       await repository.bind(audio.key, path);
-      if (ref.mounted) await _resolve();
+      if (ref.mounted) {
+        _audio = _audio
+            .map(
+              (item) =>
+                  item.fileId == audio.fileId ? item.withLocalPath(path) : item,
+            )
+            .toList(growable: false);
+        await _resolve();
+      }
+      // The public file is already saved even if library read access is unavailable.
+      try {
+        await syncLibrary();
+      } catch (_) {
+        /* A later library sync can retry. */
+      }
     } catch (e) {
       if (ref.mounted) {
         state = state.copyWith(

@@ -8,6 +8,7 @@ abstract final class AppSpacing {
   static const double xl = 32;
   static const double iconHero = 64;
   static const double avatarSize = 48;
+  static const double avatarLarge = 64;
   static const double contentMaxWidth = 560;
 
   static const EdgeInsets allSm = EdgeInsets.all(sm);

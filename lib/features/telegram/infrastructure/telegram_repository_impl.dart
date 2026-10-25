@@ -9,17 +9,31 @@ import 'package:path_provider/path_provider.dart';
 import '../domain/telegram_models.dart';
 import '../domain/telegram_repository.dart';
 import 'tdlib_transport.dart';
+import 'telegram_audio_mapper.dart';
+import 'telegram_chat_mapper.dart';
+import 'telegram_music_publisher.dart';
 
 class TelegramRepositoryImpl implements TelegramRepository {
+  TelegramRepositoryImpl({
+    Directory? cacheDirectory,
+    TelegramMusicPublisher? musicPublisher,
+  }) : _directory = cacheDirectory,
+       _musicPublisher = musicPublisher ?? TelegramMusicPublisher();
+
+  final TelegramMusicPublisher _musicPublisher;
+  final _downloads = <int, Future<String>>{};
+
   static const apiId = int.fromEnvironment('TELEGRAM_API_ID');
   static const apiHash = String.fromEnvironment('TELEGRAM_API_HASH');
   final _auth = StreamController<TelegramAuth>.broadcast();
+  final _files = StreamController<TelegramLocalFile>.broadcast();
   final _secure = const FlutterSecureStorage(
     aOptions: AndroidOptions(storageNamespace: 'songs_cleaner_telegram'),
   );
   TdlibTransport? _transport;
   StreamSubscription<Map<String, dynamic>>? _subscription;
   Map<String, dynamic>? _cache;
+  Future<Map<String, dynamic>>? _loadingCache;
   Future<void> _write = Future.value();
   int _chatLimit = 50;
   bool _initializing = false;
@@ -30,6 +44,8 @@ class TelegramRepositoryImpl implements TelegramRepository {
 
   @override
   Stream<TelegramAuth> get authorization => _auth.stream;
+  @override
+  Stream<TelegramLocalFile> get fileUpdates => _files.stream;
   @override
   Future<bool> hasSession() async =>
       await _secure.read(key: 'telegram.session.active') == 'true';
@@ -42,8 +58,12 @@ class TelegramRepositoryImpl implements TelegramRepository {
     '${(await getApplicationSupportDirectory()).path}/telegram',
   ).create(recursive: true);
 
-  Future<Map<String, dynamic>> _store() async {
-    if (_cache != null) return _cache!;
+  Future<Map<String, dynamic>> _store() {
+    if (_cache != null) return Future.value(_cache!);
+    return _loadingCache ??= _readStore();
+  }
+
+  Future<Map<String, dynamic>> _readStore() async {
     final file = File('${(await _dir()).path}/library-v1.json');
     try {
       _cache = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
@@ -95,6 +115,15 @@ class TelegramRepositoryImpl implements TelegramRepository {
       }
       final transport = _transport = TdlibTransport();
       _subscription = transport.updates.listen((update) {
+        if (update['@type'] == 'updateFile' && !_files.isClosed) {
+          final file = update['file'] as Map<String, dynamic>;
+          _files.add(
+            TelegramLocalFile(
+              file['id'] as int,
+              TelegramAudioMapper.completedPath(file),
+            ),
+          );
+        }
         if (update['@type'] == 'updateAuthorizationState') {
           unawaited(
             _authorization(
@@ -220,13 +249,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
       for (final id in page['chat_ids'] as List? ?? []) {
         if (!seen.add(id as int)) continue;
         final chat = await _td.call('getChat', {'chat_id': id});
-        result.add(
-          TelegramChat(
-            id: id,
-            title: chat['title'] as String,
-            kind: (chat['type'] as Map)['@type'] as String,
-          ),
-        );
+        result.add(TelegramChatMapper.fromJson(chat));
       }
     }
     final store = await _store();
@@ -249,28 +272,11 @@ class TelegramRepositoryImpl implements TelegramRepository {
     });
     final items = <TelegramAudio>[];
     for (final value in response['messages'] as List? ?? []) {
-      final message = value as Map<String, dynamic>;
-      final content = message['content'] as Map<String, dynamic>;
-      if (content['@type'] != 'messageAudio') continue;
-      final audio = content['audio'] as Map<String, dynamic>;
-      final file = audio['audio'] as Map<String, dynamic>;
-      final local = file['local'] as Map<String, dynamic>;
-      items.add(
-        TelegramAudio(
-          messageId: message['id'] as int,
-          chatId: chatId,
-          fileId: file['id'] as int,
-          fileName: audio['file_name'] as String,
-          size: file['size'] as int,
-          title: audio['title'] as String,
-          artist: audio['performer'] as String,
-          duration: audio['duration'] as int,
-          date: message['date'] as int,
-          localPath: local['is_downloading_completed'] == true
-              ? local['path'] as String
-              : '',
-        ),
+      final audio = TelegramAudioMapper.fromMessage(
+        value as Map<String, dynamic>,
+        chatId,
       );
+      if (audio != null) items.add(audio);
     }
     final store = await _store();
     // Refreshing the newest page must not evict older offline music.
@@ -287,7 +293,28 @@ class TelegramRepositoryImpl implements TelegramRepository {
   }
 
   @override
-  Future<String> download(int fileId) async {
+  Future<String> download(TelegramAudio audio) async {
+    final pending = _downloads[audio.fileId];
+    if (pending != null) return pending;
+    final future = _download(audio);
+    _downloads[audio.fileId] = future;
+    try {
+      return await future;
+    } finally {
+      _downloads.remove(audio.fileId);
+    }
+  }
+
+  Future<String> _download(TelegramAudio audio) async {
+    final fileId = audio.fileId;
+    final store = await _store();
+    final published = (store['publishedFiles'] as Map?)?['$fileId'] as String?;
+    if (published != null && await File(published).exists()) return published;
+    await _musicPublisher.ensureAccess();
+    final cached = (store['files'] as Map?)?['$fileId'] as String?;
+    if (cached != null && await File(cached).exists()) {
+      return _publishDownload(cached, audio);
+    }
     // Request asynchronously, then query completion without blocking the UI.
     await _td.call('downloadFile', {
       'file_id': fileId,
@@ -301,7 +328,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
       final file = await _td.call('getFile', {'file_id': fileId});
       final local = file['local'] as Map<String, dynamic>;
       if (local['is_downloading_completed'] == true) {
-        return local['path'] as String;
+        return _publishDownload(local['path'] as String, audio);
       }
       await Future<void>.delayed(const Duration(milliseconds: 600));
     }
@@ -312,14 +339,72 @@ class TelegramRepositoryImpl implements TelegramRepository {
     throw const TelegramException(TelegramFailure.network);
   }
 
+  Future<String> _publishDownload(
+    String sourcePath,
+    TelegramAudio audio,
+  ) async {
+    final path = await _musicPublisher.publish(sourcePath, audio);
+    final store = await _store();
+    final paths = Map<String, String>.from(store['files'] as Map? ?? {});
+    final published = Map<String, String>.from(
+      store['publishedFiles'] as Map? ?? {},
+    );
+    paths['${audio.fileId}'] = path;
+    published['${audio.fileId}'] = path;
+    store['files'] = paths;
+    store['publishedFiles'] = published;
+    // Keep all cached messages for this file pointed at its permanent public copy.
+    final bindings = Map<String, String>.from(store['bindings'] as Map? ?? {});
+    for (final entry in store.entries) {
+      if (!entry.key.startsWith('audio:') || entry.value is! List) continue;
+      for (final value in entry.value as List) {
+        final cachedAudio = TelegramAudio.fromJson(
+          value as Map<String, dynamic>,
+        );
+        if (cachedAudio.fileId == audio.fileId) {
+          bindings[cachedAudio.key] = path;
+        }
+      }
+    }
+    bindings[audio.key] = path;
+    store['bindings'] = bindings;
+    await _save();
+    return path;
+  }
+
+  @override
+  Future<String?> coverPath(int fileId, {String localPath = ''}) async {
+    if (localPath.isNotEmpty && await File(localPath).exists()) {
+      return localPath;
+    }
+    if (fileId <= 0) return null;
+    final cached = (await _store())['cover:$fileId'] as String?;
+    if (cached != null && await File(cached).exists()) return cached;
+    if (_state != TelegramAuth.ready) return null;
+    final file = await _td.call('downloadFile', {
+      'file_id': fileId,
+      'priority': 1,
+      'offset': 0,
+      'limit': 0,
+      'synchronous': true,
+    });
+    final path = TelegramAudioMapper.completedPath(file);
+    if (path.isEmpty) return null;
+    (await _store())['cover:$fileId'] = path;
+    await _save();
+    return path;
+  }
+
   @override
   Future<Map<String, String>> loadBindings() async =>
       Map<String, String>.from((await _store())['bindings'] as Map? ?? {});
   @override
   Future<void> bind(String key, String path) async {
-    final bindings = await loadBindings();
+    // Read/modify the shared snapshot without another await between them.
+    final store = await _store();
+    final bindings = Map<String, String>.from(store['bindings'] as Map? ?? {});
     bindings[key] = path;
-    (await _store())['bindings'] = bindings;
+    store['bindings'] = bindings;
     await _save();
   }
 
@@ -329,10 +414,15 @@ class TelegramRepositoryImpl implements TelegramRepository {
           .map((e) => TelegramChat.fromJson(e as Map<String, dynamic>))
           .toList();
   @override
-  Future<List<TelegramAudio>> cachedAudio(int chatId) async =>
-      ((await _store())['audio:$chatId'] as List? ?? [])
-          .map((e) => TelegramAudio.fromJson(e as Map<String, dynamic>))
-          .toList();
+  Future<List<TelegramAudio>> cachedAudio(int chatId) async {
+    final store = await _store();
+    final paths = store['files'] as Map? ?? {};
+    return (store['audio:$chatId'] as List? ?? []).map((e) {
+      final audio = TelegramAudio.fromJson(e as Map<String, dynamic>);
+      final path = paths['${audio.fileId}'] as String?;
+      return path == null ? audio : audio.withLocalPath(path);
+    }).toList();
+  }
 
   @override
   Future<void> logout() async {
@@ -353,5 +443,6 @@ class TelegramRepositoryImpl implements TelegramRepository {
     await _transport?.dispose();
     await _write.catchError((Object _) {});
     await _auth.close();
+    await _files.close();
   }
 }
