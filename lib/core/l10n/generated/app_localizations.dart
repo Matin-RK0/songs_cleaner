@@ -367,6 +367,12 @@ abstract class AppLocalizations {
   /// **'بازکردن پیام در تلگرام'**
   String get telegramOpenMessage;
 
+  /// No description provided for @telegramOpenMessageFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'پیام باز نشد. نصب بودن تلگرام و دسترسی همان حساب به این چت را بررسی کن.'**
+  String get telegramOpenMessageFailed;
+
   /// No description provided for @telegramTitle.
   ///
   /// In fa, this message translates to:

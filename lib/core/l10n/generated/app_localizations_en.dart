@@ -165,6 +165,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telegramOpenMessage => 'Open message in Telegram';
 
   @override
+  String get telegramOpenMessageFailed =>
+      'Could not open the message. Check that Telegram is installed and the same account has access to this chat.';
+
+  @override
   String get telegramTitle => 'Telegram';
 
   @override

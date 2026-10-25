@@ -165,6 +165,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get telegramOpenMessage => 'بازکردن پیام در تلگرام';
 
   @override
+  String get telegramOpenMessageFailed =>
+      'پیام باز نشد. نصب بودن تلگرام و دسترسی همان حساب به این چت را بررسی کن.';
+
+  @override
   String get telegramTitle => 'تلگرام';
 
   @override

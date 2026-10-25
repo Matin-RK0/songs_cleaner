@@ -51,6 +51,7 @@
   "telegramDownloadLocation": "Downloads are saved in Music/Telegram. Completed audio is removed from this app’s private cache.",
   "telegramDownloadNotification": "Telegram music downloads",
   "telegramOpenMessage": "Open message in Telegram",
+  "telegramOpenMessageFailed": "Could not open the message. Check that Telegram is installed and the same account has access to this chat.",
   "telegramTitle": "Telegram",
   "telegramHeadline": "Your chats. Your music.",
   "telegramDescription": "Keep music from channels, groups and conversations together, with a library for each chat.",

@@ -51,6 +51,7 @@
   "telegramDownloadLocation": "محل ذخیره دانلودها Music/Telegram است. نسخه خصوصی آهنگ پس از ذخیره موفق پاک می‌شود.",
   "telegramDownloadNotification": "دانلود آهنگ‌های تلگرام",
   "telegramOpenMessage": "بازکردن پیام در تلگرام",
+  "telegramOpenMessageFailed": "پیام باز نشد. نصب بودن تلگرام و دسترسی همان حساب به این چت را بررسی کن.",
   "telegramTitle": "تلگرام",
   "telegramHeadline": "هر چت، یک دنیای موسیقی",
   "telegramDescription": "آهنگ‌های کانال‌ها، گروه‌ها و گفتگوهایت را در کتابخانه‌ای جدا برای هر چت پیدا کن.",

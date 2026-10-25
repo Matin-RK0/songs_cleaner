@@ -208,7 +208,11 @@ class TelegramTrackTile extends ConsumerWidget {
         .read(telegramRepositoryProvider)
         .openMessage(track.audio);
     if (!opened && context.mounted) {
-      showAppSnackBar(context, context.l10n.telegramErrorGeneric, error: true);
+      showAppSnackBar(
+        context,
+        context.l10n.telegramOpenMessageFailed,
+        error: true,
+      );
     }
   }
 }

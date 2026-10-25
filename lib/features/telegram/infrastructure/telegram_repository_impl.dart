@@ -9,6 +9,7 @@ import 'telegram_cache_store.dart';
 
 import '../domain/telegram_models.dart';
 import '../domain/telegram_repository.dart';
+import '../domain/telegram_message_link.dart';
 import 'tdlib_transport.dart';
 import 'telegram_audio_mapper.dart';
 import 'telegram_chat_mapper.dart';
@@ -34,6 +35,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
   final _progress = <int, void Function(TelegramTransferProgress)>{};
   final _completedFiles = <int, Completer<String>>{};
   final _savingAudio = <int>{};
+  final _messageOpens = <String, Future<bool>>{};
 
   static const apiId = int.fromEnvironment('TELEGRAM_API_ID');
   static const apiHash = String.fromEnvironment('TELEGRAM_API_HASH');
@@ -724,16 +726,41 @@ class TelegramRepositoryImpl implements TelegramRepository {
   }
 
   @override
-  Future<bool> openMessage(TelegramAudio audio) async {
-    try {
-      final response = await _td.call('getMessageLink', {
-        'chat_id': audio.chatId,
-        'message_id': audio.messageId,
-        'media_timestamp': 0,
-        'for_album': false,
-        'in_message_thread': false,
+  Future<bool> openMessage(TelegramAudio audio) =>
+      _messageOpens[audio.key] ??= _openMessage(audio).whenComplete(() {
+        _messageOpens.remove(audio.key);
       });
-      return await _musicPublisher.openTelegramLink(response['link'] as String);
+
+  Future<bool> _openMessage(TelegramAudio audio) async {
+    var target = TelegramMessageLink.fromAudio(audio);
+    // Private chats/basic groups have no shareable HTTPS message link. Their
+    // app-only link also works without a live TDLib session.
+    if (_transport != null && target?.appUri.host != 'openmessage') {
+      final scope = 'message-link:${audio.key}';
+      try {
+        final response = await _td
+            .read(scope, 'getMessageLink', {
+              'chat_id': audio.chatId,
+              'message_id': audio.messageId,
+              'media_timestamp': 0,
+              'for_album': false,
+              'in_message_thread': false,
+            })
+            .timeout(const Duration(seconds: 3));
+        target =
+            TelegramMessageLink.fromHttps(response['link'] as String? ?? '') ??
+            target;
+      } catch (_) {
+        // A missing/unavailable message link must not disable cached messages.
+        _transport?.cancelReads(scope);
+      }
+    }
+    if (target == null || _disposed) return false;
+    try {
+      return await _musicPublisher.openTelegramLink(
+        target.appUri.toString(),
+        fallbackLink: target.webUri?.toString(),
+      );
     } catch (_) {
       return false;
     }

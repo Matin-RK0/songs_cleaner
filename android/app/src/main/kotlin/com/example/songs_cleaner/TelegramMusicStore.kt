@@ -40,13 +40,9 @@ class TelegramMusicStore(private val context: Context) : MethodChannel.MethodCal
                 } catch (_: Exception) { result.error("DOWNLOAD_SERVICE_UNAVAILABLE", "Background transfer unavailable", null) }
             }
             "openTelegramLink" -> {
-                try {
-                    val link = call.argument<String>("link") ?: ""
-                    val uri = Uri.parse(link)
-                    if (uri.scheme != "https" || uri.host != "t.me") throw IOException("Invalid Telegram link")
-                    context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    result.success(true)
-                } catch (_: Exception) { result.success(false) }
+                val primary = call.argument<String>("link")
+                val fallback = call.argument<String>("fallbackLink")
+                result.success(openTelegramLink(primary) || openTelegramLink(fallback))
             }
             "requiresLegacyPermission" -> result.success(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
             "saveAudio" -> {
@@ -80,6 +76,22 @@ class TelegramMusicStore(private val context: Context) : MethodChannel.MethodCal
             }
             else -> result.notImplemented()
         }
+    }
+
+    private fun openTelegramLink(link: String?): Boolean {
+        if (link.isNullOrBlank()) return false
+        return try {
+            val uri = Uri.parse(link)
+            val valid = (uri.scheme == "tg" && uri.host in setOf("resolve", "privatepost", "openmessage")) ||
+                (uri.scheme == "https" && uri.host in setOf("t.me", "telegram.me", "telegram.dog"))
+            if (!valid || uri.userInfo != null) return false
+            // tg:// avoids Android's unverified HTTPS-domain/browser defaults.
+            // Let Android resolve the user's installed Telegram client/fork.
+            context.startActivity(Intent(Intent.ACTION_VIEW, uri)
+                .addCategory(Intent.CATEGORY_BROWSABLE)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            true
+        } catch (_: Exception) { false }
     }
 
     @Suppress("DEPRECATION")
