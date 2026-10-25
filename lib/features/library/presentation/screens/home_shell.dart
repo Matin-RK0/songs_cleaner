@@ -21,6 +21,7 @@ import '../../../telegram/presentation/screens/telegram_tab.dart';
 import '../screens/groups_tab.dart';
 import '../screens/songs_tab.dart';
 import '../models/home_tab_presentation.dart';
+import '../widgets/home_action_visibility.dart';
 import '../../application/providers/library_controller.dart';
 import '../../application/providers/library_sync_scheduler.dart';
 
@@ -240,38 +241,44 @@ class _HomeShellState extends ConsumerState<HomeShell>
             bottom: hasCurrent ? 0 : -MiniPlayerBar.height,
             child: const MiniPlayerBar(),
           ),
-          if (onPlaylistsTab)
-            PositionedDirectional(
-              end: AppSpacing.md,
-              bottom: hasCurrent
-                  ? MiniPlayerBar.height + AppSpacing.md
-                  : AppSpacing.md,
+          PositionedDirectional(
+            end: AppSpacing.md,
+            bottom: hasCurrent
+                ? MiniPlayerBar.height + AppSpacing.md
+                : AppSpacing.md,
+            child: HomeActionVisibility(
+              visible: onPlaylistsTab,
               child: FloatingActionButton(
                 heroTag: 'new-playlist',
                 tooltip: l10n.newPlaylist,
                 onPressed: _createPlaylist,
                 child: const Icon(Icons.add_rounded),
               ),
-            )
-          else if (!onTelegramTab) ...[
-            PositionedDirectional(
-              end: AppSpacing.md,
-              bottom: hasCurrent
-                  ? MiniPlayerBar.height + AppSpacing.md
-                  : AppSpacing.md,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (activeTab == HomeTab.songs) ...[
-                    FloatingActionButton.small(
+            ),
+          ),
+          PositionedDirectional(
+            end: AppSpacing.md,
+            bottom: hasCurrent
+                ? MiniPlayerBar.height + AppSpacing.md
+                : AppSpacing.md,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                HomeActionVisibility(
+                  visible: activeTab == HomeTab.songs,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: FloatingActionButton.small(
                       heroTag: 'scroll-to-top',
                       tooltip: l10n.scrollToTop,
                       onPressed: _scrollToTop,
-                      child: const Icon(Icons.vertical_align_top_rounded),
+                      child: const Icon(Icons.arrow_upward_rounded),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                  ],
-                  FloatingActionButton(
+                  ),
+                ),
+                HomeActionVisibility(
+                  visible: !onPlaylistsTab && !onTelegramTab,
+                  child: FloatingActionButton(
                     heroTag: 'shuffle-all',
                     tooltip: l10n.shuffleAll,
                     onPressed: () async {
@@ -285,14 +292,17 @@ class _HomeShellState extends ConsumerState<HomeShell>
                     },
                     child: const Icon(Icons.shuffle_rounded),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            PositionedDirectional(
-              end: AppSpacing.md + 64,
-              bottom: hasCurrent
-                  ? MiniPlayerBar.height + AppSpacing.md
-                  : AppSpacing.md,
+          ),
+          PositionedDirectional(
+            end: AppSpacing.md + 64,
+            bottom: hasCurrent
+                ? MiniPlayerBar.height + AppSpacing.md
+                : AppSpacing.md,
+            child: HomeActionVisibility(
+              visible: !onPlaylistsTab && !onTelegramTab,
               child: FloatingActionButton.small(
                 heroTag: 'scroll-to-current',
                 tooltip: l10n.nowPlaying,
@@ -300,7 +310,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 child: const Icon(Icons.my_location_rounded),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );

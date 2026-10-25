@@ -1,6 +1,7 @@
 import 'package:flutter/animation.dart';
 
 abstract final class AppMotion {
+  static const Offset floatingActionEntryOffset = Offset(0, 0.18);
   static const Duration fast = Duration(milliseconds: 150);
   static const Duration normal = Duration(milliseconds: 250);
   static const Duration slow = Duration(milliseconds: 400);
