@@ -188,6 +188,14 @@
     }
   },
   "delete": "حذف",
+  "homeTabsTitle": "تب‌ها و صفحه شروع",
+  "homeTabsDescription": "برای تغییر ترتیب، دستگیره کنار تب‌ها را بکشید. دایره کنار هر تب را انتخاب کنید تا هنگام باز کردن برنامه نمایش داده شود.",
+  "homeTabsDefaultSummary": "صفحه شروع: {tab}",
+  "@homeTabsDefaultSummary": {"placeholders": {"tab": {"type": "String"}}},
+  "homeTabsDefaultBadge": "نمایش هنگام شروع برنامه",
+  "homeTabsDragHint": "برای جابه‌جایی بکشید",
+  "homeTabsReset": "بازنشانی",
+  "homeTabsSaving": "در حال ذخیره…",
   "cancel": "انصراف",
   "songDeletedToast": "«{title}» حذف شد",
   "@songDeletedToast": {

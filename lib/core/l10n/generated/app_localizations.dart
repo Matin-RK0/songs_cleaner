@@ -1123,6 +1123,48 @@ abstract class AppLocalizations {
   /// **'حذف'**
   String get delete;
 
+  /// No description provided for @homeTabsTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تب‌ها و صفحه شروع'**
+  String get homeTabsTitle;
+
+  /// No description provided for @homeTabsDescription.
+  ///
+  /// In fa, this message translates to:
+  /// **'برای تغییر ترتیب، دستگیره کنار تب‌ها را بکشید. دایره کنار هر تب را انتخاب کنید تا هنگام باز کردن برنامه نمایش داده شود.'**
+  String get homeTabsDescription;
+
+  /// No description provided for @homeTabsDefaultSummary.
+  ///
+  /// In fa, this message translates to:
+  /// **'صفحه شروع: {tab}'**
+  String homeTabsDefaultSummary(String tab);
+
+  /// No description provided for @homeTabsDefaultBadge.
+  ///
+  /// In fa, this message translates to:
+  /// **'نمایش هنگام شروع برنامه'**
+  String get homeTabsDefaultBadge;
+
+  /// No description provided for @homeTabsDragHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'برای جابه‌جایی بکشید'**
+  String get homeTabsDragHint;
+
+  /// No description provided for @homeTabsReset.
+  ///
+  /// In fa, this message translates to:
+  /// **'بازنشانی'**
+  String get homeTabsReset;
+
+  /// No description provided for @homeTabsSaving.
+  ///
+  /// In fa, this message translates to:
+  /// **'در حال ذخیره…'**
+  String get homeTabsSaving;
+
   /// No description provided for @cancel.
   ///
   /// In fa, this message translates to:

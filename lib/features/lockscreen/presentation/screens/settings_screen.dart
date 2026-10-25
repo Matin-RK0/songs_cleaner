@@ -18,6 +18,7 @@ import '../../../../app/router/route_names.dart';
 import '../../../player/application/providers/player_preferences_controller.dart';
 import '../../../player/application/providers/audio_focus_controller.dart';
 import '../../../player/domain/audio_focus_mode.dart';
+import '../../../library/presentation/widgets/home_tabs_setting_tile.dart';
 import '../../../player/presentation/widgets/widget_background_setting_tile.dart';
 import '../../application/providers/lock_screen_controller.dart';
 
@@ -449,6 +450,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: _showPrimaryColorSheet,
               ),
               const WidgetBackgroundSettingTile(),
+              const HomeTabsSettingTile(),
               _SectionHeader(title: l10n.settingsLanguageSection),
               ListTile(
                 leading: Icon(Icons.translate_rounded, color: colors.primary),

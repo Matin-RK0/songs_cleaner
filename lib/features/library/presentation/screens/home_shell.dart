@@ -5,7 +5,8 @@ import 'package:songs_cleaner/features/library/application/providers/library_pro
 import '../../../../app/router/app_router.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
-import '../../../../core/settings/app_settings_repository.dart';
+import '../../../../core/settings/home_tab_settings.dart';
+import '../../../../core/settings/home_tab_settings_controller.dart';
 import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_feedback.dart';
@@ -19,6 +20,7 @@ import '../../../playlists/presentation/widgets/playlist_name_sheet.dart';
 import '../../../telegram/presentation/screens/telegram_tab.dart';
 import '../screens/groups_tab.dart';
 import '../screens/songs_tab.dart';
+import '../models/home_tab_presentation.dart';
 import '../../application/providers/library_controller.dart';
 import '../../application/providers/library_sync_scheduler.dart';
 
@@ -37,14 +39,14 @@ class _HomeShellState extends ConsumerState<HomeShell>
   late final ScrollController _songsScrollController;
   AppLifecycleListener? _lifecycleListener;
   late int _lastTabIndex;
+  late List<HomeTab> _tabs;
 
   @override
   void initState() {
     super.initState();
-    final savedTab = ref
-        .read(appSettingsRepositoryProvider)
-        .loadHomeTabIndex(0)
-        .clamp(0, 4);
+    final settings = ref.read(homeTabSettingsProvider);
+    _tabs = settings.order;
+    final savedTab = _tabs.indexOf(settings.defaultTab);
     _lastTabIndex = savedTab;
     _tabController = TabController(
       length: 5,
@@ -53,6 +55,14 @@ class _HomeShellState extends ConsumerState<HomeShell>
     );
     _songsScrollController = ScrollController();
     _tabController.addListener(_onTabChanged);
+    ref.listenManual(homeTabSettingsProvider, (_, settings) {
+      final activeTab = _tabs[_tabController.index];
+      setState(() {
+        _tabs = settings.order;
+        _lastTabIndex = _tabs.indexOf(activeTab);
+        _tabController.index = _lastTabIndex;
+      });
+    });
     ref.listenManual(playbackErrorEventsProvider, (previous, next) {
       next.whenData((title) {
         if (!mounted) return;
@@ -69,7 +79,6 @@ class _HomeShellState extends ConsumerState<HomeShell>
     if (_tabController.indexIsChanging) return;
     if (_tabController.index == _lastTabIndex) return;
     _lastTabIndex = _tabController.index;
-    ref.read(appSettingsRepositoryProvider).saveHomeTabIndex(_lastTabIndex);
     // Swap the floating action (shuffle vs. new playlist) for the active tab.
     setState(() {});
   }
@@ -129,8 +138,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
     final hasCurrent = ref.watch(
       playerProvider.select((state) => state.hasCurrent),
     );
-    final onPlaylistsTab = _tabController.index == 3;
-    final onTelegramTab = _tabController.index == 4;
+    final activeTab = _tabs[_tabController.index];
+    final onPlaylistsTab = activeTab == HomeTab.playlists;
+    final onTelegramTab = activeTab == HomeTab.telegram;
 
     return Scaffold(
       appBar: AppBar(
@@ -192,13 +202,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
           indicatorWeight: 4,
           indicatorSize: TabBarIndicatorSize.label,
           indicatorPadding: const EdgeInsets.symmetric(horizontal: -8),
-          tabs: [
-            Tab(text: l10n.songsTab),
-            Tab(text: l10n.artistsTab),
-            Tab(text: l10n.albumsTab),
-            Tab(text: l10n.playlistsTab),
-            Tab(text: l10n.telegramTitle),
-          ],
+          tabs: [for (final tab in _tabs) Tab(text: tab.label(l10n))],
         ),
       ),
       body: Stack(
@@ -210,11 +214,19 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    SongsTab(scrollController: _songsScrollController),
-                    GroupsTab(isArtists: true),
-                    GroupsTab(isArtists: false),
-                    const PlaylistsTab(),
-                    const TelegramTab(),
+                    for (final tab in _tabs)
+                      KeyedSubtree(
+                        key: ValueKey(tab),
+                        child: switch (tab) {
+                          HomeTab.songs => SongsTab(
+                            scrollController: _songsScrollController,
+                          ),
+                          HomeTab.artists => GroupsTab(isArtists: true),
+                          HomeTab.albums => GroupsTab(isArtists: false),
+                          HomeTab.playlists => const PlaylistsTab(),
+                          HomeTab.telegram => const TelegramTab(),
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -250,7 +262,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (_tabController.index == 0) ...[
+                  if (activeTab == HomeTab.songs) ...[
                     FloatingActionButton.small(
                       heroTag: 'scroll-to-top',
                       tooltip: l10n.scrollToTop,
@@ -311,8 +323,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
   void _scrollToCurrent() {
     final currentId = ref.read(playerProvider).current?.id;
     if (currentId == null) return;
-    if (_tabController.index != 0) {
-      _tabController.animateTo(0);
+    final songsIndex = _tabs.indexOf(HomeTab.songs);
+    if (_tabController.index != songsIndex) {
+      _tabController.animateTo(songsIndex);
     }
     final songs = ref.read(libraryProvider).value?.visibleSongs ?? const [];
     final index = songs.indexWhere((song) => song.id == currentId);

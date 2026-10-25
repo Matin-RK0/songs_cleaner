@@ -577,6 +577,30 @@ class AppLocalizationsFa extends AppLocalizations {
   String get delete => 'حذف';
 
   @override
+  String get homeTabsTitle => 'تب‌ها و صفحه شروع';
+
+  @override
+  String get homeTabsDescription =>
+      'برای تغییر ترتیب، دستگیره کنار تب‌ها را بکشید. دایره کنار هر تب را انتخاب کنید تا هنگام باز کردن برنامه نمایش داده شود.';
+
+  @override
+  String homeTabsDefaultSummary(String tab) {
+    return 'صفحه شروع: $tab';
+  }
+
+  @override
+  String get homeTabsDefaultBadge => 'نمایش هنگام شروع برنامه';
+
+  @override
+  String get homeTabsDragHint => 'برای جابه‌جایی بکشید';
+
+  @override
+  String get homeTabsReset => 'بازنشانی';
+
+  @override
+  String get homeTabsSaving => 'در حال ذخیره…';
+
+  @override
   String get cancel => 'انصراف';
 
   @override

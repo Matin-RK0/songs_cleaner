@@ -579,6 +579,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete => 'Delete';
 
   @override
+  String get homeTabsTitle => 'Tabs & start page';
+
+  @override
+  String get homeTabsDescription =>
+      'Drag the handles to arrange your tabs. Select the circle beside a tab to open it whenever you launch the app.';
+
+  @override
+  String homeTabsDefaultSummary(String tab) {
+    return 'Start page: $tab';
+  }
+
+  @override
+  String get homeTabsDefaultBadge => 'Opens on launch';
+
+  @override
+  String get homeTabsDragHint => 'Drag to reorder';
+
+  @override
+  String get homeTabsReset => 'Reset';
+
+  @override
+  String get homeTabsSaving => 'Saving…';
+
+  @override
   String get cancel => 'Cancel';
 
   @override

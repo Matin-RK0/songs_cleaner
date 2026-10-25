@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'home_tab_settings.dart';
+
 /// Primitive snapshot of the last playback session. Lives in core so the
 /// storage layer stays independent of feature models; player code translates
 /// ids/enums.
@@ -146,6 +148,7 @@ class AppSettingsRepository {
 
   static const String _librarySortKey = 'library.sortIndex';
   static const String _homeTabIndexKey = 'home.tabIndex';
+  static const String _homeTabSettingsKey = 'home.tabSettings';
   static const String _homeTabLayoutVersionKey = 'home.tabLayoutVersion';
   static const String _sessionQueueKey = 'playback.session.queueIds';
   static const String _sessionCurrentKey = 'playback.session.currentId';
@@ -180,6 +183,28 @@ class AppSettingsRepository {
       _prefs.setInt(_librarySortKey, index);
 
   // -- Home tab ---------------------------------------------------------------
+
+  HomeTabSettings loadHomeTabSettings() {
+    final raw = _prefs.getString(_homeTabSettingsKey);
+    if (raw != null) {
+      try {
+        final json = jsonDecode(raw);
+        if (json is Map<String, dynamic>) return HomeTabSettings.fromJson(json);
+      } on FormatException {
+        // An invalid optional preference should not block the home screen.
+      }
+    }
+    return const HomeTabSettings();
+  }
+
+  Future<void> saveHomeTabSettings(HomeTabSettings settings) async {
+    if (!await _prefs.setString(
+      _homeTabSettingsKey,
+      jsonEncode(settings.toJson()),
+    )) {
+      throw StateError('Home tab settings could not be saved');
+    }
+  }
 
   int loadHomeTabIndex(int fallback) {
     final stored = _prefs.getInt(_homeTabIndexKey);
