@@ -117,6 +117,26 @@ class AppLocalizationsFa extends AppLocalizations {
   String get telegramPinned => 'پین‌شده';
 
   @override
+  String get telegramPinnedChats => 'سنجاق‌شده‌ها';
+
+  @override
+  String get telegramOtherChats => 'سایر چت‌ها';
+
+  @override
+  String get telegramDownloadsActiveGroup => 'فعال';
+
+  @override
+  String get telegramDownloadsAttentionGroup => 'نیازمند اقدام';
+
+  @override
+  String get telegramDownloadsFinishedGroup => 'پایان‌یافته';
+
+  @override
+  String telegramSectionCount(int count) {
+    return '$count مورد';
+  }
+
+  @override
   String get telegramSelect => 'انتخاب آهنگ‌ها';
 
   @override

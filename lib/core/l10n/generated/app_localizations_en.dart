@@ -117,6 +117,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telegramPinned => 'Pinned';
 
   @override
+  String get telegramPinnedChats => 'Pinned chats';
+
+  @override
+  String get telegramOtherChats => 'Other chats';
+
+  @override
+  String get telegramDownloadsActiveGroup => 'Active';
+
+  @override
+  String get telegramDownloadsAttentionGroup => 'Needs attention';
+
+  @override
+  String get telegramDownloadsFinishedGroup => 'Finished';
+
+  @override
+  String telegramSectionCount(int count) {
+    return '$count items';
+  }
+
+  @override
   String get telegramSelect => 'Select tracks';
 
   @override

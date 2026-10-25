@@ -283,6 +283,42 @@ abstract class AppLocalizations {
   /// **'پین‌شده'**
   String get telegramPinned;
 
+  /// No description provided for @telegramPinnedChats.
+  ///
+  /// In fa, this message translates to:
+  /// **'سنجاق‌شده‌ها'**
+  String get telegramPinnedChats;
+
+  /// No description provided for @telegramOtherChats.
+  ///
+  /// In fa, this message translates to:
+  /// **'سایر چت‌ها'**
+  String get telegramOtherChats;
+
+  /// No description provided for @telegramDownloadsActiveGroup.
+  ///
+  /// In fa, this message translates to:
+  /// **'فعال'**
+  String get telegramDownloadsActiveGroup;
+
+  /// No description provided for @telegramDownloadsAttentionGroup.
+  ///
+  /// In fa, this message translates to:
+  /// **'نیازمند اقدام'**
+  String get telegramDownloadsAttentionGroup;
+
+  /// No description provided for @telegramDownloadsFinishedGroup.
+  ///
+  /// In fa, this message translates to:
+  /// **'پایان‌یافته'**
+  String get telegramDownloadsFinishedGroup;
+
+  /// No description provided for @telegramSectionCount.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} مورد'**
+  String telegramSectionCount(int count);
+
   /// No description provided for @telegramSelect.
   ///
   /// In fa, this message translates to:

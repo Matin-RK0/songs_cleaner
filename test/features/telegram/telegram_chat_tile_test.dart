@@ -98,7 +98,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.forum_outlined), findsOneWidget);
+      expect(find.text('ک'), findsOneWidget);
       expect(
         tester.getSize(find.byType(TelegramChatTile)).height,
         greaterThan(AppSpacing.avatarLarge),

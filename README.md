@@ -73,6 +73,12 @@ two-step-verification passwords are not persisted by this app.
 - Chats support pinned/recent ordering, verified local-track counts, an active
   download badge and cached profile pictures. Query, sort, filter and scroll
   position are retained per chat. Search explicitly covers loaded messages.
+- Chat lists separate pinned chats from other chats, including within search
+  results. Missing chat pictures use a grapheme-safe first letter and an
+  ID-stable, theme-aware color. Empty sections are hidden.
+- Downloads are grouped as active (queued/receiving/saving), needs attention
+  (paused/failed), and finished (completed/canceled). Group membership updates
+  independently of byte progress, and rows retain their existing controls.
 - Long press selects tracks. Group download confirms the missing tracks' size;
   local selections can be queued or added to playlists. Download-and-play is
   explicit. Opening a Telegram message uses TDLib's message link when available.

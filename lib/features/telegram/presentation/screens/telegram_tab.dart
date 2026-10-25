@@ -7,12 +7,14 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../player/presentation/widgets/mini_player_bar.dart';
 import '../../application/telegram_controller.dart';
+import '../../application/telegram_chat_sections_provider.dart';
 import '../../domain/telegram_models.dart';
 import '../widgets/telegram_feedback.dart';
 import '../widgets/telegram_overview_card.dart';
 import '../widgets/telegram_chat_tile.dart';
 import '../widgets/telegram_download_sheet.dart';
 import '../widgets/telegram_cache_controls.dart';
+import '../widgets/telegram_section_header.dart';
 import '../../application/telegram_preferences_controller.dart';
 
 class TelegramTab extends ConsumerWidget {
@@ -180,8 +182,8 @@ class _TelegramChatList extends ConsumerWidget {
   const _TelegramChatList();
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chats = ref.watch(telegramVisibleChatsProvider);
-    if (chats.isEmpty) {
+    final sections = ref.watch(telegramChatSectionsProvider);
+    if (sections.isEmpty) {
       final status = ref.watch(
         telegramProvider.select(
           (e) => (e.query, e.busy, e.failure, e.auth, e.chats.isEmpty),
@@ -215,33 +217,64 @@ class _TelegramChatList extends ConsumerWidget {
         ),
       );
     }
-    return SliverPadding(
-      padding: AppSpacing.allMd,
-      sliver: SliverList.builder(
-        itemCount: chats.length,
-        itemBuilder: (context, index) {
-          final chat = chats[index];
-          return Padding(
-            key: ValueKey(chat.id),
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: TelegramChatEntry(
-              chat: chat,
-              onTap: () {
-                final preferences = ref.read(
-                  telegramPreferencesProvider.notifier,
-                );
-                Navigator.of(context)
-                    .pushNamed(RouteNames.telegramChat, arguments: chat.id)
-                    .then((_) {
-                      if (context.mounted) preferences.remember(chat.id);
-                    });
-              },
+    return SliverMainAxisGroup(
+      slivers: [
+        if (sections.pinned.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: TelegramSectionHeader(
+              title: context.l10n.telegramPinnedChats,
+              count: sections.pinned.length,
+              icon: Icons.push_pin_rounded,
             ),
-          );
-        },
-      ),
+          ),
+          _TelegramChatSection(chats: sections.pinned),
+        ],
+        if (sections.other.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: TelegramSectionHeader(
+              title: context.l10n.telegramOtherChats,
+              count: sections.other.length,
+              icon: Icons.forum_outlined,
+            ),
+          ),
+          _TelegramChatSection(chats: sections.other),
+        ],
+      ],
     );
   }
+}
+
+class _TelegramChatSection extends ConsumerWidget {
+  const _TelegramChatSection({required this.chats});
+  final List<TelegramChat> chats;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => SliverPadding(
+    padding: AppSpacing.allMd,
+    sliver: SliverList.builder(
+      itemCount: chats.length,
+      itemBuilder: (context, index) {
+        final chat = chats[index];
+        return Padding(
+          key: ValueKey(chat.id),
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: TelegramChatEntry(
+            chat: chat,
+            onTap: () {
+              final preferences = ref.read(
+                telegramPreferencesProvider.notifier,
+              );
+              Navigator.of(context)
+                  .pushNamed(RouteNames.telegramChat, arguments: chat.id)
+                  .then((_) {
+                    if (context.mounted) preferences.remember(chat.id);
+                  });
+            },
+          ),
+        );
+      },
+    ),
+  );
 }
 
 class _TelegramChatSearch extends ConsumerStatefulWidget {

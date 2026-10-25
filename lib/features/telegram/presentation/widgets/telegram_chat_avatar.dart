@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_avatar_palette.dart';
 import '../../application/telegram_artwork_provider.dart';
 import '../../domain/telegram_models.dart';
+import '../providers/telegram_avatar_identity_provider.dart';
 
 class TelegramChatAvatar extends ConsumerWidget {
   const TelegramChatAvatar({
@@ -17,6 +19,10 @@ class TelegramChatAvatar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final identity = ref.watch(
+      telegramAvatarIdentityProvider((chat.id, chat.title)),
+    );
+    final palette = AppAvatarPalette.colors(colors, identity.colorIndex);
     final photo = ref.watch(
       telegramArtworkProvider((
         chat.photoFileId,
@@ -28,13 +34,27 @@ class TelegramChatAvatar extends ConsumerWidget {
     final resolution = (size * MediaQuery.devicePixelRatioOf(context))
         .round()
         .clamp(1, 256);
-    final placeholder = Icon(
-      chat.kind == 'chatTypePrivate'
-          ? Icons.person_outline_rounded
-          : Icons.forum_outlined,
-      size: AppSpacing.xl,
-      color: colors.onSecondaryContainer,
-    );
+    final placeholder = identity.initial.isNotEmpty
+        ? Padding(
+            padding: AppSpacing.allSm,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                identity.initial,
+                maxLines: 1,
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineSmall?.copyWith(color: palette.foreground),
+              ),
+            ),
+          )
+        : Icon(
+            chat.kind == 'chatTypePrivate'
+                ? Icons.person_outline_rounded
+                : Icons.forum_outlined,
+            size: AppSpacing.xl,
+            color: palette.foreground,
+          );
     return ExcludeSemantics(
       child: RepaintBoundary(
         child: SizedBox.square(
@@ -42,7 +62,7 @@ class TelegramChatAvatar extends ConsumerWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: colors.secondaryContainer,
+              color: palette.background,
             ),
             child: bytes == null
                 ? placeholder

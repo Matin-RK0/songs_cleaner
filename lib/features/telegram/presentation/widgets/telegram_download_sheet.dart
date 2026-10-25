@@ -3,14 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../application/telegram_download_controller.dart';
+import '../../application/telegram_download_sections_provider.dart';
 import '../../application/telegram_controller.dart';
 import '../../application/telegram_preferences_controller.dart';
 import '../../../../app/router/route_names.dart';
 import '../../domain/telegram_download.dart';
+import '../../domain/telegram_download_group.dart';
 import '../../domain/telegram_models.dart';
 import '../providers/download_labels_provider.dart';
 import 'telegram_download_control.dart';
 import 'telegram_feedback.dart';
+import 'telegram_section_header.dart';
 
 Future<void> showTelegramDownloads(BuildContext context) {
   FocusManager.instance.primaryFocus?.unfocus();
@@ -68,7 +71,7 @@ class TelegramDownloadsView extends ConsumerWidget {
   final bool fill;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ids = ref.watch(telegramDownloadIdsProvider);
+    final sections = ref.watch(telegramDownloadSectionsProvider);
     final l10n = context.l10n;
     return SizedBox(
       height: fill
@@ -82,17 +85,39 @@ class TelegramDownloadsView extends ConsumerWidget {
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(child: _DownloadHeader(showTitle: !fill)),
-              if (ids.isEmpty)
+              if (sections.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(child: Text(l10n.telegramNoDownloads)),
-                )
-              else
-                SliverList.builder(
-                  itemCount: ids.length,
-                  itemBuilder: (_, index) =>
-                      _DownloadRow(key: ValueKey(ids[index]), id: ids[index]),
                 ),
+              for (final section in sections) ...[
+                SliverToBoxAdapter(
+                  child: TelegramSectionHeader(
+                    title: switch (section.group) {
+                      TelegramDownloadGroup.active =>
+                        l10n.telegramDownloadsActiveGroup,
+                      TelegramDownloadGroup.needsAttention =>
+                        l10n.telegramDownloadsAttentionGroup,
+                      TelegramDownloadGroup.finished =>
+                        l10n.telegramDownloadsFinishedGroup,
+                    },
+                    count: section.ids.length,
+                    icon: switch (section.group) {
+                      TelegramDownloadGroup.active => Icons.downloading_rounded,
+                      TelegramDownloadGroup.needsAttention =>
+                        Icons.pending_actions_rounded,
+                      TelegramDownloadGroup.finished => Icons.task_alt_rounded,
+                    },
+                  ),
+                ),
+                SliverList.builder(
+                  itemCount: section.ids.length,
+                  itemBuilder: (_, index) => _DownloadRow(
+                    key: ValueKey(section.ids[index]),
+                    id: section.ids[index],
+                  ),
+                ),
+              ],
               SliverToBoxAdapter(
                 child: SafeArea(
                   top: false,
