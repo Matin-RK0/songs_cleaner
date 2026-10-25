@@ -12,6 +12,7 @@ abstract final class AppColorPickerTokens {
   static const previewHeight = 48.0;
   static const progressSize = 18.0;
   static const progressStroke = 2.0;
+  static const actionMinHeight = 48.0;
   static const hueTrackHeight = 12.0;
   static const hueTrackInset = 24.0;
   static const white = Color(0xffffffff);

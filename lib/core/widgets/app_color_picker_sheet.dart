@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../extensions/context_l10n.dart';
 import '../theme/app_color_picker_tokens.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'app_color_picker_editor.dart';
@@ -121,51 +122,84 @@ class _AppColorPickerSheetState extends State<AppColorPickerSheet> {
                           ),
                           const SizedBox(height: AppSpacing.sm),
                         ],
-                        Wrap(
-                          alignment: WrapAlignment.end,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.xs,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (widget.resetLabel != null &&
-                                widget.onReset != null)
-                              TextButton(
+                            Expanded(
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(
+                                    AppColorPickerTokens.actionMinHeight,
+                                  ),
+                                ),
                                 onPressed: _saving
                                     ? null
-                                    : () => _submit(widget.onReset!),
-                                child: Text(widget.resetLabel!),
-                              ),
-                            TextButton(
-                              onPressed: _saving
-                                  ? null
-                                  : () => Navigator.of(context).pop(),
-                              child: Text(l10n.cancel),
-                            ),
-                            FilledButton(
-                              onPressed: _saving
-                                  ? null
-                                  : () => _submit(() => widget.onSave(_draft)),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (_saving) ...[
-                                    SizedBox.square(
-                                      dimension:
-                                          AppColorPickerTokens.progressSize,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth:
-                                            AppColorPickerTokens.progressStroke,
-                                        semanticsLabel: l10n.saveAction,
+                                    : () =>
+                                          _submit(() => widget.onSave(_draft)),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (_saving) ...[
+                                      SizedBox.square(
+                                        dimension:
+                                            AppColorPickerTokens.progressSize,
+                                        child: CircularProgressIndicator(
+                                          color: colors.onPrimary,
+                                          strokeWidth: AppColorPickerTokens
+                                              .progressStroke,
+                                          semanticsLabel: l10n.saveAction,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.sm),
+                                      const SizedBox(width: AppSpacing.sm),
+                                    ],
+                                    Flexible(child: Text(l10n.saveAction)),
                                   ],
-                                  Text(l10n.saveAction),
-                                ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: colors.textHigh,
+                                  backgroundColor: colors.surfaceHigh,
+                                  minimumSize: const Size.fromHeight(
+                                    AppColorPickerTokens.actionMinHeight,
+                                  ),
+                                  padding: AppSpacing.hMdVSm,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: AppRadius.md,
+                                  ),
+                                  textStyle: AppTypography.buttonLabel,
+                                ),
+                                onPressed: _saving
+                                    ? null
+                                    : () => Navigator.of(context).pop(),
+                                child: Text(l10n.cancel),
                               ),
                             ),
                           ],
                         ),
+                        if (widget.resetLabel != null &&
+                            widget.onReset != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: colors.textMedium,
+                              minimumSize: const Size.fromHeight(
+                                AppColorPickerTokens.actionMinHeight,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppRadius.md,
+                              ),
+                              textStyle: AppTypography.buttonLabel,
+                            ),
+                            onPressed: _saving
+                                ? null
+                                : () => _submit(widget.onReset!),
+                            child: Text(widget.resetLabel!),
+                          ),
+                        ],
                       ],
                     ),
                   ),
