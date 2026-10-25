@@ -33,17 +33,35 @@ class TelegramOverviewCard extends StatelessWidget {
                   TelegramEntrance(
                     child: Icon(
                       Icons.telegram_rounded,
-                      size: AppSpacing.iconHero,
+                      size: connected
+                          ? AppSpacing.avatarSize
+                          : AppSpacing.iconHero,
                       color: colors.onPrimaryContainer,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
-                    child: Text(
-                      connected ? l10n.telegramConnected : l10n.telegramOffline,
-                      style: text.labelLarge?.copyWith(
-                        color: colors.onPrimaryContainer,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          connected
+                              ? l10n.telegramConnected
+                              : l10n.telegramOffline,
+                          style: text.titleMedium?.copyWith(
+                            color: colors.onPrimaryContainer,
+                          ),
+                        ),
+                        if (connected) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            l10n.telegramDescription,
+                            style: text.bodySmall?.copyWith(
+                              color: colors.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   Icon(
@@ -64,9 +82,7 @@ class TelegramOverviewCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  connected
-                      ? l10n.telegramDescription
-                      : l10n.telegramOfflineHint,
+                  l10n.telegramOfflineHint,
                   style: text.bodyMedium?.copyWith(
                     color: colors.onPrimaryContainer,
                   ),

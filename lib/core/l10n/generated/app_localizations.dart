@@ -394,7 +394,7 @@ abstract class AppLocalizations {
   /// No description provided for @telegramFoldersHint.
   ///
   /// In fa, this message translates to:
-  /// **'فایل‌های قابل‌دسترسی گوشی؛ چت مبدا آن‌ها مشخص نیست'**
+  /// **'همهٔ آهنگ‌های در دسترس در پوشه‌های تلگرام این دستگاه'**
   String get telegramFoldersHint;
 
   /// No description provided for @telegramChats.
@@ -516,6 +516,66 @@ abstract class AppLocalizations {
   /// In fa, this message translates to:
   /// **'بازگشت به ورود کد'**
   String get telegramReturnToCode;
+
+  /// No description provided for @telegramShowPassword.
+  ///
+  /// In fa, this message translates to:
+  /// **'نمایش رمز'**
+  String get telegramShowPassword;
+
+  /// No description provided for @telegramHidePassword.
+  ///
+  /// In fa, this message translates to:
+  /// **'پنهان کردن رمز'**
+  String get telegramHidePassword;
+
+  /// No description provided for @telegramSendingCode.
+  ///
+  /// In fa, this message translates to:
+  /// **'در حال ارسال کد…'**
+  String get telegramSendingCode;
+
+  /// No description provided for @telegramVerifyingCode.
+  ///
+  /// In fa, this message translates to:
+  /// **'در حال بررسی کد…'**
+  String get telegramVerifyingCode;
+
+  /// No description provided for @telegramSigningIn.
+  ///
+  /// In fa, this message translates to:
+  /// **'در حال ورود…'**
+  String get telegramSigningIn;
+
+  /// No description provided for @telegramNoChatsConnectedHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'هنوز چتی بارگذاری نشده است. برای بررسی حسابت، به‌روزرسانی کن یا موارد بیشتری بارگذاری کن.'**
+  String get telegramNoChatsConnectedHint;
+
+  /// No description provided for @telegramClearSearch.
+  ///
+  /// In fa, this message translates to:
+  /// **'پاک کردن جست‌وجو'**
+  String get telegramClearSearch;
+
+  /// No description provided for @telegramPinLimit.
+  ///
+  /// In fa, this message translates to:
+  /// **'حداکثر ۱۲ چت را می‌توانی سنجاق کنی. برای افزودن چت جدید، یکی را از سنجاق خارج کن.'**
+  String get telegramPinLimit;
+
+  /// No description provided for @telegramDownloadsWaitingForConnection.
+  ///
+  /// In fa, this message translates to:
+  /// **'در انتظار اتصال به تلگرام؛ برای ادامهٔ دانلودها متصل شو.'**
+  String get telegramDownloadsWaitingForConnection;
+
+  /// No description provided for @telegramDownloadSettings.
+  ///
+  /// In fa, this message translates to:
+  /// **'تنظیمات دانلود'**
+  String get telegramDownloadSettings;
 
   /// No description provided for @telegramStarting.
   ///

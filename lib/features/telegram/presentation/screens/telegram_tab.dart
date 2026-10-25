@@ -63,18 +63,7 @@ class TelegramTab extends ConsumerWidget {
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: AppSpacing.screenPadding,
-              child: TextField(
-                onChanged: ref.read(telegramProvider.notifier).search,
-                decoration: InputDecoration(
-                  hintText: context.l10n.telegramSearch,
-                  prefixIcon: const Icon(Icons.search_rounded),
-                ),
-              ),
-            ),
-          ),
+          const SliverToBoxAdapter(child: _TelegramChatSearch()),
           const SliverToBoxAdapter(child: _TelegramStatus()),
           const SliverToBoxAdapter(child: TelegramDownloadDock()),
           const _TelegramChatList(),
@@ -148,7 +137,11 @@ class _TelegramFoldersTile extends ConsumerWidget {
           subtitle: Text(
             '${context.l10n.telegramFoldersHint}\n${context.l10n.telegramLocalCount(count)}',
           ),
-          trailing: const Icon(Icons.chevron_right_rounded),
+          trailing: Icon(
+            Directionality.of(context) == TextDirection.rtl
+                ? Icons.chevron_left_rounded
+                : Icons.chevron_right_rounded,
+          ),
           onTap: () => Navigator.of(
             context,
           ).pushNamed(RouteNames.telegramChat, arguments: 0),
@@ -187,7 +180,15 @@ class _TelegramChatList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chats = ref.watch(telegramVisibleChatsProvider);
     if (chats.isEmpty) {
-      final query = ref.watch(telegramProvider.select((e) => e.query));
+      final status = ref.watch(
+        telegramProvider.select(
+          (e) => (e.query, e.busy, e.failure, e.auth, e.chats.isEmpty),
+        ),
+      );
+      final query = status.$1;
+      if (status.$5 && (status.$2 || status.$3 != null)) {
+        return const SliverToBoxAdapter(child: SizedBox.shrink());
+      }
       return SliverToBoxAdapter(
         child: Padding(
           padding: AppSpacing.allLg,
@@ -196,7 +197,18 @@ class _TelegramChatList extends ConsumerWidget {
             title: query.isEmpty
                 ? context.l10n.telegramNoChats
                 : context.l10n.telegramNoResults,
-            message: context.l10n.telegramNoChatsHint,
+            message: query.isNotEmpty
+                ? context.l10n.noResultsMessage
+                : status.$4 == TelegramAuth.ready
+                ? context.l10n.telegramNoChatsConnectedHint
+                : context.l10n.telegramNoChatsHint,
+            action: query.isEmpty
+                ? null
+                : TextButton(
+                    onPressed: () =>
+                        ref.read(telegramProvider.notifier).search(''),
+                    child: Text(context.l10n.telegramClearSearch),
+                  ),
           ),
         ),
       );
@@ -225,6 +237,67 @@ class _TelegramChatList extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _TelegramChatSearch extends ConsumerStatefulWidget {
+  const _TelegramChatSearch();
+
+  @override
+  ConsumerState<_TelegramChatSearch> createState() =>
+      _TelegramChatSearchState();
+}
+
+class _TelegramChatSearchState extends ConsumerState<_TelegramChatSearch> {
+  late final TextEditingController _query;
+
+  @override
+  void initState() {
+    super.initState();
+    _query = TextEditingController(text: ref.read(telegramProvider).query);
+  }
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(telegramProvider.select((e) => e.query), (_, value) {
+      if (_query.text != value) {
+        _query.value = TextEditingValue(
+          text: value,
+          selection: TextSelection.collapsed(offset: value.length),
+        );
+      }
+    });
+    return Padding(
+      padding: AppSpacing.screenPadding,
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: _query,
+        builder: (context, value, _) => TextField(
+          controller: _query,
+          onChanged: ref.read(telegramProvider.notifier).search,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            hintText: context.l10n.telegramSearch,
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: value.text.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: context.l10n.telegramClearSearch,
+                    onPressed: () {
+                      _query.clear();
+                      ref.read(telegramProvider.notifier).search('');
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+          ),
+        ),
       ),
     );
   }

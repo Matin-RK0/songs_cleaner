@@ -1,12 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../library/application/providers/library_providers.dart';
 import '../domain/telegram_download.dart';
 import 'telegram_controller.dart';
 import 'telegram_download_controller.dart';
 
 final telegramChatLocalCountProvider = FutureProvider.autoDispose
     .family<int?, int>((ref, id) async {
-      ref.watch(allSongsProvider);
+      final matcher = ref.watch(telegramLocalMatcherProvider);
       ref.watch(
         telegramDownloadsProvider.select(
           (jobs) => Object.hashAll(
@@ -18,12 +17,40 @@ final telegramChatLocalCountProvider = FutureProvider.autoDispose
       );
       final repository = ref.watch(telegramRepositoryProvider);
       final files = ref.watch(telegramLocalFilesProvider);
-      final bindings = await repository.loadBindings();
-      final paths = bindings.entries
-          .where((entry) => entry.key.startsWith('$id:'))
-          .map((e) => e.value)
-          .toList();
-      if (paths.isEmpty) return null;
+      // Cache-only reads keep browsing summaries from opening chat controllers
+      // (which can connect and request remote audio pages).
+      final bindings = {
+        for (final entry in (await repository.loadBindings()).entries)
+          if (entry.key.startsWith('$id:')) entry.key: entry.value,
+      };
+      final audio = await repository.cachedAudio(id);
+      if (audio.isEmpty && bindings.isEmpty) return null;
+      if (!ref.mounted) return null;
+      final jobs = ref.read(telegramDownloadsProvider);
+      final playableAudio = {
+        for (final item in audio)
+          item.key: jobs[item.fileId]?.unfinished == true
+              ? item.withLocalPath('')
+              : item,
+      };
+      final paths = {
+        ...bindings.values,
+        for (final item in playableAudio.values) item.localPath,
+      }..remove('');
       final existing = await files.existingPaths(paths);
-      return paths.where(existing.contains).length;
+      // Count messages once, even when both a binding and TDLib path exist.
+      // Filename/size candidates alone are suggestions, not playable tracks.
+      return playableAudio.values
+              .where(
+                (item) =>
+                    matcher.resolve(item, bindings, existing).song != null,
+              )
+              .length +
+          bindings.entries
+              .where(
+                (entry) =>
+                    !playableAudio.containsKey(entry.key) &&
+                    existing.contains(entry.value),
+              )
+              .length;
     });

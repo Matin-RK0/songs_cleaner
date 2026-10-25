@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_state_views.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../playlists/presentation/widgets/add_to_playlist_sheet.dart';
 import '../../application/telegram_controller.dart';
+import '../../application/telegram_chat_local_inventory_provider.dart';
 import '../../application/telegram_download_controller.dart';
 import '../../application/telegram_preferences_controller.dart';
 import 'telegram_download_sheet.dart';
@@ -123,7 +124,11 @@ class _TelegramChatLibraryState extends ConsumerState<TelegramChatLibrary> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              l10n.telegramLocalCount(songs.length),
+                              l10n.telegramLocalCount(
+                                ref.watch(
+                                  telegramChatTotalLocalCountProvider(id),
+                                ),
+                              ),
                               style: Theme.of(context).textTheme.headlineSmall,
                             ),
                             if (ref.watch(telegramLocalMatchCountProvider(id)) >
@@ -198,7 +203,7 @@ class _TelegramChatLibraryState extends ConsumerState<TelegramChatLibrary> {
                                 hintText: l10n.telegramSearchMusic,
                                 prefixIcon: const Icon(Icons.search_rounded),
                                 suffixIcon: IconButton(
-                                  tooltip: l10n.cancel,
+                                  tooltip: l10n.telegramClearSearch,
                                   onPressed: () {
                                     _query.clear();
                                     controller.search('');

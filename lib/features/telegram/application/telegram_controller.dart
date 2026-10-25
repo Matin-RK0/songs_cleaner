@@ -8,6 +8,7 @@ import '../../library/domain/entities/song.dart';
 import '../domain/telegram_local_matcher.dart';
 import '../domain/telegram_models.dart';
 import '../domain/telegram_repository.dart';
+import '../domain/telegram_auth_input.dart';
 import '../infrastructure/telegram_repository_impl.dart';
 import '../infrastructure/telegram_local_files.dart';
 import 'telegram_download_controller.dart';
@@ -158,7 +159,7 @@ class TelegramController extends Notifier<TelegramState> {
       try {
         final chats = await repository.cachedChats();
         if (ref.mounted && state.chats.isEmpty) {
-          state = state.copyWith(chats: chats);
+          state = state.copyWith(chats: chats, failure: state.failure);
         }
         if (ref.mounted && await repository.hasSession() && ref.mounted) {
           await connect();
@@ -234,16 +235,21 @@ class TelegramController extends Notifier<TelegramState> {
   Future<void> submit(String value) => _run((version) async {
     final repository = ref.read(telegramRepositoryProvider);
     final step = state.authStep;
+    final normalized = switch (step) {
+      TelegramAuth.phone => TelegramAuthInput.phone(value),
+      TelegramAuth.code => TelegramAuthInput.code(value),
+      _ => value,
+    };
     await switch (step) {
-      TelegramAuth.phone => repository.submitPhone(value.trim()),
-      TelegramAuth.code => repository.submitCode(value.trim()),
+      TelegramAuth.phone => repository.submitPhone(normalized),
+      TelegramAuth.code => repository.submitCode(normalized),
       TelegramAuth.password => repository.submitPassword(value),
       _ => Future<void>.value(),
     };
     if (ref.mounted &&
         version == _operationVersion &&
         step == TelegramAuth.phone) {
-      state = state.copyWith(phone: value.trim(), editingPhone: false);
+      state = state.copyWith(phone: normalized, editingPhone: false);
     }
   });
   Future<void> refresh({bool more = false}) async {

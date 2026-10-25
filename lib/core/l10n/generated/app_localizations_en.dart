@@ -179,7 +179,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get telegramFoldersHint =>
-      'Accessible device files; their original chat is unknown';
+      'All accessible music in Telegram folders on this device';
 
   @override
   String get telegramChats => 'Your chats';
@@ -245,6 +245,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get telegramReturnToCode => 'Back to verification code';
+
+  @override
+  String get telegramShowPassword => 'Show password';
+
+  @override
+  String get telegramHidePassword => 'Hide password';
+
+  @override
+  String get telegramSendingCode => 'Sending code…';
+
+  @override
+  String get telegramVerifyingCode => 'Verifying code…';
+
+  @override
+  String get telegramSigningIn => 'Signing in…';
+
+  @override
+  String get telegramNoChatsConnectedHint =>
+      'No chats have been loaded yet. Refresh or load more to check your account.';
+
+  @override
+  String get telegramClearSearch => 'Clear search';
+
+  @override
+  String get telegramPinLimit =>
+      'You can pin up to 12 chats. Unpin one to add another.';
+
+  @override
+  String get telegramDownloadsWaitingForConnection =>
+      'Waiting for Telegram connection. Connect to resume your downloads.';
+
+  @override
+  String get telegramDownloadSettings => 'Download settings';
 
   @override
   String get telegramStarting => 'Connecting securely…';

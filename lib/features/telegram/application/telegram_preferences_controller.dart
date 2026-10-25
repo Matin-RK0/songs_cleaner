@@ -39,10 +39,15 @@ class TelegramPreferencesController extends Notifier<Map<String, dynamic>> {
     unawaited(_saving.catchError((Object _) {}));
   }
 
-  void pin(int id) {
+  bool pin(int id) {
+    if (_closing) return false;
     final pins = (state['pins'] as List? ?? []).whereType<int>().toSet();
-    if (!pins.remove(id)) pins.add(id);
-    _commit({...state, 'pins': pins.take(12).toList()});
+    if (!pins.remove(id)) {
+      if (pins.length >= 12) return false;
+      pins.add(id);
+    }
+    _commit({...state, 'pins': pins.toList()});
+    return true;
   }
 
   void remember(int id) {

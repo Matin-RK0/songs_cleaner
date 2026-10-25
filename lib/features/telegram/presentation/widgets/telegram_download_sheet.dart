@@ -93,6 +93,18 @@ class TelegramDownloadsView extends ConsumerWidget {
                   itemBuilder: (_, index) =>
                       _DownloadRow(key: ValueKey(ids[index]), id: ids[index]),
                 ),
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: AppSpacing.allMd,
+                    child: Text(
+                      l10n.telegramDownloadLocation,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -117,53 +129,61 @@ class _DownloadHeader extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (showTitle) ...[
-            Semantics(
-              header: true,
-              child: Text(l10n.telegramDownloads, style: text.titleLarge),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-          Text(
-            l10n.telegramDownloadsOverview(
-              summary.$1,
-              summary.$2,
-              summary.$3,
-              summary.$4,
-            ),
-            style: text.bodyMedium,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(l10n.telegramDownloadLocation, style: text.bodySmall),
-          const _DownloadConnectionStatus(),
-          DropdownButton<int>(
-            isExpanded: true,
-            value:
-                (ref.watch(
-                              telegramPreferencesProvider.select(
-                                (preferences) => preferences['parallel'],
-                              ),
-                            )
-                            as int? ??
-                        2)
-                    .clamp(1, 3),
-            items: [
-              for (var count = 1; count <= 3; count++)
-                DropdownMenuItem(
-                  value: count,
+          Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  header: showTitle,
                   child: Text(
-                    l10n.telegramConcurrency(count),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    showTitle
+                        ? l10n.telegramDownloads
+                        : l10n.telegramDownloadsOverview(
+                            summary.$1,
+                            summary.$2,
+                            summary.$3,
+                            summary.$4,
+                          ),
+                    style: showTitle ? text.titleLarge : text.bodyMedium,
                   ),
                 ),
+              ),
+              PopupMenuButton<int>(
+                tooltip: l10n.telegramDownloadSettings,
+                icon: const Icon(Icons.tune_rounded),
+                initialValue:
+                    (ref.watch(
+                                  telegramPreferencesProvider.select(
+                                    (p) => p['parallel'],
+                                  ),
+                                )
+                                as int? ??
+                            2)
+                        .clamp(1, 3),
+                itemBuilder: (_) => [
+                  for (var count = 1; count <= 3; count++)
+                    PopupMenuItem(
+                      value: count,
+                      child: Text(l10n.telegramConcurrency(count)),
+                    ),
+                ],
+                onSelected: ref
+                    .read(telegramPreferencesProvider.notifier)
+                    .parallel,
+              ),
             ],
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(telegramPreferencesProvider.notifier).parallel(value);
-              }
-            },
           ),
+          if (showTitle)
+            Text(
+              l10n.telegramDownloadsOverview(
+                summary.$1,
+                summary.$2,
+                summary.$3,
+                summary.$4,
+              ),
+              style: text.bodyMedium,
+            ),
+          const SizedBox(height: AppSpacing.sm),
+          const _DownloadConnectionStatus(),
           Wrap(
             spacing: AppSpacing.sm,
             children: [
@@ -211,7 +231,7 @@ class _DownloadConnectionStatus extends ConsumerWidget {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text(
-            context.l10n.telegramOffline,
+            context.l10n.telegramDownloadsWaitingForConnection,
             style: Theme.of(context).textTheme.labelLarge,
           ),
           TextButton.icon(

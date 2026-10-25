@@ -24,23 +24,33 @@ class TelegramErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: AppSpacing.allMd,
-    child: Material(
-      color: Theme.of(context).colorScheme.errorContainer,
-      borderRadius: AppRadius.lg,
-      child: Padding(
-        padding: AppSpacing.allMd,
-        child: Row(
-          children: [
-            const Icon(Icons.error_outline_rounded),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(child: Text(telegramFailureText(context, failure))),
-            if (onRetry != null)
-              IconButton(
-                tooltip: context.l10n.telegramReconnect,
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded),
+    child: Semantics(
+      liveRegion: true,
+      child: Material(
+        color: Theme.of(context).colorScheme.errorContainer,
+        textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onErrorContainer,
+        ),
+        borderRadius: AppRadius.lg,
+        child: Padding(
+          padding: AppSpacing.allMd,
+          child: Row(
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                color: Theme.of(context).colorScheme.onErrorContainer,
               ),
-          ],
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(child: Text(telegramFailureText(context, failure))),
+              if (onRetry != null)
+                IconButton(
+                  tooltip: context.l10n.retry,
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+            ],
+          ),
         ),
       ),
     ),

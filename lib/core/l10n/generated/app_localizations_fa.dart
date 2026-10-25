@@ -179,7 +179,7 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get telegramFoldersHint =>
-      'فایل‌های قابل‌دسترسی گوشی؛ چت مبدا آن‌ها مشخص نیست';
+      'همهٔ آهنگ‌های در دسترس در پوشه‌های تلگرام این دستگاه';
 
   @override
   String get telegramChats => 'چت‌های تو';
@@ -245,6 +245,39 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get telegramReturnToCode => 'بازگشت به ورود کد';
+
+  @override
+  String get telegramShowPassword => 'نمایش رمز';
+
+  @override
+  String get telegramHidePassword => 'پنهان کردن رمز';
+
+  @override
+  String get telegramSendingCode => 'در حال ارسال کد…';
+
+  @override
+  String get telegramVerifyingCode => 'در حال بررسی کد…';
+
+  @override
+  String get telegramSigningIn => 'در حال ورود…';
+
+  @override
+  String get telegramNoChatsConnectedHint =>
+      'هنوز چتی بارگذاری نشده است. برای بررسی حسابت، به‌روزرسانی کن یا موارد بیشتری بارگذاری کن.';
+
+  @override
+  String get telegramClearSearch => 'پاک کردن جست‌وجو';
+
+  @override
+  String get telegramPinLimit =>
+      'حداکثر ۱۲ چت را می‌توانی سنجاق کنی. برای افزودن چت جدید، یکی را از سنجاق خارج کن.';
+
+  @override
+  String get telegramDownloadsWaitingForConnection =>
+      'در انتظار اتصال به تلگرام؛ برای ادامهٔ دانلودها متصل شو.';
+
+  @override
+  String get telegramDownloadSettings => 'تنظیمات دانلود';
 
   @override
   String get telegramStarting => 'در حال برقراری اتصال امن…';

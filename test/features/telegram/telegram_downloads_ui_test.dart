@@ -152,7 +152,16 @@ void main() {
   ) async {
     await pumpDownloads(tester, size: const Size(640, 320), scale: 2);
     expect(tester.takeException(), isNull);
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+    await tester.scrollUntilVisible(
+      find.byIcon(Icons.close_rounded),
+      100,
+      scrollable: find
+          .descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.close_rounded).hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -200,7 +209,10 @@ void main() {
     await pumpDownloads(tester, size: const Size(600, 800));
     final context = tester.element(find.byType(TelegramDownloadsView));
     final l10n = AppLocalizations.of(context);
-    expect(find.text(l10n.telegramOffline), findsOneWidget);
+    expect(
+      find.text(l10n.telegramDownloadsWaitingForConnection),
+      findsOneWidget,
+    );
     await tester.tap(find.text(l10n.telegramReconnect));
     await tester.pumpAndSettle();
     expect(find.text('auth destination'), findsOneWidget);

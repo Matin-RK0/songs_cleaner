@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_feedback.dart';
 import '../../domain/telegram_models.dart';
 import 'telegram_chat_avatar.dart';
 import '../../application/telegram_chat_summary_provider.dart';
@@ -46,7 +47,12 @@ class TelegramChatEntry extends ConsumerWidget {
       recent: recent,
       localCount: count,
       downloading: active > 0,
-      onPin: () => ref.read(telegramPreferencesProvider.notifier).pin(chat.id),
+      onPin: () {
+        final changed = ref
+            .read(telegramPreferencesProvider.notifier)
+            .pin(chat.id);
+        if (!changed) showAppSnackBar(context, context.l10n.telegramPinLimit);
+      },
     );
   }
 }
@@ -122,13 +128,11 @@ class TelegramChatTile extends StatelessWidget {
                       chat.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleLarge,
+                      style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      localCount != null
-                          ? context.l10n.telegramLocalCount(localCount!)
-                          : pinned
+                      pinned
                           ? context.l10n.telegramPinned
                           : recent
                           ? context.l10n.telegramRecent
@@ -139,6 +143,15 @@ class TelegramChatTile extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
+                    if (localCount != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        context.l10n.telegramLocalCount(localCount!),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -154,7 +167,11 @@ class TelegramChatTile extends StatelessWidget {
                   ),
                 )
               else
-                const Icon(Icons.chevron_right_rounded),
+                Icon(
+                  Directionality.of(context) == TextDirection.rtl
+                      ? Icons.chevron_left_rounded
+                      : Icons.chevron_right_rounded,
+                ),
             ],
           ),
         ),

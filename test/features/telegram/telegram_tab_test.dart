@@ -44,7 +44,16 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byIcon(Icons.telegram_rounded), findsOneWidget);
         expect(tester.takeException(), isNull);
-        await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
+        await tester.scrollUntilVisible(
+          find.byIcon(Icons.forum_outlined),
+          150,
+          scrollable: find
+              .descendant(
+                of: find.byType(CustomScrollView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
         await tester.pumpAndSettle();
         expect(find.byIcon(Icons.forum_outlined), findsOneWidget);
         expect(tester.takeException(), isNull);

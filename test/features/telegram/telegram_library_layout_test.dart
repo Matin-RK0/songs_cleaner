@@ -173,10 +173,7 @@ void main() {
       (widget) => widget is Semantics && widget.properties.selected == true,
     );
     expect(selected, findsOneWidget);
-    expect(
-      tester.getSemantics(selected),
-      isSemantics(isSelected: true),
-    );
+    expect(tester.getSemantics(selected), isSemantics(isSelected: true));
     semantics.dispose();
   });
 
@@ -268,7 +265,7 @@ void main() {
       await tester.pumpAndSettle();
       final l10n = AppLocalizations.of(
         tester.element(find.byType(TelegramChatLibrary)),
-    );
+      );
       expect(find.text(l10n.noResultsTitle), findsOneWidget);
       expect(find.text(l10n.telegramNoResults), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());
