@@ -67,6 +67,7 @@ object LockScreenController {
 
     /** True while the player is currently covering the keyguard. */
     @Volatile private var playerShown = false
+    private var dismissingKeyguard = false
     private var wakeScreenOnPresentation = true
     private val screenWakeHandler = Handler(Looper.getMainLooper())
     private val clearScreenWake = Runnable {
@@ -76,10 +77,9 @@ object LockScreenController {
                 // Only the over-keyguard presentation may auto-lock. A Routine
                 // can also open this player while the user is using the phone.
                 if (keyguard.isKeyguardLocked && lockScreen() == "locked") return@let
-                clearWakeFlags(host)
-                // The activity may remain alive behind the keyguard, but the
-                // next manual SCREEN_ON must present it again.
-                playerShown = false
+                clearLockedFlags(host)
+                // Keep the logical presentation until Back/unlock removes the
+                // Flutter route, even when it is now behind the keyguard.
             }
         }
     }
@@ -96,7 +96,10 @@ object LockScreenController {
     }
 
     fun detach(host: Activity) {
-        if (activity === host) activity = null
+        if (activity === host) {
+            activity = null
+            dismissingKeyguard = false
+        }
     }
 
     fun onActivityCreated(host: Activity) {
@@ -144,7 +147,7 @@ object LockScreenController {
 
     /** Resets the wake grace period while the lock-screen player is being used. */
     fun onUserInteraction(host: Activity) {
-        if (!playerShown) return
+        if (!playerShown || dismissingKeyguard) return
         screenWakeHandler.removeCallbacks(clearScreenWake)
         screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
     }
@@ -184,13 +187,16 @@ object LockScreenController {
         activity?.let(::clearWakeFlags)
         val context = appContext ?: return
         if (!enabled || !playbackActive || !overlayGranted(context)) return
+        // Keep the same surface throughout the system's screen-off animation.
+        // Relaunching it or toggling SHOW_WHEN_LOCKED here causes a flash.
+        if (playerShown && activity != null) return
         // Prepare the Flutter route before the next wake, without waking the
         // display or starting a timeout that would discard the prepared window.
         showOverLockScreen(context, wakeScreen = false)
     }
 
     private fun onScreenOn() {
-        if (!enabled) return
+        if (!enabled || dismissingKeyguard) return
         val context = appContext ?: return
         val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         if (!keyguard.isKeyguardLocked) {
@@ -248,6 +254,7 @@ object LockScreenController {
     }
 
     private fun onUserPresent() {
+        dismissingKeyguard = false
         pendingShow = false
         if (!playerShown) return
         playerShown = false
@@ -257,12 +264,38 @@ object LockScreenController {
 
     /** Back pressed on the lock-screen player: return to the app home route. */
     private fun dismissFromBack() {
-        if (!playerShown) return
-        playerShown = false
-        val host = activity
-        if (host != null) {
-            clearLockedFlags(host)
+        if (dismissingKeyguard) return
+        if (!playerShown) {
+            // The feature may have been disabled while its Dart route remained.
+            channel?.invokeMethod("hidePlayer", null)
+            return
         }
+        val host = activity ?: return
+        if (host.isFinishing || host.isDestroyed) return
+        val keyguard = host.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        if (!keyguard.isKeyguardLocked) {
+            onUserPresent()
+            return
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            // Leave Flutter's player route intact behind the system keyguard.
+            // USER_PRESENT removes it only after the user unlocks the device.
+            clearLockedFlags(host)
+            return
+        }
+        dismissingKeyguard = true
+        screenWakeHandler.removeCallbacks(clearScreenWake)
+        val resumePlayer = {
+            dismissingKeyguard = false
+            if (activity === host) onUserInteraction(host)
+        }
+        // Never expose the underlying library while the device is still locked.
+        // Cancellation leaves the player visible instead of popping its route.
+        keyguard.requestDismissKeyguard(host, object : KeyguardManager.KeyguardDismissCallback() {
+            override fun onDismissSucceeded() { onUserPresent() }
+            override fun onDismissCancelled() { resumePlayer() }
+            override fun onDismissError() { resumePlayer() }
+        })
     }
 
     private fun dismissIfShown() {
@@ -292,7 +325,7 @@ object LockScreenController {
         // lock-screen presentation. Leaving it attached makes some Samsung
         // builds bypass their normal lock-screen display timeout.
         screenWakeHandler.removeCallbacks(clearScreenWake)
-        if (wakeScreen || isScreenInteractive(host)) {
+        if (!dismissingKeyguard && (wakeScreen || isScreenInteractive(host))) {
             screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
         }
     }
@@ -322,12 +355,6 @@ object LockScreenController {
             host.window.clearFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
         }
         host.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            host.setShowWhenLocked(false)
-        } else {
-            @Suppress("DEPRECATION")
-            host.window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
-        }
     }
 
     // -- Dart channel -----------------------------------------------------------
@@ -336,9 +363,9 @@ object LockScreenController {
     private fun lockScreen(): String {
         val status = ScreenLockAccessibilityService.lockScreen()
         if (status == "locked") {
-            activity?.let(::clearLockedFlags)
-            playerShown = false
-            pendingShow = false
+            // The lock action is asynchronous. Keep the player surface and
+            // SHOW_WHEN_LOCKED stable while Android animates the display off.
+            activity?.let(::clearWakeFlags)
         }
         return status
     }
@@ -389,7 +416,7 @@ object LockScreenController {
                 screenWakeDurationMs = seconds!!.toLong() * 1000L
                 context?.getSharedPreferences(LOCK_SCREEN_PREFS, Context.MODE_PRIVATE)
                     ?.edit()?.putInt(TIMEOUT_KEY, seconds)?.apply()
-                if (playerShown && context != null && isScreenInteractive(context)) {
+                if (playerShown && !dismissingKeyguard && context != null && isScreenInteractive(context)) {
                     screenWakeHandler.removeCallbacks(clearScreenWake)
                     screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
                 }

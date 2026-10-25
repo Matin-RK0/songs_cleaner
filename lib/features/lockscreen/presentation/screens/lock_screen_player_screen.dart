@@ -21,8 +21,8 @@ import '../widgets/lock_screen_background.dart';
 
 /// Lock-screen player. Pushed by the lock-screen coordinator when the keyguard
 /// turns on during playback, so the controls cover the lock screen instead of
-/// the home screen. Back closes this presentation task while audio remains
-/// owned by the background handler.
+/// the home screen. Native confirms keyguard dismissal before the coordinator
+/// removes this route; playback stays owned by the background handler.
 class LockScreenPlayerScreen extends ConsumerWidget {
   const LockScreenPlayerScreen({super.key});
 
@@ -33,10 +33,11 @@ class LockScreenPlayerScreen extends ConsumerWidget {
     final hideQuickDelete = ref.watch(hideQuickDeleteProvider);
     final l10n = context.l10n;
     return PopScope(
-      // The route is removed by the lock-screen coordinator (unlock or back);
-      // after it is gone tell native to drop the over-keyguard window flags.
+      canPop: false,
+      // Keep covering the library until native confirms the device is unlocked.
+      // The coordinator's imperative pop must not request dismissal again.
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) ref.read(lockScreenServiceProvider).dismiss();
+        if (!didPop) ref.read(lockScreenServiceProvider).dismiss();
       },
       child: Scaffold(
         backgroundColor: context.colors.background,
@@ -68,7 +69,6 @@ class LockScreenPlayerScreen extends ConsumerWidget {
                                       ref
                                           .read(lockScreenServiceProvider)
                                           .dismiss();
-                                      Navigator.of(context).maybePop();
                                     },
                                   ),
                                 ),

@@ -19,6 +19,9 @@ dependencies:
   permission_handler: ^12.0.1
   shared_preferences: ^2.5.3
   intl: ^0.20.2
+  handy_tdlib_next: 2.3.16
+  flutter_secure_storage: ^10.0.0
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

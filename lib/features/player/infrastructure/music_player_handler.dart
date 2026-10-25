@@ -828,7 +828,9 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     // ContentResolver.loadThumbnail. `loadThumbnailUri` must be non-null so
     // audio_service picks that path instead of the removed `/albumart` legacy
     // URI, otherwise the notification shows no artwork.
-    final mediaUri = 'content://media/external/audio/media/${song.id}';
+    final mediaUri = song.id >= 0
+        ? 'content://media/external/audio/media/${song.id}'
+        : null;
     return MediaItem(
       id: 'song_${song.id}',
       title: song.title,
@@ -836,8 +838,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       album: song.album.isEmpty ? null : song.album,
       artist: song.artist.isEmpty ? null : song.artist,
       duration: song.duration > Duration.zero ? song.duration : null,
-      artUri: Uri.parse(mediaUri),
-      extras: {'path': song.path, 'loadThumbnailUri': mediaUri},
+      artUri: mediaUri == null ? null : Uri.parse(mediaUri),
+      extras: {'path': song.path, 'loadThumbnailUri': ?mediaUri},
     );
   }
 

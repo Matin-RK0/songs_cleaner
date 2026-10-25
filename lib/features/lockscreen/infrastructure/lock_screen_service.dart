@@ -93,8 +93,8 @@ class LockScreenService {
     return pending ?? false;
   }
 
-  /// Back pressed on the lock-screen player: drop the window flags and retreat
-  /// to the keyguard.
+  /// Requests exit. Native emits hidePlayer only after keyguard dismissal;
+  /// cancelling system authentication keeps the player route visible.
   Future<void> dismiss() => _invoke<void>('dismiss');
 
   Future<ScreenLockResult> lockScreen() async {

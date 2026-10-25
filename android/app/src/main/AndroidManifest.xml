@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Device music library access -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission
@@ -29,6 +31,8 @@
     <application
         android:label="Songs Cleaner"
         android:name="${applicationName}"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher">
         <receiver
             android:name=".NowPlayingWidgetProvider"

@@ -20,6 +20,8 @@ import '../../features/file_manager/presentation/screens/folder_picker_screen.da
 import '../../features/trash/presentation/screens/trash_screen.dart';
 import '../../features/library/domain/entities/song.dart';
 import '../../features/playlists/presentation/screens/playlist_detail_screen.dart';
+import '../../features/telegram/presentation/screens/telegram_auth_screen.dart';
+import '../../features/telegram/presentation/screens/telegram_chat_screen.dart';
 import 'route_names.dart';
 
 abstract final class AppRouter {
@@ -52,6 +54,20 @@ abstract final class AppRouter {
         return PlayerRoute(settings: settings);
       case RouteNames.search:
         return _slideRoute(settings, const SearchScreen());
+      case RouteNames.telegramAuth:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const TelegramAuthScreen(),
+        );
+      case RouteNames.telegramChat:
+        final chatId = settings.arguments;
+        if (chatId is int) {
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => TelegramChatScreen(chatId: chatId),
+          );
+        }
+        return _fadeRoute(settings, const HomeShell());
       case RouteNames.settings:
         return _slideRoute(settings, const SettingsScreen());
       case RouteNames.history:

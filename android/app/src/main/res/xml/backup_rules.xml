@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude domain="file" path="telegram/" />
+    <exclude domain="sharedpref" path="songs_cleaner_telegram.xml" />
+    <exclude domain="sharedpref" path="FlutterSecureKeyStorage:songs_cleaner_telegram.xml" />
+    <exclude domain="sharedpref" path="FlutterSecureStorageConfiguration:songs_cleaner_telegram.xml" />
+</full-backup-content>

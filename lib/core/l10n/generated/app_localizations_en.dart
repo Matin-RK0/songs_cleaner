@@ -9,6 +9,195 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get telegramTitle => 'Telegram';
+
+  @override
+  String get telegramHeadline => 'Your chats. Your music.';
+
+  @override
+  String get telegramDescription =>
+      'Keep music from channels, groups and conversations together, with a library for each chat.';
+
+  @override
+  String get telegramConnect => 'Connect Telegram';
+
+  @override
+  String get telegramReconnect => 'Reconnect';
+
+  @override
+  String get telegramConnected => 'Account connected';
+
+  @override
+  String get telegramOffline => 'Offline library';
+
+  @override
+  String get telegramOfflineHint =>
+      'Saved local music is available. Reconnect to update chats and discover more music.';
+
+  @override
+  String get telegramPrivacy =>
+      'Sign in directly through Telegram. Your session stays on this device. Private cache in the official Telegram app cannot be scanned.';
+
+  @override
+  String get telegramFolders => 'Files in Telegram folders';
+
+  @override
+  String get telegramFoldersHint =>
+      'Accessible device files; their original chat is unknown';
+
+  @override
+  String get telegramChats => 'Your chats';
+
+  @override
+  String get telegramSearch => 'Search chats';
+
+  @override
+  String get telegramNoChats => 'No chats to show';
+
+  @override
+  String get telegramNoResults => 'No matching chats';
+
+  @override
+  String get telegramNoChatsHint =>
+      'Connect your account to see music by chat, or browse accessible Telegram folders.';
+
+  @override
+  String get telegramLoadMore => 'Load more';
+
+  @override
+  String get telegramRefresh => 'Update chats';
+
+  @override
+  String get telegramLogout => 'Disconnect account';
+
+  @override
+  String get telegramLogoutTitle => 'Disconnect Telegram?';
+
+  @override
+  String get telegramLogoutHint =>
+      'This ends this app’s Telegram session and clears its chat index. Files in your device library are kept.';
+
+  @override
+  String get telegramPhone => 'Phone number';
+
+  @override
+  String get telegramPhoneHint =>
+      'Include the country code, e.g. +989121234567';
+
+  @override
+  String get telegramCode => 'Verification code';
+
+  @override
+  String get telegramCodeHint =>
+      'Enter the code sent by Telegram. It may arrive in the Telegram app rather than by SMS.';
+
+  @override
+  String get telegramPassword => 'Two-step verification password';
+
+  @override
+  String get telegramPasswordHint =>
+      'Enter the password you set for your Telegram account.';
+
+  @override
+  String get telegramContinue => 'Continue';
+
+  @override
+  String get telegramStarting => 'Connecting securely…';
+
+  @override
+  String get telegramSetup => 'Telegram connection needs configuration';
+
+  @override
+  String get telegramSetupHint =>
+      'Build the app with TELEGRAM_API_ID and TELEGRAM_API_HASH from my.telegram.org. Setup instructions are in the project README.';
+
+  @override
+  String get telegramUnsupported =>
+      'Telegram connection is available on Android.';
+
+  @override
+  String get telegramOtherAuth =>
+      'This account needs an additional verification step that this app does not support yet. You can still browse your saved local library.';
+
+  @override
+  String get telegramErrorNetwork =>
+      'Could not reach Telegram. Check your connection and try again.';
+
+  @override
+  String get telegramErrorPhone =>
+      'Enter a valid phone number with its country code.';
+
+  @override
+  String get telegramErrorCode =>
+      'The code is invalid or expired. Check the code and try again.';
+
+  @override
+  String get telegramErrorPassword => 'The password is incorrect. Try again.';
+
+  @override
+  String get telegramErrorFlood =>
+      'Telegram has limited requests. Wait a while before trying again.';
+
+  @override
+  String get telegramErrorGeneric =>
+      'The Telegram action failed. Please try again.';
+
+  @override
+  String get telegramLocal => 'On this device';
+
+  @override
+  String get telegramAllAudio => 'All music';
+
+  @override
+  String telegramLocalCount(int count) {
+    return '$count local tracks';
+  }
+
+  @override
+  String get telegramNoAudio => 'No local music in this chat yet';
+
+  @override
+  String get telegramNoAudioHint =>
+      'Switch to All music to link an existing file or download a track. Use Load more to search older messages.';
+
+  @override
+  String get telegramEmptyChat => 'No music found in the loaded messages';
+
+  @override
+  String get telegramDownload => 'Download to this app';
+
+  @override
+  String get telegramDownloading => 'Downloading…';
+
+  @override
+  String get telegramLink => 'Link local file';
+
+  @override
+  String get telegramLinkTitle => 'Choose the matching file';
+
+  @override
+  String get telegramLinkHint =>
+      'These files have the same name and size. Confirm the correct file before assigning it to this chat.';
+
+  @override
+  String get telegramCloud => 'Not available locally';
+
+  @override
+  String get telegramSuggested => 'Possible local match';
+
+  @override
+  String get telegramPlayLocal => 'Play local music';
+
+  @override
+  String get telegramSyncAudio => 'Update music';
+
+  @override
+  String get telegramChannelOrGroup => 'Group / channel';
+
+  @override
+  String get telegramConversation => 'Conversation';
+
+  @override
   String get undoAction => 'Undo';
 
   @override

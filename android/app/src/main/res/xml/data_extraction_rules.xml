@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="telegram/" />
+        <exclude domain="sharedpref" path="songs_cleaner_telegram.xml" />
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage:songs_cleaner_telegram.xml" />
+        <exclude domain="sharedpref" path="FlutterSecureStorageConfiguration:songs_cleaner_telegram.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="telegram/" />
+        <exclude domain="sharedpref" path="songs_cleaner_telegram.xml" />
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage:songs_cleaner_telegram.xml" />
+        <exclude domain="sharedpref" path="FlutterSecureStorageConfiguration:songs_cleaner_telegram.xml" />
+    </device-transfer>
+</data-extraction-rules>

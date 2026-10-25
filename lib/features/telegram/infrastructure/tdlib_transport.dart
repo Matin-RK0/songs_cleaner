@@ -1,0 +1,153 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:isolate';
+
+import 'package:handy_tdlib_next/client.dart';
+
+import '../domain/telegram_models.dart';
+
+/// All native polling and JSON parsing live outside Flutter's UI isolate.
+class TdlibTransport {
+  final _updates = StreamController<Map<String, dynamic>>.broadcast();
+  final _pending = <int, Completer<Map<String, dynamic>>>{};
+  final _receive = ReceivePort();
+  final _nativeClosed = Completer<void>();
+  SendPort? _send;
+  int _sequence = 0;
+  bool _closed = false;
+  Stream<Map<String, dynamic>> get updates => _updates.stream;
+
+  Future<void> start() async {
+    final ready = Completer<void>();
+    _receive.listen((event) {
+      if (event is SendPort) {
+        _send = event;
+        ready.complete();
+      } else if (event is Map<String, dynamic>) {
+        if (event['@type'] == 'workerError') {
+          if (!ready.isCompleted) {
+            ready.completeError(
+              const TelegramException(TelegramFailure.generic),
+            );
+          }
+          return;
+        }
+        if (event['@type'] == 'updateAuthorizationState' &&
+            (event['authorization_state'] as Map?)?['@type'] ==
+                'authorizationStateClosed' &&
+            !_nativeClosed.isCompleted) {
+          _nativeClosed.complete();
+        }
+        final completer = _pending.remove(event['@extra']);
+        if (completer != null) {
+          if (event['@type'] == 'error') {
+            completer.completeError(TelegramException(_mapError(event)));
+          } else {
+            completer.complete(event);
+          }
+        } else if (!_updates.isClosed) {
+          _updates.add(event);
+        }
+      }
+    });
+    await Isolate.spawn(_tdWorker, _receive.sendPort);
+    await ready.future.timeout(const Duration(seconds: 20));
+  }
+
+  Future<Map<String, dynamic>> call(
+    String type, [
+    Map<String, dynamic> fields = const {},
+  ]) async {
+    if (_closed || _send == null) {
+      throw const TelegramException(TelegramFailure.network);
+    }
+    final id = ++_sequence;
+    final completer = Completer<Map<String, dynamic>>();
+    _pending[id] = completer;
+    _send!.send({'@type': type, ...fields, '@extra': id});
+    try {
+      return await completer.future.timeout(const Duration(seconds: 45));
+    } on TimeoutException {
+      throw const TelegramException(TelegramFailure.network);
+    } finally {
+      _pending.remove(id);
+    }
+  }
+
+  static TelegramFailure _mapError(Map<String, dynamic> error) {
+    final text = error['message'] as String? ?? '';
+    if (error['code'] == 429 || text.contains('FLOOD')) {
+      return TelegramFailure.flood;
+    }
+    if (text.contains('PHONE_NUMBER')) return TelegramFailure.phone;
+    if (text.contains('PHONE_CODE')) return TelegramFailure.code;
+    if (text.contains('PASSWORD')) return TelegramFailure.password;
+    if (error['code'] == 500) return TelegramFailure.network;
+    return TelegramFailure.generic;
+  }
+
+  Future<void> dispose() async {
+    if (_closed) return;
+    _closed = true;
+    // TDLib must finish closing its database before the receive isolate exits.
+    if (_send != null && !_nativeClosed.isCompleted) {
+      _send!.send({'@type': 'close'});
+      try {
+        await _nativeClosed.future.timeout(const Duration(seconds: 5));
+      } catch (_) {
+        /* The worker continues polling until native storage closes. */
+      }
+    }
+    for (final pending in _pending.values) {
+      pending.completeError(const TelegramException(TelegramFailure.network));
+    }
+    _pending.clear();
+    _receive.close();
+    await _updates.close();
+  }
+}
+
+Future<void> _tdWorker(SendPort output) async {
+  try {
+    await TdPlugin.initialize();
+    final td = TdPlugin.instance;
+    td.tdExecute(
+      jsonEncode({'@type': 'setLogVerbosityLevel', 'new_verbosity_level': 0}),
+    );
+    final client = td.tdCreateClientId();
+    final input = ReceivePort();
+    Timer? timer;
+    var closing = false;
+    input.listen((request) {
+      if (request == null) {
+        closing = true;
+        return;
+      }
+      td.tdSend(client, jsonEncode(request));
+    });
+    output.send(input.sendPort);
+    timer = Timer.periodic(const Duration(milliseconds: 20), (_) {
+      for (var i = 0; i < 100; i++) {
+        final raw = td.tdReceive(0);
+        if (raw == null) break;
+        final event = jsonDecode(raw) as Map<String, dynamic>;
+        if (event['@client_id'] != client) continue;
+        output.send(event);
+        if (event['@type'] == 'updateAuthorizationState' &&
+            (event['authorization_state'] as Map?)?['@type'] ==
+                'authorizationStateClosed') {
+          timer?.cancel();
+          input.close();
+          Isolate.exit();
+        }
+      }
+      if (closing) {
+        // Keep polling until authorizationStateClosed flushes native storage.
+        td.tdSend(client, jsonEncode({'@type': 'close'}));
+        closing = false;
+      }
+    });
+  } catch (_) {
+    output.send(<String, dynamic>{'@type': 'workerError'});
+  }
+}

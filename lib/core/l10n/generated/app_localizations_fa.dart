@@ -9,6 +9,194 @@ class AppLocalizationsFa extends AppLocalizations {
   AppLocalizationsFa([String locale = 'fa']) : super(locale);
 
   @override
+  String get telegramTitle => 'تلگرام';
+
+  @override
+  String get telegramHeadline => 'هر چت، یک دنیای موسیقی';
+
+  @override
+  String get telegramDescription =>
+      'آهنگ‌های کانال‌ها، گروه‌ها و گفتگوهایت را در کتابخانه‌ای جدا برای هر چت پیدا کن.';
+
+  @override
+  String get telegramConnect => 'اتصال به تلگرام';
+
+  @override
+  String get telegramReconnect => 'اتصال دوباره';
+
+  @override
+  String get telegramConnected => 'حساب متصل است';
+
+  @override
+  String get telegramOffline => 'کتابخانه آفلاین';
+
+  @override
+  String get telegramOfflineHint =>
+      'آهنگ‌های محلی ذخیره‌شده در دسترس‌اند. برای به‌روزرسانی چت‌ها و یافتن آهنگ‌های بیشتر دوباره متصل شو.';
+
+  @override
+  String get telegramPrivacy =>
+      'ورود مستقیم از طریق تلگرام انجام می‌شود و نشست روی همین دستگاه می‌ماند. کش خصوصی برنامه اصلی تلگرام قابل اسکن نیست.';
+
+  @override
+  String get telegramFolders => 'فایل‌های پوشه تلگرام';
+
+  @override
+  String get telegramFoldersHint =>
+      'فایل‌های قابل‌دسترسی گوشی؛ چت مبدا آن‌ها مشخص نیست';
+
+  @override
+  String get telegramChats => 'چت‌های تو';
+
+  @override
+  String get telegramSearch => 'جستجو در چت‌ها';
+
+  @override
+  String get telegramNoChats => 'هنوز چتی برای نمایش نیست';
+
+  @override
+  String get telegramNoResults => 'چتی با این نام پیدا نشد';
+
+  @override
+  String get telegramNoChatsHint =>
+      'برای دیدن آهنگ‌ها به تفکیک چت، حسابت را متصل کن؛ یا فایل‌های پوشه تلگرام را ببین.';
+
+  @override
+  String get telegramLoadMore => 'نمایش بیشتر';
+
+  @override
+  String get telegramRefresh => 'به‌روزرسانی چت‌ها';
+
+  @override
+  String get telegramLogout => 'قطع اتصال حساب';
+
+  @override
+  String get telegramLogoutTitle => 'اتصال تلگرام قطع شود؟';
+
+  @override
+  String get telegramLogoutHint =>
+      'نشست تلگرام این برنامه بسته و فهرست چت‌های ذخیره‌شده پاک می‌شود. فایل‌های کتابخانه گوشی باقی می‌مانند.';
+
+  @override
+  String get telegramPhone => 'شماره تلفن';
+
+  @override
+  String get telegramPhoneHint =>
+      'شماره را با کد کشور وارد کن؛ مانند ‎+989121234567';
+
+  @override
+  String get telegramCode => 'کد ورود';
+
+  @override
+  String get telegramCodeHint =>
+      'کدی که تلگرام فرستاده وارد کن. ممکن است کد در خود تلگرام برسد، نه با پیامک.';
+
+  @override
+  String get telegramPassword => 'رمز تأیید دومرحله‌ای';
+
+  @override
+  String get telegramPasswordHint =>
+      'رمزی را که برای حساب تلگرامت تنظیم کرده‌ای وارد کن.';
+
+  @override
+  String get telegramContinue => 'ادامه';
+
+  @override
+  String get telegramStarting => 'در حال برقراری اتصال امن…';
+
+  @override
+  String get telegramSetup => 'اتصال تلگرام نیاز به تنظیم دارد';
+
+  @override
+  String get telegramSetupHint =>
+      'برنامه باید با TELEGRAM_API_ID و TELEGRAM_API_HASH از my.telegram.org ساخته شود. راهنما در README پروژه است.';
+
+  @override
+  String get telegramUnsupported =>
+      'اتصال تلگرام در نسخه اندروید در دسترس است.';
+
+  @override
+  String get telegramOtherAuth =>
+      'این حساب به مرحله تأیید دیگری نیاز دارد که هنوز در این برنامه پشتیبانی نمی‌شود. کتابخانه محلی ذخیره‌شده همچنان در دسترس است.';
+
+  @override
+  String get telegramErrorNetwork =>
+      'ارتباط با تلگرام برقرار نشد. اتصال اینترنت را بررسی و دوباره تلاش کن.';
+
+  @override
+  String get telegramErrorPhone =>
+      'شماره تلفن معتبر را همراه با کد کشور وارد کن.';
+
+  @override
+  String get telegramErrorCode =>
+      'کد نادرست است یا منقضی شده. کد را بررسی و دوباره تلاش کن.';
+
+  @override
+  String get telegramErrorPassword => 'رمز نادرست است. دوباره تلاش کن.';
+
+  @override
+  String get telegramErrorFlood =>
+      'تلگرام درخواست‌ها را محدود کرده است. کمی صبر کن و دوباره تلاش کن.';
+
+  @override
+  String get telegramErrorGeneric => 'عملیات تلگرام انجام نشد. دوباره تلاش کن.';
+
+  @override
+  String get telegramLocal => 'روی این دستگاه';
+
+  @override
+  String get telegramAllAudio => 'همه آهنگ‌ها';
+
+  @override
+  String telegramLocalCount(int count) {
+    return '$count آهنگ محلی';
+  }
+
+  @override
+  String get telegramNoAudio => 'هنوز آهنگ محلی در این چت نیست';
+
+  @override
+  String get telegramNoAudioHint =>
+      'در «همه آهنگ‌ها» فایل موجود را متصل یا آهنگی دانلود کن. برای پیام‌های قدیمی‌تر «نمایش بیشتر» را بزن.';
+
+  @override
+  String get telegramEmptyChat => 'در پیام‌های بارگذاری‌شده آهنگی پیدا نشد';
+
+  @override
+  String get telegramDownload => 'دانلود در این برنامه';
+
+  @override
+  String get telegramDownloading => 'در حال دانلود…';
+
+  @override
+  String get telegramLink => 'اتصال فایل محلی';
+
+  @override
+  String get telegramLinkTitle => 'فایل مطابق را انتخاب کن';
+
+  @override
+  String get telegramLinkHint =>
+      'نام و حجم این فایل‌ها یکسان است. پیش از نسبت دادن فایل به این چت، مورد درست را تأیید کن.';
+
+  @override
+  String get telegramCloud => 'فایل محلی در دسترس نیست';
+
+  @override
+  String get telegramSuggested => 'فایل محلی احتمالی پیدا شد';
+
+  @override
+  String get telegramPlayLocal => 'پخش آهنگ‌های محلی';
+
+  @override
+  String get telegramSyncAudio => 'به‌روزرسانی آهنگ‌ها';
+
+  @override
+  String get telegramChannelOrGroup => 'گروه / کانال';
+
+  @override
+  String get telegramConversation => 'گفتگو';
+
+  @override
   String get undoAction => 'بازگردانی';
 
   @override

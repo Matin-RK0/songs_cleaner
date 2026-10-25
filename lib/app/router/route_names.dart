@@ -19,6 +19,8 @@ abstract final class RouteNames {
   static const String tagEditor = '/tag-editor';
   static const String folderPicker = '/folder-picker';
   static const String trash = '/trash';
+  static const String telegramAuth = '/telegram/auth';
+  static const String telegramChat = '/telegram/chat';
 }
 
 /// Navigation payload for the playlist detail screen. Exactly one of

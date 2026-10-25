@@ -14,6 +14,8 @@ class ArtworkCacheService {
   final LinkedHashMap<(int, int), Uint8List?> _cache = LinkedHashMap();
 
   Future<Uint8List?> artworkFor(int songId, {required int size}) async {
+    // App-owned files (for example TDLib downloads) are not MediaStore entries.
+    if (songId < 0) return null;
     final key = (songId, size);
     if (_cache.containsKey(key)) {
       // Refresh position so the entry counts as most recently used.

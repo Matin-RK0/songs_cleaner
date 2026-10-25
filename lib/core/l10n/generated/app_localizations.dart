@@ -98,6 +98,342 @@ abstract class AppLocalizations {
     Locale('fa'),
   ];
 
+  /// No description provided for @telegramTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تلگرام'**
+  String get telegramTitle;
+
+  /// No description provided for @telegramHeadline.
+  ///
+  /// In fa, this message translates to:
+  /// **'هر چت، یک دنیای موسیقی'**
+  String get telegramHeadline;
+
+  /// No description provided for @telegramDescription.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگ‌های کانال‌ها، گروه‌ها و گفتگوهایت را در کتابخانه‌ای جدا برای هر چت پیدا کن.'**
+  String get telegramDescription;
+
+  /// No description provided for @telegramConnect.
+  ///
+  /// In fa, this message translates to:
+  /// **'اتصال به تلگرام'**
+  String get telegramConnect;
+
+  /// No description provided for @telegramReconnect.
+  ///
+  /// In fa, this message translates to:
+  /// **'اتصال دوباره'**
+  String get telegramReconnect;
+
+  /// No description provided for @telegramConnected.
+  ///
+  /// In fa, this message translates to:
+  /// **'حساب متصل است'**
+  String get telegramConnected;
+
+  /// No description provided for @telegramOffline.
+  ///
+  /// In fa, this message translates to:
+  /// **'کتابخانه آفلاین'**
+  String get telegramOffline;
+
+  /// No description provided for @telegramOfflineHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگ‌های محلی ذخیره‌شده در دسترس‌اند. برای به‌روزرسانی چت‌ها و یافتن آهنگ‌های بیشتر دوباره متصل شو.'**
+  String get telegramOfflineHint;
+
+  /// No description provided for @telegramPrivacy.
+  ///
+  /// In fa, this message translates to:
+  /// **'ورود مستقیم از طریق تلگرام انجام می‌شود و نشست روی همین دستگاه می‌ماند. کش خصوصی برنامه اصلی تلگرام قابل اسکن نیست.'**
+  String get telegramPrivacy;
+
+  /// No description provided for @telegramFolders.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل‌های پوشه تلگرام'**
+  String get telegramFolders;
+
+  /// No description provided for @telegramFoldersHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل‌های قابل‌دسترسی گوشی؛ چت مبدا آن‌ها مشخص نیست'**
+  String get telegramFoldersHint;
+
+  /// No description provided for @telegramChats.
+  ///
+  /// In fa, this message translates to:
+  /// **'چت‌های تو'**
+  String get telegramChats;
+
+  /// No description provided for @telegramSearch.
+  ///
+  /// In fa, this message translates to:
+  /// **'جستجو در چت‌ها'**
+  String get telegramSearch;
+
+  /// No description provided for @telegramNoChats.
+  ///
+  /// In fa, this message translates to:
+  /// **'هنوز چتی برای نمایش نیست'**
+  String get telegramNoChats;
+
+  /// No description provided for @telegramNoResults.
+  ///
+  /// In fa, this message translates to:
+  /// **'چتی با این نام پیدا نشد'**
+  String get telegramNoResults;
+
+  /// No description provided for @telegramNoChatsHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'برای دیدن آهنگ‌ها به تفکیک چت، حسابت را متصل کن؛ یا فایل‌های پوشه تلگرام را ببین.'**
+  String get telegramNoChatsHint;
+
+  /// No description provided for @telegramLoadMore.
+  ///
+  /// In fa, this message translates to:
+  /// **'نمایش بیشتر'**
+  String get telegramLoadMore;
+
+  /// No description provided for @telegramRefresh.
+  ///
+  /// In fa, this message translates to:
+  /// **'به‌روزرسانی چت‌ها'**
+  String get telegramRefresh;
+
+  /// No description provided for @telegramLogout.
+  ///
+  /// In fa, this message translates to:
+  /// **'قطع اتصال حساب'**
+  String get telegramLogout;
+
+  /// No description provided for @telegramLogoutTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'اتصال تلگرام قطع شود؟'**
+  String get telegramLogoutTitle;
+
+  /// No description provided for @telegramLogoutHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'نشست تلگرام این برنامه بسته و فهرست چت‌های ذخیره‌شده پاک می‌شود. فایل‌های کتابخانه گوشی باقی می‌مانند.'**
+  String get telegramLogoutHint;
+
+  /// No description provided for @telegramPhone.
+  ///
+  /// In fa, this message translates to:
+  /// **'شماره تلفن'**
+  String get telegramPhone;
+
+  /// No description provided for @telegramPhoneHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'شماره را با کد کشور وارد کن؛ مانند ‎+989121234567'**
+  String get telegramPhoneHint;
+
+  /// No description provided for @telegramCode.
+  ///
+  /// In fa, this message translates to:
+  /// **'کد ورود'**
+  String get telegramCode;
+
+  /// No description provided for @telegramCodeHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'کدی که تلگرام فرستاده وارد کن. ممکن است کد در خود تلگرام برسد، نه با پیامک.'**
+  String get telegramCodeHint;
+
+  /// No description provided for @telegramPassword.
+  ///
+  /// In fa, this message translates to:
+  /// **'رمز تأیید دومرحله‌ای'**
+  String get telegramPassword;
+
+  /// No description provided for @telegramPasswordHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'رمزی را که برای حساب تلگرامت تنظیم کرده‌ای وارد کن.'**
+  String get telegramPasswordHint;
+
+  /// No description provided for @telegramContinue.
+  ///
+  /// In fa, this message translates to:
+  /// **'ادامه'**
+  String get telegramContinue;
+
+  /// No description provided for @telegramStarting.
+  ///
+  /// In fa, this message translates to:
+  /// **'در حال برقراری اتصال امن…'**
+  String get telegramStarting;
+
+  /// No description provided for @telegramSetup.
+  ///
+  /// In fa, this message translates to:
+  /// **'اتصال تلگرام نیاز به تنظیم دارد'**
+  String get telegramSetup;
+
+  /// No description provided for @telegramSetupHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'برنامه باید با TELEGRAM_API_ID و TELEGRAM_API_HASH از my.telegram.org ساخته شود. راهنما در README پروژه است.'**
+  String get telegramSetupHint;
+
+  /// No description provided for @telegramUnsupported.
+  ///
+  /// In fa, this message translates to:
+  /// **'اتصال تلگرام در نسخه اندروید در دسترس است.'**
+  String get telegramUnsupported;
+
+  /// No description provided for @telegramOtherAuth.
+  ///
+  /// In fa, this message translates to:
+  /// **'این حساب به مرحله تأیید دیگری نیاز دارد که هنوز در این برنامه پشتیبانی نمی‌شود. کتابخانه محلی ذخیره‌شده همچنان در دسترس است.'**
+  String get telegramOtherAuth;
+
+  /// No description provided for @telegramErrorNetwork.
+  ///
+  /// In fa, this message translates to:
+  /// **'ارتباط با تلگرام برقرار نشد. اتصال اینترنت را بررسی و دوباره تلاش کن.'**
+  String get telegramErrorNetwork;
+
+  /// No description provided for @telegramErrorPhone.
+  ///
+  /// In fa, this message translates to:
+  /// **'شماره تلفن معتبر را همراه با کد کشور وارد کن.'**
+  String get telegramErrorPhone;
+
+  /// No description provided for @telegramErrorCode.
+  ///
+  /// In fa, this message translates to:
+  /// **'کد نادرست است یا منقضی شده. کد را بررسی و دوباره تلاش کن.'**
+  String get telegramErrorCode;
+
+  /// No description provided for @telegramErrorPassword.
+  ///
+  /// In fa, this message translates to:
+  /// **'رمز نادرست است. دوباره تلاش کن.'**
+  String get telegramErrorPassword;
+
+  /// No description provided for @telegramErrorFlood.
+  ///
+  /// In fa, this message translates to:
+  /// **'تلگرام درخواست‌ها را محدود کرده است. کمی صبر کن و دوباره تلاش کن.'**
+  String get telegramErrorFlood;
+
+  /// No description provided for @telegramErrorGeneric.
+  ///
+  /// In fa, this message translates to:
+  /// **'عملیات تلگرام انجام نشد. دوباره تلاش کن.'**
+  String get telegramErrorGeneric;
+
+  /// No description provided for @telegramLocal.
+  ///
+  /// In fa, this message translates to:
+  /// **'روی این دستگاه'**
+  String get telegramLocal;
+
+  /// No description provided for @telegramAllAudio.
+  ///
+  /// In fa, this message translates to:
+  /// **'همه آهنگ‌ها'**
+  String get telegramAllAudio;
+
+  /// No description provided for @telegramLocalCount.
+  ///
+  /// In fa, this message translates to:
+  /// **'{count} آهنگ محلی'**
+  String telegramLocalCount(int count);
+
+  /// No description provided for @telegramNoAudio.
+  ///
+  /// In fa, this message translates to:
+  /// **'هنوز آهنگ محلی در این چت نیست'**
+  String get telegramNoAudio;
+
+  /// No description provided for @telegramNoAudioHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'در «همه آهنگ‌ها» فایل موجود را متصل یا آهنگی دانلود کن. برای پیام‌های قدیمی‌تر «نمایش بیشتر» را بزن.'**
+  String get telegramNoAudioHint;
+
+  /// No description provided for @telegramEmptyChat.
+  ///
+  /// In fa, this message translates to:
+  /// **'در پیام‌های بارگذاری‌شده آهنگی پیدا نشد'**
+  String get telegramEmptyChat;
+
+  /// No description provided for @telegramDownload.
+  ///
+  /// In fa, this message translates to:
+  /// **'دانلود در این برنامه'**
+  String get telegramDownload;
+
+  /// No description provided for @telegramDownloading.
+  ///
+  /// In fa, this message translates to:
+  /// **'در حال دانلود…'**
+  String get telegramDownloading;
+
+  /// No description provided for @telegramLink.
+  ///
+  /// In fa, this message translates to:
+  /// **'اتصال فایل محلی'**
+  String get telegramLink;
+
+  /// No description provided for @telegramLinkTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل مطابق را انتخاب کن'**
+  String get telegramLinkTitle;
+
+  /// No description provided for @telegramLinkHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'نام و حجم این فایل‌ها یکسان است. پیش از نسبت دادن فایل به این چت، مورد درست را تأیید کن.'**
+  String get telegramLinkHint;
+
+  /// No description provided for @telegramCloud.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل محلی در دسترس نیست'**
+  String get telegramCloud;
+
+  /// No description provided for @telegramSuggested.
+  ///
+  /// In fa, this message translates to:
+  /// **'فایل محلی احتمالی پیدا شد'**
+  String get telegramSuggested;
+
+  /// No description provided for @telegramPlayLocal.
+  ///
+  /// In fa, this message translates to:
+  /// **'پخش آهنگ‌های محلی'**
+  String get telegramPlayLocal;
+
+  /// No description provided for @telegramSyncAudio.
+  ///
+  /// In fa, this message translates to:
+  /// **'به‌روزرسانی آهنگ‌ها'**
+  String get telegramSyncAudio;
+
+  /// No description provided for @telegramChannelOrGroup.
+  ///
+  /// In fa, this message translates to:
+  /// **'گروه / کانال'**
+  String get telegramChannelOrGroup;
+
+  /// No description provided for @telegramConversation.
+  ///
+  /// In fa, this message translates to:
+  /// **'گفتگو'**
+  String get telegramConversation;
+
   /// No description provided for @undoAction.
   ///
   /// In fa, this message translates to:

@@ -16,6 +16,7 @@ import '../../../player/presentation/widgets/notification_permission_banner.dart
 import '../../../playlists/application/providers/playlists_controller.dart';
 import '../../../playlists/presentation/screens/playlists_tab.dart';
 import '../../../playlists/presentation/widgets/playlist_name_sheet.dart';
+import '../../../telegram/presentation/screens/telegram_tab.dart';
 import '../screens/groups_tab.dart';
 import '../screens/songs_tab.dart';
 import '../../application/providers/library_controller.dart';
@@ -43,10 +44,10 @@ class _HomeShellState extends ConsumerState<HomeShell>
     final savedTab = ref
         .read(appSettingsRepositoryProvider)
         .loadHomeTabIndex(0)
-        .clamp(0, 3);
+        .clamp(0, 4);
     _lastTabIndex = savedTab;
     _tabController = TabController(
-      length: 4,
+      length: 5,
       vsync: this,
       initialIndex: savedTab,
     );
@@ -129,6 +130,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
       playerProvider.select((state) => state.hasCurrent),
     );
     final onPlaylistsTab = _tabController.index == 3;
+    final onTelegramTab = _tabController.index == 4;
 
     return Scaffold(
       appBar: AppBar(
@@ -141,7 +143,8 @@ class _HomeShellState extends ConsumerState<HomeShell>
           ),
           PopupMenuButton<_HomeAction>(
             tooltip: l10n.moreActions,
-            onSelected: (action) => _runHomeAction(action, onPlaylistsTab),
+            onSelected: (action) =>
+                _runHomeAction(action, onPlaylistsTab || onTelegramTab),
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: _HomeAction.refresh,
@@ -150,7 +153,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
                   title: Text(l10n.refreshLibraryTooltip),
                 ),
               ),
-              if (!onPlaylistsTab) ...[
+              if (!onPlaylistsTab && !onTelegramTab) ...[
                 PopupMenuItem(
                   value: _HomeAction.filter,
                   child: ListTile(
@@ -194,6 +197,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
             Tab(text: l10n.artistsTab),
             Tab(text: l10n.albumsTab),
             Tab(text: l10n.playlistsTab),
+            Tab(text: l10n.telegramTitle),
           ],
         ),
       ),
@@ -210,6 +214,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
                     GroupsTab(isArtists: true),
                     GroupsTab(isArtists: false),
                     const PlaylistsTab(),
+                    const TelegramTab(),
                   ],
                 ),
               ),
@@ -236,7 +241,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 child: const Icon(Icons.add_rounded),
               ),
             )
-          else ...[
+          else if (!onTelegramTab) ...[
             PositionedDirectional(
               end: AppSpacing.md,
               bottom: hasCurrent
