@@ -9,6 +9,7 @@ import '../domain/telegram_local_matcher.dart';
 import '../domain/telegram_models.dart';
 import '../domain/telegram_repository.dart';
 import '../domain/telegram_auth_input.dart';
+import '../domain/telegram_connection_policy.dart';
 import '../infrastructure/telegram_repository_impl.dart';
 import '../infrastructure/telegram_local_files.dart';
 import '../infrastructure/telegram_diagnostics.dart';
@@ -57,6 +58,7 @@ class TelegramState {
     this.editingPhone = false,
     this.cacheRevision = 0,
     this.clearingCache = false,
+    this.connection = TelegramConnection.unknown,
   });
   final TelegramAuth auth;
   final List<TelegramChat> chats;
@@ -67,6 +69,7 @@ class TelegramState {
   final bool editingPhone;
   final int cacheRevision;
   final bool clearingCache;
+  final TelegramConnection connection;
   TelegramAuth get authStep => editingPhone ? TelegramAuth.phone : auth;
   TelegramState copyWith({
     TelegramAuth? auth,
@@ -78,6 +81,7 @@ class TelegramState {
     bool? editingPhone,
     int? cacheRevision,
     bool? clearingCache,
+    TelegramConnection? connection,
   }) => TelegramState(
     auth: auth ?? this.auth,
     chats: chats ?? this.chats,
@@ -88,6 +92,7 @@ class TelegramState {
     editingPhone: editingPhone ?? this.editingPhone,
     cacheRevision: cacheRevision ?? this.cacheRevision,
     clearingCache: clearingCache ?? this.clearingCache,
+    connection: connection ?? this.connection,
   );
 }
 
@@ -140,6 +145,7 @@ class TelegramController extends Notifier<TelegramState> {
   int _operationVersion = 0;
   _TelegramOperation? _operation;
   bool _refreshOnIdle = false;
+  Completer<void>? _cancelOperation;
   @override
   TelegramState build() {
     final repository = ref.watch(telegramRepositoryProvider);
@@ -151,18 +157,46 @@ class TelegramController extends Notifier<TelegramState> {
         if (state.busy) {
           _refreshOnIdle = true;
         } else {
-          unawaited(refresh());
+          unawaited(refresh(recoverConnection: false));
         }
       } else if (auth != TelegramAuth.ready &&
           _operation == _TelegramOperation.refresh) {
         ++_operationVersion;
         _operation = null;
+        _cancelOperation?.complete();
+        _cancelOperation = null;
         state = state.copyWith(busy: false);
+      }
+    });
+    final connectionSubscription = repository.connection.listen((connection) {
+      if (!ref.mounted || state.connection == connection) return;
+      final failure =
+          connection == TelegramConnection.ready &&
+              state.failure == TelegramFailure.network
+          ? null
+          : state.failure;
+      state = state.copyWith(connection: connection, failure: failure);
+      if (connection.unavailable && _operation == _TelegramOperation.refresh) {
+        ++_operationVersion;
+        _operation = null;
+        _cancelOperation?.complete();
+        _cancelOperation = null;
+        state = state.copyWith(busy: false, failure: TelegramFailure.network);
+      }
+      if (connection == TelegramConnection.ready &&
+          state.auth == TelegramAuth.ready) {
+        if (state.busy && _operation != _TelegramOperation.refresh) {
+          _refreshOnIdle = true;
+        } else {
+          unawaited(refresh(recoverConnection: false));
+        }
       }
     });
     ref.onDispose(() {
       _search?.cancel();
+      _cancelOperation?.complete();
       unawaited(subscription.cancel());
+      unawaited(connectionSubscription.cancel());
     });
     Future.microtask(() async {
       try {
@@ -196,15 +230,17 @@ class TelegramController extends Notifier<TelegramState> {
       return;
     }
     final version = ++_operationVersion;
+    _cancelOperation?.complete();
+    final cancellation = _cancelOperation = Completer<void>();
     _operation = operation;
     if (operation == _TelegramOperation.refresh) _refreshOnIdle = false;
     state = state.copyWith(busy: true);
     try {
-      final pending = action(version);
+      final pending = Future.any<void>([action(version), cancellation.future]);
       if (operation == _TelegramOperation.auth) {
         await pending;
       } else {
-        await pending.timeout(const Duration(seconds: 20));
+        await pending.timeout(TelegramConnectionPolicy.operationTimeout);
       }
     } catch (e) {
       if (ref.mounted && version == _operationVersion) {
@@ -221,10 +257,13 @@ class TelegramController extends Notifier<TelegramState> {
         // Invalidate a timed-out action before it can finish in the background.
         ++_operationVersion;
         _operation = null;
+        _cancelOperation = null;
         state = state.copyWith(busy: false, failure: state.failure);
         if (_refreshOnIdle) {
           _refreshOnIdle = false;
-          if (state.auth == TelegramAuth.ready) unawaited(refresh());
+          if (state.auth == TelegramAuth.ready) {
+            unawaited(refresh(recoverConnection: false));
+          }
         }
       }
     }
@@ -264,7 +303,10 @@ class TelegramController extends Notifier<TelegramState> {
       state = state.copyWith(phone: normalized, editingPhone: false);
     }
   });
-  Future<void> refresh({bool more = false}) async {
+  Future<void> refresh({
+    bool more = false,
+    bool recoverConnection = true,
+  }) async {
     if (state.auth != TelegramAuth.ready) {
       if (!more &&
           (state.auth == TelegramAuth.starting ||
@@ -275,6 +317,16 @@ class TelegramController extends Notifier<TelegramState> {
     }
     if (more && state.busy) return;
     await _run((version) async {
+      final repository = ref.read(telegramRepositoryProvider);
+      if (!more && recoverConnection) {
+        await repository.retryConnection().timeout(
+          TelegramConnectionPolicy.retryTimeout,
+        );
+      }
+      if (!ref.mounted || version != _operationVersion) return;
+      if (state.connection.unavailable) {
+        throw const TelegramException(TelegramFailure.network);
+      }
       final chats = await ref
           .read(telegramRepositoryProvider)
           .chats(more: more);
@@ -466,6 +518,7 @@ class TelegramChatController extends Notifier<TelegramChatState> {
   bool _initialized = false;
   int _loadVersion = 0;
   bool _browseEdited = false;
+  Completer<void>? _cancelLoad;
   Timer? _fileRefresh;
   Timer? _search;
 
@@ -504,6 +557,7 @@ class TelegramChatController extends Notifier<TelegramChatState> {
     ref.onDispose(() {
       _fileRefresh?.cancel();
       _search?.cancel();
+      _cancelLoad?.complete();
       unawaited(fileSubscription.cancel());
     });
     // Wait for the derived matcher itself, not its source list: a source-list
@@ -515,6 +569,8 @@ class TelegramChatController extends Notifier<TelegramChatState> {
     ref.listen(telegramProvider.select((s) => s.cacheRevision), (_, _) {
       ++_loadVersion;
       ++_resolution;
+      _cancelLoad?.complete();
+      _cancelLoad = null;
       _fileRefresh?.cancel();
       _audio = [];
       state = state.copyWith(tracks: [], selected: {}, nextId: 0, busy: false);
@@ -523,14 +579,32 @@ class TelegramChatController extends Notifier<TelegramChatState> {
       telegramPublishedPathsProvider,
       (_, _) => unawaited(_resolveSafely()),
     );
-    ref.listen(telegramProvider.select((s) => s.auth), (_, auth) {
-      if (!_initialized) return;
+    ref.listen(telegramProvider.select((s) => s.auth), (previous, auth) {
+      if (!_initialized || previous == auth) return;
       if (auth == TelegramAuth.ready) {
-        unawaited(refresh());
+        unawaited(refresh(recoverConnection: false));
       } else {
         ++_loadVersion;
         ++_resolution;
+        _cancelLoad?.complete();
+        _cancelLoad = null;
         state = state.copyWith(busy: false);
+      }
+    });
+    ref.listen(telegramProvider.select((s) => s.connection), (
+      previous,
+      connection,
+    ) {
+      if (!_initialized || previous == connection) return;
+      if (connection == TelegramConnection.ready &&
+          ref.read(telegramProvider).auth == TelegramAuth.ready) {
+        unawaited(refresh(recoverConnection: false));
+      } else if (connection.unavailable && state.busy) {
+        ++_loadVersion;
+        ++_resolution;
+        _cancelLoad?.complete();
+        _cancelLoad = null;
+        state = state.copyWith(busy: false, failure: TelegramFailure.network);
       }
     });
     Future.microtask(_initialize);
@@ -565,7 +639,7 @@ class TelegramChatController extends Notifier<TelegramChatState> {
       _initialized = true;
       if (_loadVersion != 0) return;
       if (ref.read(telegramProvider).auth == TelegramAuth.ready) {
-        await refresh();
+        await refresh(recoverConnection: false);
       } else {
         state = state.copyWith(busy: false);
       }
@@ -649,28 +723,36 @@ class TelegramChatController extends Notifier<TelegramChatState> {
     }
   }
 
-  Future<void> refresh({bool more = false}) async {
-    if (!ref.mounted || ref.read(telegramProvider).auth != TelegramAuth.ready) {
+  Future<void> refresh({
+    bool more = false,
+    bool recoverConnection = true,
+  }) async {
+    if (!ref.mounted) return;
+    if (ref.read(telegramProvider).auth != TelegramAuth.ready) {
+      if (!more && recoverConnection) {
+        await ref.read(telegramProvider.notifier).refresh();
+      }
       return;
     }
     if (more && (state.busy || state.nextId == 0)) return;
     final version = ++_loadVersion;
+    _cancelLoad?.complete();
+    final cancellation = _cancelLoad = Completer<void>();
     // A prior local-file resolution must not publish an older page afterwards.
     ++_resolution;
     state = state.copyWith(busy: true);
     try {
-      final page = await ref
-          .read(telegramRepositoryProvider)
-          .audio(chatId, fromId: more ? state.nextId : 0)
-          .timeout(const Duration(seconds: 20));
-      if (!ref.mounted || version != _loadVersion) return;
-      _audio = {
-        for (final audio in [..._audio, ...page.items]) audio.key: audio,
-      }.values.toList()..sort((a, b) => b.messageId.compareTo(a.messageId));
-      state = state.copyWith(nextId: page.nextId);
-      await _resolve();
+      await Future.any<void>([
+        _loadAudioPage(
+          version,
+          more: more,
+          recoverConnection: recoverConnection,
+        ),
+        cancellation.future,
+      ]).timeout(TelegramConnectionPolicy.operationTimeout);
     } catch (e) {
       if (ref.mounted && version == _loadVersion) {
+        ++_resolution;
         state = state.copyWith(
           failure: e is TelegramException
               ? e.failure
@@ -682,9 +764,37 @@ class TelegramChatController extends Notifier<TelegramChatState> {
     } finally {
       if (ref.mounted && version == _loadVersion) {
         ++_loadVersion;
+        _cancelLoad = null;
         state = state.copyWith(busy: false, failure: state.failure);
       }
     }
+  }
+
+  Future<void> _loadAudioPage(
+    int version, {
+    required bool more,
+    required bool recoverConnection,
+  }) async {
+    final repository = ref.read(telegramRepositoryProvider);
+    if (!more && recoverConnection) {
+      await repository.retryConnection().timeout(
+        TelegramConnectionPolicy.retryTimeout,
+      );
+    }
+    if (!ref.mounted || version != _loadVersion) return;
+    if (ref.read(telegramProvider).connection.unavailable) {
+      throw const TelegramException(TelegramFailure.network);
+    }
+    final page = await repository.audio(
+      chatId,
+      fromId: more ? state.nextId : 0,
+    );
+    if (!ref.mounted || version != _loadVersion) return;
+    _audio = {
+      for (final audio in [..._audio, ...page.items]) audio.key: audio,
+    }.values.toList()..sort((a, b) => b.messageId.compareTo(a.messageId));
+    state = state.copyWith(nextId: page.nextId);
+    await _resolve();
   }
 
   void setLocalOnly(bool value) {

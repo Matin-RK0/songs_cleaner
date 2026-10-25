@@ -22,6 +22,7 @@ class TelegramTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(telegramProvider.select((e) => e.auth));
+    final connection = ref.watch(telegramProvider.select((e) => e.connection));
     final connected = auth == TelegramAuth.ready;
     return RefreshIndicator(
       onRefresh: () => ref.read(telegramProvider.notifier).refresh(),
@@ -34,7 +35,10 @@ class TelegramTab extends ConsumerWidget {
           SliverPadding(
             padding: AppSpacing.allMd,
             sliver: SliverToBoxAdapter(
-              child: TelegramOverviewCard(connected: connected),
+              child: TelegramOverviewCard(
+                connected: connected,
+                connection: connection,
+              ),
             ),
           ),
           const SliverToBoxAdapter(child: _TelegramFoldersTile()),

@@ -44,6 +44,9 @@ class FakeTelegramRepository implements TelegramRepository {
   }
 
   final events = StreamController<TelegramAuth>.broadcast(sync: true);
+  final connectionEvents = StreamController<TelegramConnection>.broadcast(
+    sync: true,
+  );
   final files = StreamController<TelegramLocalFile>.broadcast(sync: true);
   List<TelegramChat> savedChats = const [];
   List<TelegramAudio> savedAudio = const [];
@@ -52,6 +55,15 @@ class FakeTelegramRepository implements TelegramRepository {
   TelegramFailure? failure;
   bool session = false;
   int connectCalls = 0;
+  int retryConnectionCalls = 0;
+  Completer<void>? pendingConnectionRetry;
+
+  @override
+  Future<void> retryConnection() async {
+    retryConnectionCalls++;
+    await pendingConnectionRetry?.future;
+  }
+
   int clearCacheCalls = 0;
   int logoutCalls = 0;
   bool failCacheClear = false;
@@ -75,6 +87,8 @@ class FakeTelegramRepository implements TelegramRepository {
   Completer<void>? pendingDownload;
   @override
   Stream<TelegramAuth> get authorization => events.stream;
+  @override
+  Stream<TelegramConnection> get connection => connectionEvents.stream;
   @override
   Stream<TelegramLocalFile> get fileUpdates => files.stream;
   int coverCalls = 0;
@@ -166,6 +180,7 @@ class FakeTelegramRepository implements TelegramRepository {
   @override
   Future<void> dispose() async {
     await events.close();
+    await connectionEvents.close();
     await files.close();
   }
 }

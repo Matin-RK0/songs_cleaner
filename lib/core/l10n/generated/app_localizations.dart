@@ -403,6 +403,12 @@ abstract class AppLocalizations {
   /// **'اتصال دوباره'**
   String get telegramReconnect;
 
+  /// No description provided for @telegramReconnecting.
+  ///
+  /// In fa, this message translates to:
+  /// **'در حال اتصال دوباره به تلگرام…'**
+  String get telegramReconnecting;
+
   /// No description provided for @telegramConnected.
   ///
   /// In fa, this message translates to:

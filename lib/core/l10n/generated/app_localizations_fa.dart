@@ -185,6 +185,9 @@ class AppLocalizationsFa extends AppLocalizations {
   String get telegramReconnect => 'اتصال دوباره';
 
   @override
+  String get telegramReconnecting => 'در حال اتصال دوباره به تلگرام…';
+
+  @override
   String get telegramConnected => 'حساب متصل است';
 
   @override

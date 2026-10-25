@@ -57,6 +57,7 @@
   "telegramDescription": "Keep music from channels, groups and conversations together, with a library for each chat.",
   "telegramConnect": "Connect Telegram",
   "telegramReconnect": "Reconnect",
+  "telegramReconnecting": "Reconnecting to Telegram…",
   "telegramConnected": "Account connected",
   "telegramOffline": "Offline library",
   "telegramOfflineHint": "Saved local music is available. Reconnect to update chats and discover more music.",

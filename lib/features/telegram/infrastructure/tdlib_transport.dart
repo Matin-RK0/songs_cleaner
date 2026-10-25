@@ -37,6 +37,12 @@ class TdlibTransport {
         if (event['@type'] == 'workerError') {
           _send = null;
           _failPending();
+          if (!_updates.isClosed) {
+            _updates.add({
+              '@type': 'updateConnectionState',
+              'state': {'@type': 'connectionStateClosed'},
+            });
+          }
           if (!ready.isCompleted) {
             ready.completeError(
               const TelegramException(TelegramFailure.generic),
@@ -181,6 +187,7 @@ Future<void> _tdWorker(SendPort output) async {
         // typing and unrelated message events away from Flutter's UI isolate.
         if (event['@extra'] == null &&
             event['@type'] != 'updateAuthorizationState' &&
+            event['@type'] != 'updateConnectionState' &&
             event['@type'] != 'updateFile') {
           continue;
         }

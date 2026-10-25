@@ -14,6 +14,17 @@ enum TelegramAuth {
 
 enum TelegramFailure { network, phone, code, password, flood, storage, generic }
 
+enum TelegramConnection {
+  unknown,
+  waitingForNetwork,
+  connecting,
+  updating,
+  ready,
+  closed;
+
+  bool get unavailable => this != unknown && this != ready;
+}
+
 class TelegramException implements Exception {
   const TelegramException(this.failure);
   final TelegramFailure failure;

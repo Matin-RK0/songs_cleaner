@@ -52,6 +52,13 @@ two-step-verification passwords are not persisted by this app.
   Main and archived chat lists are included. Refresh preserves older indexed tracks.
 - The cached chat index and existing verified files remain browsable offline.
   An authorized session reconnects automatically on subsequent visits.
+- TDLib connection state is tracked separately from authorization. Losing the
+  network ends obsolete browse/loading futures; a ready connection refreshes
+  the chat list and any open audio list without waiting for another login event.
+  Manual refresh also retries the existing TDLib network connection. Retry is
+  bounded and coalesced, and never logs the account out or deletes transfers.
+  Optional startup storage maintenance runs after authorization is announced,
+  so interrupted-file cleanup cannot block connecting or refreshing.
 - Disconnecting logs this app out and clears its chat index and bindings. TDLib
   manages its private cache on logout; published files in Music/Telegram remain
   independently in the device library, including after uninstalling this app.

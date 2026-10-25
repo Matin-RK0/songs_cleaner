@@ -32,6 +32,7 @@ class TelegramChatScreen extends ConsumerWidget {
     );
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: AppSpacing.sm,
         title: Row(
           children: [
             if (chat != null) ...[
@@ -39,10 +40,7 @@ class TelegramChatScreen extends ConsumerWidget {
                 enabled: !MediaQuery.disableAnimationsOf(context),
                 child: Hero(
                   tag: 'telegram-chat-${chat.id}',
-                  child: TelegramChatAvatar(
-                    chat: chat,
-                    size: AppSpacing.avatarSize,
-                  ),
+                  child: TelegramChatAvatar(chat: chat, size: AppSpacing.xl),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -82,11 +80,15 @@ class TelegramChatScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: TickerMode(
-        enabled: ModalRoute.of(context)?.isCurrent != false,
-        child: chatId == 0
-            ? const _TelegramFolderSongs()
-            : TelegramChatLibrary(chatId: chatId, connected: connected),
+      body: SafeArea(
+        top: false,
+        bottom: !hasCurrent,
+        child: TickerMode(
+          enabled: ModalRoute.of(context)?.isCurrent != false,
+          child: chatId == 0
+              ? const _TelegramFolderSongs()
+              : TelegramChatLibrary(chatId: chatId, connected: connected),
+        ),
       ),
       bottomNavigationBar: hasCurrent ? const MiniPlayerBar() : null,
     );

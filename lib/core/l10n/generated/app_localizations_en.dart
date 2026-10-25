@@ -185,6 +185,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telegramReconnect => 'Reconnect';
 
   @override
+  String get telegramReconnecting => 'Reconnecting to Telegram…';
+
+  @override
   String get telegramConnected => 'Account connected';
 
   @override

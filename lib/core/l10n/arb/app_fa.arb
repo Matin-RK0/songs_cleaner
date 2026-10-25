@@ -57,6 +57,7 @@
   "telegramDescription": "آهنگ‌های کانال‌ها، گروه‌ها و گفتگوهایت را در کتابخانه‌ای جدا برای هر چت پیدا کن.",
   "telegramConnect": "اتصال به تلگرام",
   "telegramReconnect": "اتصال دوباره",
+  "telegramReconnecting": "در حال اتصال دوباره به تلگرام…",
   "telegramConnected": "حساب متصل است",
   "telegramOffline": "کتابخانه آفلاین",
   "telegramOfflineHint": "آهنگ‌های محلی ذخیره‌شده در دسترس‌اند. برای به‌روزرسانی چت‌ها و یافتن آهنگ‌های بیشتر دوباره متصل شو.",

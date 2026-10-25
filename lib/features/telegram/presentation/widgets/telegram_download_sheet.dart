@@ -245,10 +245,15 @@ class _DownloadConnectionStatus extends ConsumerWidget {
         ),
       ),
     );
-    final ready = ref.watch(
-      telegramProvider.select((state) => state.auth == TelegramAuth.ready),
+    final connection = ref.watch(
+      telegramProvider.select(
+        (state) =>
+            (state.auth == TelegramAuth.ready, state.connection.unavailable),
+      ),
     );
-    if (!pending || ready) return const SizedBox.shrink();
+    if (!pending || connection.$1 && !connection.$2) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Wrap(
@@ -260,8 +265,10 @@ class _DownloadConnectionStatus extends ConsumerWidget {
             style: Theme.of(context).textTheme.labelLarge,
           ),
           TextButton.icon(
-            onPressed: () =>
-                Navigator.of(context).pushNamed(RouteNames.telegramAuth),
+            onPressed: connection.$1
+                ? () => ref.read(telegramProvider.notifier).refresh()
+                : () =>
+                      Navigator.of(context).pushNamed(RouteNames.telegramAuth),
             icon: const Icon(Icons.link_rounded),
             label: Text(context.l10n.telegramReconnect),
           ),

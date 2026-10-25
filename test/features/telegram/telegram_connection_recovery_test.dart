@@ -71,6 +71,7 @@ void main() {
         expect(repository.chatRequests, hasLength(1));
         final controller = container.read(telegramProvider.notifier);
         final recovery = controller.refresh();
+        await settle();
         expect(repository.chatRequests, hasLength(2));
         expect(container.read(telegramProvider).chats.single.id, _cached.id);
         // The old finally block must not end the latest request's busy state.
@@ -111,6 +112,7 @@ void main() {
         await controller.refresh(more: true);
         expect(repository.audioRequests, hasLength(1));
         final recovery = controller.refresh();
+        await settle();
         expect(repository.audioRequests, hasLength(2));
         repository.audioRequests.last.complete(
           TelegramAudioPage([testAudio(messageId: 10)], 9),

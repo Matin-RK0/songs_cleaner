@@ -4,15 +4,22 @@ import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../widgets/telegram_entrance.dart';
+import '../../domain/telegram_models.dart';
 
 class TelegramOverviewCard extends StatelessWidget {
-  const TelegramOverviewCard({super.key, required this.connected});
+  const TelegramOverviewCard({
+    super.key,
+    required this.connected,
+    this.connection = TelegramConnection.unknown,
+  });
   final bool connected;
+  final TelegramConnection connection;
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final l10n = context.l10n;
+    final reconnecting = connected && connection.unavailable;
     return RepaintBoundary(
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -45,7 +52,9 @@ class TelegramOverviewCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          connected
+                          reconnecting
+                              ? l10n.telegramReconnecting
+                              : connected
                               ? l10n.telegramConnected
                               : l10n.telegramOffline,
                           style: text.titleMedium?.copyWith(
@@ -65,7 +74,9 @@ class TelegramOverviewCard extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    connected
+                    reconnecting
+                        ? Icons.sync_rounded
+                        : connected
                         ? Icons.check_circle_outline_rounded
                         : Icons.offline_pin_outlined,
                     color: colors.onPrimaryContainer,

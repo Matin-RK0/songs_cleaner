@@ -10,6 +10,7 @@ import 'telegram_cache_store.dart';
 import '../domain/telegram_models.dart';
 import '../domain/telegram_repository.dart';
 import '../domain/telegram_message_link.dart';
+import '../domain/telegram_connection_policy.dart';
 import 'tdlib_transport.dart';
 import 'telegram_audio_mapper.dart';
 import 'telegram_chat_mapper.dart';
@@ -26,7 +27,10 @@ class TelegramRepositoryImpl implements TelegramRepository {
   }) : _directory = cacheDirectory,
        _transport = transportFactory?.call(),
        _musicPublisher = musicPublisher ?? TelegramMusicPublisher(),
-       _isInUse = isInUse ?? ((_) => false);
+       _isInUse = isInUse ?? ((_) => false) {
+    final transport = _transport;
+    if (transport != null) _listenTransport(transport);
+  }
 
   final TelegramMusicPublisher _musicPublisher;
   final bool Function(String) _isInUse;
@@ -41,6 +45,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
   static const apiId = int.fromEnvironment('TELEGRAM_API_ID');
   static const apiHash = String.fromEnvironment('TELEGRAM_API_HASH');
   final _auth = StreamController<TelegramAuth>.broadcast();
+  final _connection = StreamController<TelegramConnection>.broadcast();
   final _files = StreamController<TelegramLocalFile>.broadcast();
   final _secure = const FlutterSecureStorage(
     aOptions: AndroidOptions(storageNamespace: 'songs_cleaner_telegram'),
@@ -57,6 +62,9 @@ class TelegramRepositoryImpl implements TelegramRepository {
   final _browseVersions = <String, int>{};
   bool _initializing = false;
   Future<void>? _readyPreparation;
+  Future<void>? _maintenance;
+  DateTime? _lastNetworkRetry;
+  TelegramConnection _connectionState = TelegramConnection.unknown;
   int _sessionEpoch = 0;
   int _connectVersion = 0;
   Future<void>? _connecting;
@@ -69,6 +77,8 @@ class TelegramRepositoryImpl implements TelegramRepository {
   @override
   Stream<TelegramAuth> get authorization => _auth.stream;
   @override
+  Stream<TelegramConnection> get connection => _connection.stream;
+  @override
   Stream<TelegramLocalFile> get fileUpdates => _files.stream;
   @override
   Future<bool> hasSession() async =>
@@ -76,6 +86,99 @@ class TelegramRepositoryImpl implements TelegramRepository {
   void _emit(TelegramAuth state) {
     _state = state;
     if (!_auth.isClosed) _auth.add(state);
+    if (state == TelegramAuth.disconnected) {
+      _emitConnection(TelegramConnection.closed);
+    }
+  }
+
+  void _emitConnection(TelegramConnection value) {
+    if (_connectionState == value || _disposed) return;
+    _connectionState = value;
+    if (value.unavailable) {
+      for (final scope in _browseVersions.keys.toList()) {
+        _browseVersions[scope] = _browseVersions[scope]! + 1;
+        _transport?.cancelReads(scope);
+      }
+    }
+    if (!_connection.isClosed) _connection.add(value);
+  }
+
+  void _listenTransport(TdlibTransport transport, [Directory? directory]) {
+    _subscription = transport.updates.listen((update) {
+      if (_transport != transport || _disposed) return;
+      if (update['@type'] == 'updateConnectionState') {
+        _emitConnection(switch ((update['state'] as Map?)?['@type']) {
+          'connectionStateReady' => TelegramConnection.ready,
+          'connectionStateWaitingForNetwork' =>
+            TelegramConnection.waitingForNetwork,
+          'connectionStateUpdating' => TelegramConnection.updating,
+          'connectionStateClosed' => TelegramConnection.closed,
+          _ => TelegramConnection.connecting,
+        });
+      } else if (update['@type'] == 'updateFile' && !_files.isClosed) {
+        _acceptFile(update['file'] as Map<String, dynamic>);
+      } else if (update['@type'] == 'updateAuthorizationState') {
+        unawaited(
+          () async {
+            final dir = directory ?? await _dir();
+            if (_transport != transport || _disposed) return;
+            await _authorization(
+              update['authorization_state'] as Map<String, dynamic>,
+              dir,
+            );
+          }().catchError((Object error, StackTrace stackTrace) {
+            if (_transport != transport || _disposed) return;
+            TelegramDiagnostics.report(
+              'Restoring Telegram authorization',
+              error,
+              stackTrace,
+            );
+            _emit(TelegramAuth.disconnected);
+          }),
+        );
+      }
+    });
+  }
+
+  @override
+  Future<void> retryConnection() async {
+    final transport = _transport;
+    if (transport == null || _connectionState == TelegramConnection.closed) {
+      if (transport != null) {
+        await _subscription?.cancel();
+        await transport.dispose();
+        _transport = null;
+        _emit(TelegramAuth.disconnected);
+      }
+      await connect();
+      return;
+    }
+    if (!_connectionState.unavailable) return;
+    final now = DateTime.now();
+    if (_lastNetworkRetry != null &&
+        now.difference(_lastNetworkRetry!) <
+            TelegramConnectionPolicy.retryCooldown) {
+      return;
+    }
+    _lastNetworkRetry = now;
+    const scope = 'network-recovery';
+    transport.cancelReads(scope);
+    try {
+      // TDLib has no Android connectivity integration in this worker. Send both
+      // local commands in order before awaiting replies, so even a timeout
+      // cannot leave networking disabled. This preserves auth and file transfers.
+      await Future.wait([
+        transport.read(scope, 'setNetworkType', {
+          'type': {'@type': 'networkTypeNone'},
+        }),
+        transport.read(scope, 'setNetworkType', {
+          'type': {'@type': 'networkTypeOther'},
+        }),
+      ]).timeout(TelegramConnectionPolicy.retryTimeout);
+    } catch (_) {
+      transport.cancelReads(scope);
+      rethrow;
+    }
   }
 
   Future<Directory> _dir() async => _directory ??= await Directory(
@@ -90,7 +193,18 @@ class TelegramRepositoryImpl implements TelegramRepository {
     // Database/key setup must remain single-flight even if Retry is tapped
     // before the transport has been created.
     if (_transport == null && _connecting != null) return _connecting!;
-    final pending = _connect();
+    final connecting = _connect();
+    final version = _connectVersion;
+    final pending = connecting.timeout(
+      TelegramConnectionPolicy.operationTimeout,
+      onTimeout: () {
+        if (version == _connectVersion && !_disposed) {
+          ++_connectVersion;
+          _emit(TelegramAuth.disconnected);
+        }
+        throw const TelegramException(TelegramFailure.network);
+      },
+    );
     _connecting = pending;
     try {
       await pending;
@@ -143,30 +257,17 @@ class TelegramRepositoryImpl implements TelegramRepository {
     _readyPreparation = null;
     try {
       final dir = await _dir();
+      if (version != _connectVersion || _disposed) return;
       _key = await _secure.read(key: 'telegram.database.key');
+      if (version != _connectVersion || _disposed) return;
       if (_key == null) {
         final random = Random.secure();
         _key = base64Encode(List.generate(32, (_) => random.nextInt(256)));
         await _secure.write(key: 'telegram.database.key', value: _key);
       }
+      if (version != _connectVersion || _disposed) return;
       final transport = _transport = TdlibTransport();
-      _subscription = transport.updates.listen((update) {
-        if (_transport != transport || _disposed) return;
-        if (update['@type'] == 'updateFile' && !_files.isClosed) {
-          final file = update['file'] as Map<String, dynamic>;
-          _acceptFile(file);
-        }
-        if (update['@type'] == 'updateAuthorizationState') {
-          unawaited(
-            _authorization(
-              update['authorization_state'] as Map<String, dynamic>,
-              dir,
-            ).catchError((Object _) {
-              _emit(TelegramAuth.disconnected);
-            }),
-          );
-        }
-      });
+      _listenTransport(transport, dir);
       await (_transportStarting = transport.start());
       if (version != _connectVersion || _disposed) return;
       final initial = await transport.read(
@@ -232,7 +333,15 @@ class TelegramRepositoryImpl implements TelegramRepository {
       'authorizationStateClosing' => TelegramAuth.starting,
       _ => TelegramAuth.other,
     });
-    if (type == 'authorizationStateReady') unawaited(_cleanPublishedCopies());
+    if (type == 'authorizationStateReady' && _maintenance == null) {
+      final maintenance = _maintainStorage();
+      _maintenance = maintenance;
+      unawaited(
+        maintenance.whenComplete(() {
+          if (identical(_maintenance, maintenance)) _maintenance = null;
+        }),
+      );
+    }
   }
 
   TdlibTransport get _td =>
@@ -240,18 +349,32 @@ class TelegramRepositoryImpl implements TelegramRepository {
 
   Future<void> _prepareReady() async {
     await _secure.write(key: 'telegram.session.active', value: 'true');
-    await _pruneTemporary();
-    final store = await _store();
-    if (store['imagePurgePending'] == true) {
-      try {
-        await _purgeImageStorage();
-        store.remove('imagePurgePending');
-        await _save();
-      } catch (_) {
-        // Keep the durable cleanup request for the next connection.
+  }
+
+  Future<void> _maintainStorage() async {
+    final session = _sessionEpoch;
+    try {
+      await _pruneTemporary();
+      if (_disposed || session != _sessionEpoch) return;
+      final store = await _store();
+      if (store['imagePurgePending'] == true) {
+        try {
+          await _purgeImageStorage();
+          store.remove('imagePurgePending');
+          await _save();
+        } catch (_) {
+          // Keep the durable cleanup request for the next connection.
+        }
       }
+      unawaited(_trimImageCache());
+      await _cleanPublishedCopies();
+    } catch (error, stackTrace) {
+      TelegramDiagnostics.report(
+        'Maintaining Telegram storage',
+        error,
+        stackTrace,
+      );
     }
-    unawaited(_trimImageCache());
   }
 
   @override
@@ -569,7 +692,12 @@ class TelegramRepositoryImpl implements TelegramRepository {
   Future<void> _discardTemporary(int id) async {
     // TDLib owns only its private copy; this never deletes a public file path.
     if (_transport == null) return;
-    await _td.call('deleteFile', {'file_id': id});
+    final transport = _td;
+    final session = _sessionEpoch;
+    await transport.call('deleteFile', {'file_id': id});
+    if (_disposed || session != _sessionEpoch || transport != _transport) {
+      return;
+    }
     final store = await _store();
     final staged = Map<String, dynamic>.from(
       store['temporaryAudio'] as Map? ?? {},
@@ -579,10 +707,15 @@ class TelegramRepositoryImpl implements TelegramRepository {
   }
 
   Future<void> _pruneTemporary() async {
+    final session = _sessionEpoch;
+    final transport = _transport;
     final staged = Map<String, dynamic>.from(
       (await _store())['temporaryAudio'] as Map? ?? {},
     );
     for (final key in staged.keys) {
+      if (_disposed || session != _sessionEpoch || transport != _transport) {
+        return;
+      }
       final id = int.tryParse(key);
       if (id == null || _downloads.containsKey(id)) continue;
       try {
@@ -994,6 +1127,7 @@ class TelegramRepositoryImpl implements TelegramRepository {
     await _transport?.dispose();
     await _cache.flush().catchError((Object _) {});
     await _auth.close();
+    await _connection.close();
     await _files.close();
   }
 }

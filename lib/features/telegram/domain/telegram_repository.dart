@@ -3,9 +3,11 @@ import 'telegram_download.dart';
 
 abstract class TelegramRepository {
   Stream<TelegramAuth> get authorization;
+  Stream<TelegramConnection> get connection;
   Stream<TelegramLocalFile> get fileUpdates;
   Future<bool> hasSession();
   Future<void> connect();
+  Future<void> retryConnection();
   Future<void> submitPhone(String phone);
   Future<void> submitCode(String code);
   Future<void> submitPassword(String password);
