@@ -4,6 +4,7 @@ import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../application/telegram_controller.dart';
 import '../../domain/telegram_models.dart';
+import '../../domain/telegram_auth_defaults.dart';
 import '../widgets/telegram_feedback.dart';
 
 class TelegramAuthScreen extends ConsumerStatefulWidget {
@@ -107,7 +108,22 @@ class _TelegramAuthForm extends ConsumerStatefulWidget {
 }
 
 class _TelegramAuthFormState extends ConsumerState<_TelegramAuthForm> {
-  final _input = TextEditingController();
+  late final TextEditingController _input;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.auth == TelegramAuth.phone
+        ? TelegramAuthDefaults.phoneCountryCode
+        : '';
+    _input = TextEditingController.fromValue(
+      TextEditingValue(
+        text: initial,
+        selection: TextSelection.collapsed(offset: initial.length),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _input.dispose();
