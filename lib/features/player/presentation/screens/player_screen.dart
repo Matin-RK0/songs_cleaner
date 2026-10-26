@@ -101,11 +101,10 @@ class PlayerScreen extends ConsumerWidget {
                               const PlayerControlsRow(),
                               const SizedBox(height: AppSpacing.xs),
                               _PlayerActions(song: song),
-                              if (!hideQuickDelete) ...[
-                                const SizedBox(height: AppSpacing.xs),
-                                DeleteCurrentButton(song: song),
-                              ],
-                              const SizedBox(height: AppSpacing.xs),
+                               const SizedBox(height: AppSpacing.xl),
+                               if (!hideQuickDelete)
+                                 DeleteCurrentButton(song: song),
+                               const SizedBox(height: AppSpacing.md),
                             ],
                           ),
                         ),
