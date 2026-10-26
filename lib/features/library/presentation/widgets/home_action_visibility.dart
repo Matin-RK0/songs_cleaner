@@ -57,7 +57,12 @@ class _HomeActionVisibilityState extends State<HomeActionVisibility>
     if (_reduceMotion) {
       _controller.value = widget.visible ? 1 : 0;
     } else if (widget.visible) {
-      _controller.forward();
+      // Lay out the action at zero opacity before starting its entry, so the
+      // tab's initial layout does not consume the animation's first frames.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !widget.visible || _reduceMotion) return;
+        _controller.forward();
+      });
     } else {
       _controller.reverse();
     }
@@ -74,8 +79,10 @@ class _HomeActionVisibilityState extends State<HomeActionVisibility>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) =>
-          Offstage(offstage: _controller.isDismissed, child: child),
+      builder: (context, child) => Offstage(
+        offstage: !widget.visible && _controller.isDismissed,
+        child: child,
+      ),
       child: IgnorePointer(
         ignoring: !widget.visible,
         child: ExcludeSemantics(
