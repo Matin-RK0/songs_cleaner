@@ -113,14 +113,19 @@ class TelegramMusicStore(private val context: Context) : MethodChannel.MethodCal
         val uri = resolver.insert(collection, values)
             ?: throw IOException("Unable to create audio entry")
         try {
+            val expectedSize = source.length()
             val copied = resolver.openOutputStream(uri, "w")?.use { output ->
                 source.inputStream().use { input -> input.copyTo(output) }
             } ?: throw IOException("Unable to open audio output")
-            if (copied != source.length()) throw IOException("Incomplete audio copy")
+            if (copied != expectedSize) throw IOException("Incomplete audio copy")
+            // Verify through the owned MediaStore URI while still pending. Raw
+            // path access after publication is not a reliable scoped-storage check.
+            val storedSize = resolver.openFileDescriptor(uri, "r")?.use { it.statSize }
+                ?: throw IOException("Unable to verify audio output")
+            if (storedSize != expectedSize) throw IOException("Incomplete audio output")
             val path = resolver.query(uri, arrayOf(MediaStore.Audio.Media.DATA), null, null, null)?.use {
                 if (it.moveToFirst()) it.getString(0) else null
             } ?: throw IOException("Audio file path unavailable")
-            if (!File(path).isFile) throw IOException("Audio file unavailable")
             val published = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
             if (resolver.update(uri, published, null, null) <= 0) throw IOException("Unable to publish audio")
             return path
@@ -144,8 +149,9 @@ class TelegramMusicStore(private val context: Context) : MethodChannel.MethodCal
             destination = File(directory, "$base (${suffix++})$extension")
         }
         try {
+            val expectedSize = source.length()
             val copied = source.inputStream().use { input -> destination.outputStream().use { input.copyTo(it) } }
-            if (copied != source.length()) throw IOException("Incomplete audio copy")
+            if (copied != expectedSize || destination.length() != expectedSize) throw IOException("Incomplete audio copy")
             return destination.absolutePath
         } catch (error: Exception) {
             destination.delete()

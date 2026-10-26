@@ -793,13 +793,10 @@ class TelegramRepositoryImpl implements TelegramRepository {
     staged['${audio.fileId}'] = audio.withLocalPath(sourcePath).toJson();
     stagedStore['temporaryAudio'] = staged;
     await _save();
-    final sourceSize = await File(sourcePath).length();
     final path = await _musicPublisher.publish(sourcePath, audio);
-    if (await File(path).length() != sourceSize) {
-      throw const TelegramException(TelegramFailure.storage);
-    }
-    // This is the commit boundary: native publication and byte verification
-    // succeeded. Preserve that receipt before touching any legacy metadata.
+    // Native storage verifies the copy before publishing it. Its successful
+    // reply is the commit boundary: re-statting the shared path from Dart can
+    // fail under scoped storage even though MediaStore saved the file correctly.
     _committedAudio[audio.fileId] = path;
     try {
       await _indexPublishedAudio(audio, path);

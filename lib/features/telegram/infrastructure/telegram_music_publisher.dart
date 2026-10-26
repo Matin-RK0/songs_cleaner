@@ -35,6 +35,9 @@ class TelegramMusicPublisher {
     }
   }
 
+  /// Returns only after native storage has verified and published the copy.
+  /// The returned path is a commit receipt, not a request for a second raw-path
+  /// verification outside Android's MediaStore access boundary.
   Future<String> publish(String sourcePath, TelegramAudio audio) async {
     try {
       final path = await channel.invokeMethod<String>('saveAudio', {

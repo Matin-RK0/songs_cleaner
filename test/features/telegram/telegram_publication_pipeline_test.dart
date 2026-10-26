@@ -23,6 +23,36 @@ class _Authorized extends TelegramController {
   TelegramState build() => const TelegramState(auth: TelegramAuth.ready);
 }
 
+final class _PublishedPathAccess extends IOOverrides {
+  _PublishedPathAccess(this.deniedPath);
+  final String deniedPath;
+  int lengthReads = 0;
+
+  @override
+  File createFile(String path) {
+    final file = super.createFile(path);
+    return path == deniedPath ? _PublishedFile(file, this) : file;
+  }
+}
+
+class _PublishedFile extends Fake implements File {
+  _PublishedFile(this.file, this.access);
+  final File file;
+  final _PublishedPathAccess access;
+
+  @override
+  Future<bool> exists() => file.exists();
+
+  @override
+  Future<int> length() async {
+    access.lengthReads++;
+    throw FileSystemException(
+      'Permission denied after MediaStore publication',
+      file.path,
+    );
+  }
+}
+
 class _CompletedFileTransport extends TdlibTransport {
   _CompletedFileTransport(this.source);
   final File source;
@@ -75,6 +105,7 @@ void main() {
     'publishedFiles',
     'bindings',
     'unrelatedAudio',
+    'publishedPathAccess',
   ]) {
     test(
       'native publication completes and Retry reuses it ($damagedIndex cache)',
@@ -93,7 +124,8 @@ void main() {
             {'legacy': true},
             'old record',
           ];
-        } else if (damagedIndex != 'valid') {
+        } else if (damagedIndex != 'valid' &&
+            damagedIndex != 'publishedPathAccess') {
           seed[damagedIndex] = {
             'old': null,
             'another': {'legacy': true},
@@ -118,78 +150,90 @@ void main() {
           }
           return null;
         });
-        final transport = _CompletedFileTransport(source);
-        final repository = TelegramRepositoryImpl(
-          cacheDirectory: dir,
-          transportFactory: () => transport,
+        final access = _PublishedPathAccess(
+          damagedIndex == 'publishedPathAccess' ? destination.path : '',
         );
-        final container = ProviderContainer(
-          overrides: [
-            telegramRepositoryProvider.overrideWithValue(repository),
-            telegramProvider.overrideWith(_Authorized.new),
-            telegramLibrarySyncProvider.overrideWithValue(() async {}),
-            allSongsProvider.overrideWithValue([]),
-          ],
-        );
-        addTearDown(() async {
-          container.dispose();
-          await repository.dispose();
-          messenger.setMockMethodCallHandler(
-            TelegramMusicPublisher.channel,
-            null,
+        await IOOverrides.runWithIOOverrides(() async {
+          final transport = _CompletedFileTransport(source);
+          final repository = TelegramRepositoryImpl(
+            cacheDirectory: dir,
+            transportFactory: () => transport,
           );
-          await dir.delete(recursive: true);
-        });
-        final chat = container.listen(telegramChatProvider(123), (_, _) {});
-        addTearDown(chat.close);
-        await settle();
-        final manager = container.read(telegramDownloadsProvider.notifier);
-        manager.enqueue(audio);
-        await manager.waitFor(audio.fileId);
-        await settle();
-        expect(await destination.readAsBytes(), [1, 2, 3]);
-        expect(
-          container.read(telegramDownloadsProvider)[audio.fileId]!.phase,
-          TelegramDownloadPhase.completed,
-        );
-        expect(
-          container.read(telegramDownloadsProvider)[audio.fileId]!.failure,
-          isNull,
-        );
-        expect(
-          container.read(telegramChatSongsProvider(123)).single.path,
-          destination.path,
-        );
-        expect(container.read(telegramChatProvider(123)).failure, isNull);
-        final l10n = lookupAppLocalizations(const Locale('en'));
-        expect(
-          container
-              .read(telegramDownloadLabelsProvider((audio.fileId, 'en')))
-              .$1,
-          l10n.telegramCompleted,
-        );
-        // Force the same request again, as with repeated Retry taps after the old bug.
-        manager.enqueue(audio);
-        await manager.waitFor(audio.fileId);
-        await settle();
-        expect(
-          container.read(telegramDownloadsProvider)[audio.fileId]!.phase,
-          TelegramDownloadPhase.completed,
-        );
-        expect(publications, 1);
-        expect(transport.downloads, 1);
-        if (damagedIndex != 'valid' && damagedIndex != 'unrelatedAudio') {
-          final repaired =
-              jsonDecode(
-                    await File('${dir.path}/library-v1.json').readAsString(),
-                  )
-                  as Map;
+          final container = ProviderContainer(
+            overrides: [
+              telegramRepositoryProvider.overrideWithValue(repository),
+              telegramProvider.overrideWith(_Authorized.new),
+              telegramLibrarySyncProvider.overrideWithValue(() async {}),
+              allSongsProvider.overrideWithValue([]),
+            ],
+          );
+          addTearDown(() async {
+            container.dispose();
+            await repository.dispose();
+            messenger.setMockMethodCallHandler(
+              TelegramMusicPublisher.channel,
+              null,
+            );
+            await dir.delete(recursive: true);
+          });
+          final chat = container.listen(telegramChatProvider(123), (_, _) {});
+          addTearDown(chat.close);
+          await settle();
+          final manager = container.read(telegramDownloadsProvider.notifier);
+          await settle();
+          Future<void> download() async {
+            manager.enqueue(audio);
+            await manager.waitFor(audio.fileId);
+          }
+
+          await download();
+          await settle();
+          expect(await destination.readAsBytes(), [1, 2, 3]);
           expect(
-            (repaired[damagedIndex] as Map)['kept'],
-            '/Music/previous-song.mp3',
+            container.read(telegramDownloadsProvider)[audio.fileId]!.phase,
+            TelegramDownloadPhase.completed,
           );
-          expect((repaired[damagedIndex] as Map).containsKey('old'), isFalse);
-        }
+          expect(
+            container.read(telegramDownloadsProvider)[audio.fileId]!.failure,
+            isNull,
+          );
+          expect(
+            container.read(telegramChatSongsProvider(123)).single.path,
+            destination.path,
+          );
+          expect(container.read(telegramChatProvider(123)).failure, isNull);
+          final l10n = lookupAppLocalizations(const Locale('en'));
+          expect(
+            container
+                .read(telegramDownloadLabelsProvider((audio.fileId, 'en')))
+                .$1,
+            l10n.telegramCompleted,
+          );
+          // Force the same request again, as with repeated Retry taps after the old bug.
+          await download();
+          await settle();
+          expect(
+            container.read(telegramDownloadsProvider)[audio.fileId]!.phase,
+            TelegramDownloadPhase.completed,
+          );
+          expect(publications, 1);
+          expect(transport.downloads, 1);
+          expect(access.lengthReads, 0);
+          if (damagedIndex != 'valid' &&
+              damagedIndex != 'unrelatedAudio' &&
+              damagedIndex != 'publishedPathAccess') {
+            final repaired =
+                jsonDecode(
+                      await File('${dir.path}/library-v1.json').readAsString(),
+                    )
+                    as Map;
+            expect(
+              (repaired[damagedIndex] as Map)['kept'],
+              '/Music/previous-song.mp3',
+            );
+            expect((repaired[damagedIndex] as Map).containsKey('old'), isFalse);
+          }
+        }, access);
       },
     );
   }
