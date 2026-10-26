@@ -55,13 +55,6 @@ class _SongsTabState extends ConsumerState<SongsTab> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => _buildError(context, ref, error),
       data: (state) {
-        if (state.songs.isEmpty) {
-          return AppEmptyState(
-            icon: Icons.library_music_rounded,
-            title: context.l10n.emptyLibraryTitle,
-            message: context.l10n.emptyLibraryMessage,
-          );
-        }
         return Column(
           children: [
             AnimatedSwitcher(
@@ -131,27 +124,32 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                     ),
             ),
             Expanded(
-              child: state.visibleSongs.isEmpty
-                  ? AppEmptyState(
-                      icon: Icons.search_off_rounded,
-                      title: context.l10n.noResultsTitle,
-                      message: context.l10n.noResultsMessage,
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () =>
-                          ref.read(libraryProvider.notifier).refresh(),
-                      child: SongListView(
-                        songs: state.visibleSongs,
-                        currentSongId: currentId,
-                        controller: widget.scrollController,
-                        itemExtent: SongTile.itemExtent,
-                        selectedSongIds: _selectedIds,
-                        onSelectionChanged: _toggleSelection,
-                        onSongTap: (songs, index) => ref
-                            .read(playerProvider.notifier)
-                            .playFromList(songs, startIndex: index),
-                      ),
-                    ),
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(libraryProvider.notifier).refresh(),
+                child: SongListView(
+                  animateChanges: true,
+                  emptyState: AppEmptyState(
+                    icon: state.songs.isEmpty
+                        ? Icons.library_music_rounded
+                        : Icons.search_off_rounded,
+                    title: state.songs.isEmpty
+                        ? context.l10n.emptyLibraryTitle
+                        : context.l10n.noResultsTitle,
+                    message: state.songs.isEmpty
+                        ? context.l10n.emptyLibraryMessage
+                        : context.l10n.noResultsMessage,
+                  ),
+                  songs: state.visibleSongs,
+                  currentSongId: currentId,
+                  controller: widget.scrollController,
+                  itemExtent: SongTile.itemExtent,
+                  selectedSongIds: _selectedIds,
+                  onSelectionChanged: _toggleSelection,
+                  onSongTap: (songs, index) => ref
+                      .read(playerProvider.notifier)
+                      .playFromList(songs, startIndex: index),
+                ),
+              ),
             ),
           ],
         );

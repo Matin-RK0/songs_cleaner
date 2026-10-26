@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../application/providers/library_providers.dart';
 
@@ -38,6 +39,9 @@ class ArtworkImage extends ConsumerWidget {
     // keep the source at the reference app's 500px minimum for every usage.
     // Larger widgets still get a source large enough for their bounds.
     final requestSize = resolution ?? math.max(500, size.round());
+    final decodeSize = (size * MediaQuery.devicePixelRatioOf(context))
+        .ceil()
+        .clamp(1, requestSize);
     final bytes = ref.watch(songArtworkProvider((songId, requestSize)));
     final colors = context.colors;
     final image = RepaintBoundary(
@@ -53,7 +57,9 @@ class ArtworkImage extends ConsumerWidget {
           ),
           child:
               bytes.whenOrNull(
-                data: (data) => data == null ? null : _image(data),
+                data: (data) => data == null
+                    ? null
+                    : _image(data, decodeSize, colors.textLow),
               ) ??
               _placeholder(colors.textLow),
         ),
@@ -63,14 +69,29 @@ class ArtworkImage extends ConsumerWidget {
     return Semantics(image: true, label: semanticLabel, child: image);
   }
 
-  Widget _image(Uint8List data) {
+  Widget _image(Uint8List data, int decodeSize, Color placeholderColor) {
     return ClipRRect(
       borderRadius: borderRadius ?? AppRadius.md,
       child: Image.memory(
+        key: ValueKey(songId),
         data,
+        cacheWidth: decodeSize,
         fit: BoxFit.cover,
         gaplessPlayback: true,
-        filterQuality: FilterQuality.high,
+        filterQuality: FilterQuality.low,
+        errorBuilder: (_, _, _) => _placeholder(placeholderColor),
+        frameBuilder: (context, child, frame, synchronouslyLoaded) {
+          if (synchronouslyLoaded) return child;
+          final placeholder = _placeholder(placeholderColor);
+          if (frame == null) return placeholder;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              placeholder,
+              _ArtworkReveal(key: ValueKey(songId), child: child),
+            ],
+          );
+        },
       ),
     );
   }
@@ -78,4 +99,57 @@ class ArtworkImage extends ConsumerWidget {
   Widget _placeholder(Color color) {
     return Icon(Icons.music_note_rounded, size: size * 0.5, color: color);
   }
+}
+
+/// Mounted only after the first decoded frame is ready, so the transition
+/// never expires while an artwork request is still waiting for MediaStore.
+class _ArtworkReveal extends StatefulWidget {
+  const _ArtworkReveal({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ArtworkReveal> createState() => _ArtworkRevealState();
+}
+
+class _ArtworkRevealState extends State<_ArtworkReveal>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final CurvedAnimation _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: AppMotion.normal);
+    _opacity = CurvedAnimation(parent: _controller, curve: AppMotion.standard);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!TickerMode.valuesOf(context).enabled) {
+      _controller.stop();
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !TickerMode.valuesOf(context).enabled) return;
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _controller.value = 1;
+      } else {
+        _controller.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _opacity.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: FadeTransition(opacity: _opacity, child: widget.child),
+  );
 }

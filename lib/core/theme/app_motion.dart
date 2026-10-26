@@ -1,6 +1,9 @@
 import 'package:flutter/animation.dart';
 
 abstract final class AppMotion {
+  static const double songEntryDistance = 12;
+  static const double songExitDistance = 20;
+  static const double songMaxMoveRows = 3;
   static const Offset floatingActionEntryOffset = Offset(0, 0.18);
   static const Duration fast = Duration(milliseconds: 150);
   static const Duration normal = Duration(milliseconds: 250);
