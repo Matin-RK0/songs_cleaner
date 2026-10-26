@@ -53,6 +53,26 @@ void main() {
   });
 
   group('navigation', () {
+    test(
+      'metadata refresh preserves shuffle order, selection and missing tracks',
+      () {
+        final queue = PlaybackQueue()
+          ..load([song(1), song(2), song(3)], startIndex: 1)
+          ..setShuffled(true);
+        final order = queue.songs.map((song) => song.id).toList();
+        final updated = song(2);
+
+        queue.refreshMetadata([updated]);
+
+        expect(queue.current, same(updated));
+        expect(queue.shuffled, isTrue);
+        expect(queue.songs.map((song) => song.id), order);
+        expect(queue.originalSongs.map((song) => song.id), [1, 2, 3]);
+        queue.setShuffled(false);
+        expect(queue.current, same(updated));
+      },
+    );
+
     test('next advances and wraps when requested', () {
       final queue = PlaybackQueue()
         ..load([song(1), song(2), song(3)], startIndex: 2);

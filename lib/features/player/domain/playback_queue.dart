@@ -59,6 +59,14 @@ class PlaybackQueue {
     _index = 0;
   }
 
+  void refreshMetadata(List<Song> songs) {
+    final byId = {for (final song in songs) song.id: song};
+    _original = List.unmodifiable(
+      _original.map((song) => byId[song.id] ?? song),
+    );
+    _order = List.unmodifiable(_order.map((song) => byId[song.id] ?? song));
+  }
+
   /// Moves to the next track. Returns false when the queue ended without
   /// wrapping. When [wrap] is true it loops back to the first track.
   bool next({bool wrap = false}) {

@@ -52,7 +52,12 @@ class PlayerScreen extends ConsumerWidget {
                                 child: Center(
                                   child: RepaintBoundary(
                                     child: AnimatedSwitcher(
-                                      duration: AppMotion.normal,
+                                      duration:
+                                          MediaQuery.disableAnimationsOf(
+                                            context,
+                                          )
+                                          ? Duration.zero
+                                          : AppMotion.normal,
                                       switchInCurve: AppMotion.standard,
                                       switchOutCurve: AppMotion.standard,
                                       transitionBuilder: (child, animation) =>
@@ -76,14 +81,22 @@ class PlayerScreen extends ConsumerWidget {
                                   ),
                                 ),
                               ),
-                              AnimatedSwitcher(
-                                duration: AppMotion.fast,
-                                switchInCurve: AppMotion.standard,
-                                switchOutCurve: AppMotion.standard,
-                                child: PlayerTrackInfo(key: ValueKey(song.id)),
+                              RepaintBoundary(
+                                child: AnimatedSwitcher(
+                                  duration:
+                                      MediaQuery.disableAnimationsOf(context)
+                                      ? Duration.zero
+                                      : AppMotion.normal,
+                                  switchInCurve: AppMotion.standard,
+                                  switchOutCurve: AppMotion.standard,
+                                  child: PlayerTrackInfo(
+                                    key: ValueKey(song.id),
+                                    song: song,
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: AppSpacing.xs),
-                              const SeekBar(),
+                              SeekBar(key: ValueKey(song.id)),
                               const SizedBox(height: AppSpacing.xs),
                               const PlayerControlsRow(),
                               const SizedBox(height: AppSpacing.xs),

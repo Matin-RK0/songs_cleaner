@@ -99,7 +99,10 @@ class LockScreenPlayerScreen extends ConsumerWidget {
                               ),
                               child: RepaintBoundary(
                                 child: AnimatedSwitcher(
-                                  duration: AppMotion.normal,
+                                  duration:
+                                      MediaQuery.disableAnimationsOf(context)
+                                      ? Duration.zero
+                                      : AppMotion.normal,
                                   switchInCurve: AppMotion.standard,
                                   switchOutCurve: AppMotion.standard,
                                   transitionBuilder: (child, animation) =>
@@ -119,14 +122,21 @@ class LockScreenPlayerScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
-                        AnimatedSwitcher(
-                          duration: AppMotion.fast,
-                          switchInCurve: AppMotion.standard,
-                          switchOutCurve: AppMotion.standard,
-                          child: PlayerTrackInfo(key: ValueKey(song.id)),
+                        RepaintBoundary(
+                          child: AnimatedSwitcher(
+                            duration: MediaQuery.disableAnimationsOf(context)
+                                ? Duration.zero
+                                : AppMotion.normal,
+                            switchInCurve: AppMotion.standard,
+                            switchOutCurve: AppMotion.standard,
+                            child: PlayerTrackInfo(
+                              key: ValueKey(song.id),
+                              song: song,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        SeekBar(),
+                        SeekBar(key: ValueKey(song.id)),
                         const SizedBox(height: AppSpacing.md),
                         const PlayerControlsRow(),
                         const SizedBox(height: AppSpacing.xl),

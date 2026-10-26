@@ -77,18 +77,18 @@ class PlayerController extends Notifier<PlayerState> {
 
     subscriptions
       ..add(
-        player.positionStream.listen((position) {
-          state = state.copyWith(position: position);
+        player.positionStream.listen((_) {
+          _syncTimeline(handler);
         }),
       )
       ..add(
-        player.bufferedPositionStream.listen((buffered) {
-          state = state.copyWith(bufferedPosition: buffered);
+        player.bufferedPositionStream.listen((_) {
+          _syncTimeline(handler);
         }),
       )
       ..add(
-        player.durationStream.listen((duration) {
-          state = state.copyWith(duration: duration ?? Duration.zero);
+        player.durationStream.listen((_) {
+          _syncTimeline(handler);
         }),
       )
       ..add(
@@ -97,10 +97,14 @@ class PlayerController extends Notifier<PlayerState> {
         }),
       )
       ..add(
-        player.playerStateStream.listen((playerState) {
+        handler.playbackState.listen((_) {
+          final playerState = handler.playbackState.value;
+          _syncTimeline(handler);
           state = state.copyWith(
             playing: playerState.playing,
-            processingState: _mapProcessingState(playerState.processingState),
+            processingState: _mapProcessingState(
+              handler.playbackState.value.processingState,
+            ),
           );
           unawaited(_updateWidget(handler, playing: playerState.playing));
         }),
@@ -132,7 +136,13 @@ class PlayerController extends Notifier<PlayerState> {
     return PlayerState(
       songs: handler.queueSongs,
       index: handler.currentIndex,
-      playing: false,
+      playing: handler.playbackState.value.playing,
+      position: handler.position,
+      duration: handler.duration,
+      bufferedPosition: handler.bufferedPosition,
+      processingState: _mapProcessingState(
+        handler.playbackState.value.processingState,
+      ),
       repeatMode: handler.repeatMode,
       shuffled: handler.shuffled,
       gapless: handler.gapless,
@@ -177,6 +187,13 @@ class PlayerController extends Notifier<PlayerState> {
     MusicPlayerHandler handler,
     List<Song> librarySongs,
   ) async {
+    // The handler already restores before the first frame. Hydrate metadata
+    // in place rather than loading the same source again as the library arrives.
+    if (await handler.refreshRestoredMetadata(librarySongs)) {
+      if (ref.mounted) _mirrorHandler(handler);
+      return;
+    }
+    if (!ref.mounted) return;
     final settings = ref.read(appSettingsRepositoryProvider);
     final session = settings.loadPlaybackSession();
     final plan = SessionResumePlanner.plan(session, librarySongs);
@@ -195,20 +212,8 @@ class PlayerController extends Notifier<PlayerState> {
       repeatMode: plan.repeatMode,
       shuffled: plan.shuffled,
     );
-    if (!restored) return;
-
-    // Seed the seek position directly: a paused player emits no position
-    // stream updates, so without this the seek bar would look wrong after
-    // reopening the app.
-    state = state.copyWith(
-      songs: handler.queueSongs,
-      index: handler.currentIndex,
-      repeatMode: handler.repeatMode,
-      shuffled: handler.shuffled,
-      gapless: handler.gapless,
-      position: plan.position,
-      queueRevision: state.queueRevision + 1,
-    );
+    if (!restored || !ref.mounted) return;
+    _mirrorHandler(handler);
   }
 
   /// Copies the handler's current queue/modes into state (single source of
@@ -219,10 +224,25 @@ class PlayerController extends Notifier<PlayerState> {
       index: handler.currentIndex,
       repeatMode: handler.repeatMode,
       shuffled: handler.shuffled,
+      gapless: handler.gapless,
+      position: handler.position,
+      duration: handler.duration,
+      bufferedPosition: handler.bufferedPosition,
       queueRevision: state.queueRevision + 1,
     );
     unawaited(
       _updateWidget(handler, playing: handler.playbackState.value.playing),
+    );
+  }
+
+  void _syncTimeline(MusicPlayerHandler handler) {
+    final trackChanged = state.current?.id != handler.currentSong?.id;
+    state = state.copyWith(
+      songs: trackChanged ? handler.queueSongs : null,
+      index: trackChanged ? handler.currentIndex : null,
+      position: handler.position,
+      duration: handler.duration,
+      bufferedPosition: handler.bufferedPosition,
     );
   }
 
@@ -333,12 +353,14 @@ class PlayerController extends Notifier<PlayerState> {
     await handler.stopAndClearQueue();
   }
 
-  static PlayerProcessingState _mapProcessingState(ProcessingState source) =>
-      switch (source) {
-        ProcessingState.idle => PlayerProcessingState.idle,
-        ProcessingState.loading => PlayerProcessingState.loading,
-        ProcessingState.buffering => PlayerProcessingState.buffering,
-        ProcessingState.ready => PlayerProcessingState.ready,
-        ProcessingState.completed => PlayerProcessingState.completed,
-      };
+  static PlayerProcessingState _mapProcessingState(
+    AudioProcessingState source,
+  ) => switch (source) {
+    AudioProcessingState.idle => PlayerProcessingState.idle,
+    AudioProcessingState.loading => PlayerProcessingState.loading,
+    AudioProcessingState.buffering => PlayerProcessingState.buffering,
+    AudioProcessingState.ready => PlayerProcessingState.ready,
+    AudioProcessingState.completed => PlayerProcessingState.completed,
+    AudioProcessingState.error => PlayerProcessingState.idle,
+  };
 }
