@@ -5,10 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'library_controller.dart';
 
-/// App-wide scheduler that keeps the library fresh with an optimized
-/// incremental scan: on resume (throttled) and on a slow timer while the app
-/// stays visible. Songs imported outside the app (e.g. a file manager) appear
-/// without a manual reload.
+/// App-wide scheduler that reconciles the library on songs-tab entry, resume
+/// (throttled) and a slow timer while the app stays visible. Added, removed and
+/// edited device music appears without a manual reload.
 ///
 /// The underlying MediaStore query has no date filter, so every check reads
 /// the full song list. The interval and cooldowns are deliberately
@@ -16,7 +15,7 @@ import 'library_controller.dart';
 /// keep battery impact negligible on low-end devices.
 final librarySyncSchedulerProvider = Provider<LibrarySyncScheduler>((ref) {
   final scheduler = LibrarySyncScheduler(
-    onSync: () => ref.read(libraryProvider.notifier).syncNewSongs(),
+    onSync: () => ref.read(libraryProvider.notifier).syncDeviceChanges(),
   );
   ref.onDispose(scheduler.dispose);
   return scheduler..start();
@@ -63,6 +62,10 @@ class LibrarySyncScheduler {
     }
     unawaited(_run());
   }
+
+  /// Tab entry must not inherit the resume cooldown: a file may have just been
+  /// downloaded, deleted or edited from the Telegram tab in this same session.
+  void onSongsTabSelected() => unawaited(_run());
 
   void _startTimer() {
     _timer ??= Timer.periodic(interval, (_) => unawaited(_run()));

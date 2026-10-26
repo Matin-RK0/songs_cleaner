@@ -72,8 +72,12 @@ final libraryProvider = AsyncNotifierProvider<LibraryController, LibraryState>(
 );
 
 class LibraryController extends AsyncNotifier<LibraryState> {
+  Future<void>? _deviceSync;
+  int _libraryGeneration = 0;
+
   @override
   Future<LibraryState> build() async {
+    ++_libraryGeneration;
     final permissions = ref.watch(mediaPermissionsProvider);
     if (!await permissions.requestAudioAccess()) {
       throw const PermissionFailure();
@@ -142,6 +146,7 @@ class LibraryController extends AsyncNotifier<LibraryState> {
   void removeSongLocally(int songId) {
     final current = state.value;
     if (current == null) return;
+    ++_libraryGeneration;
     final remaining = current.songs
         .where((song) => song.id != songId)
         .toList(growable: false);
@@ -152,14 +157,24 @@ class LibraryController extends AsyncNotifier<LibraryState> {
   /// merges only the new ones. Avoids a full re-query and file-existence pass,
   /// so periodic checks stay cheap even on large libraries.
   Future<void> syncNewSongs() async {
+    // A completed Telegram download must not be overwritten by an older full
+    // snapshot that was requested while its publication was still in flight.
+    final pending = _deviceSync;
+    if (pending != null) await pending;
+    if (!ref.mounted) return;
     final current = state.value;
     if (current == null) return;
+    final generation = _libraryGeneration;
 
     final source = ref.read(deviceMusicDataSourceProvider);
     final candidates = await source.fetchSongsNewerThan(
       newestDateAddedSeconds(current.songs),
     );
-    if (candidates.isEmpty) return;
+    if (!ref.mounted ||
+        generation != _libraryGeneration ||
+        candidates.isEmpty) {
+      return;
+    }
 
     // Re-read the state: a manual refresh may have replaced the list while the
     // MediaStore query was in flight. mergeNewSongs de-duplicates by song id.
@@ -168,6 +183,32 @@ class LibraryController extends AsyncNotifier<LibraryState> {
     final merged = mergeNewSongs(latest.songs, candidates);
     if (identical(merged, latest.songs)) return;
     state = AsyncData(latest.copyWith(songs: merged));
+  }
+
+  /// Reconciles additions, deletions and metadata changes without replacing the
+  /// visible page with a loading state or resetting its query/filter/order.
+  Future<void> syncDeviceChanges() {
+    final running = _deviceSync;
+    if (running != null) return running;
+    if (!state.hasValue) return Future.value();
+    late final Future<void> pending;
+    pending = _reconcileDeviceSongs(_libraryGeneration).whenComplete(() {
+      if (identical(_deviceSync, pending)) _deviceSync = null;
+    });
+    _deviceSync = pending;
+    return pending;
+  }
+
+  Future<void> _reconcileDeviceSongs(int generation) async {
+    final source = ref.read(deviceMusicDataSourceProvider);
+    final fetched = await source.fetchSongs();
+    if (!ref.mounted || generation != _libraryGeneration) return;
+    final existing = await _keepExistingFiles(fetched);
+    if (!ref.mounted || generation != _libraryGeneration) return;
+    final latest = state.value;
+    if (latest == null) return;
+    ++_libraryGeneration;
+    state = AsyncData(latest.copyWith(songs: List.unmodifiable(existing)));
   }
 
   Future<void> refresh() async {

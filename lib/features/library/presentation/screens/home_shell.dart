@@ -80,6 +80,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
     if (_tabController.indexIsChanging) return;
     if (_tabController.index == _lastTabIndex) return;
     _lastTabIndex = _tabController.index;
+    if (_tabs[_lastTabIndex] == HomeTab.songs) {
+      ref.read(librarySyncSchedulerProvider).onSongsTabSelected();
+    }
     // Swap the floating action (shuffle vs. new playlist) for the active tab.
     setState(() {});
   }
