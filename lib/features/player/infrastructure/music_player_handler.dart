@@ -164,6 +164,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     if (isChangingSource) return song.duration;
     return _player.duration ?? song.duration;
   }
+
   Duration get bufferedPosition => isChangingSource || _queue.current == null
       ? Duration.zero
       : _player.bufferedPosition;
