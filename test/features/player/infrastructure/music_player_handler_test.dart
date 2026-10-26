@@ -82,6 +82,53 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test(
+    'notification uses the loaded duration instead of library metadata',
+    () async {
+      final player = _Player();
+      final handler = MusicPlayerHandler(player);
+      addTearDown(player.close);
+      await handler.loadAndPlay([_song(1, 300)]);
+
+      expect(handler.mediaItem.value?.duration, const Duration(seconds: 60));
+
+      player.duration = const Duration(seconds: 58);
+      player.events.add(player.playbackEvent);
+      await Future<void>.delayed(Duration.zero);
+      expect(handler.mediaItem.value?.duration, const Duration(seconds: 58));
+    },
+  );
+
+  test('notification clock drift is corrected without play/pause', () async {
+    final player = _Player();
+    final handler = MusicPlayerHandler(player);
+    addTearDown(player.close);
+    await handler.loadAndPlay([_song(1, 60)]);
+    player.events.add(player.playbackEvent);
+    await Future<void>.delayed(Duration.zero);
+
+    // Playback keeps advancing without another playback event.
+    player.position = const Duration(seconds: 55);
+    player.positions.add(player.position);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(handler.playbackState.value.updatePosition, player.position);
+    expect(handler.playbackState.value.playing, isTrue);
+
+    // Ordinary position ticks must not continuously republish media state.
+    final synchronized = handler.playbackState.value;
+    player.position = synchronized.position;
+    player.positions.add(player.position);
+    await Future<void>.delayed(Duration.zero);
+    expect(handler.playbackState.value, same(synchronized));
+
+    // Also correct a clock that is ahead of the actual audio.
+    player.position = const Duration(seconds: 10);
+    player.positions.add(player.position);
+    await Future<void>.delayed(Duration.zero);
+    expect(handler.playbackState.value.updatePosition, player.position);
+  });
+
+  test(
     'new metadata never carries the outgoing position while loading',
     () async {
       final player = _Player();
@@ -108,8 +155,10 @@ void main() {
 
       // Late events from the outgoing source must remain masked.
       player.events.add(player.playbackEvent);
+      player.positions.add(player.position);
       await Future<void>.delayed(Duration.zero);
       expect(handler.playbackState.value.updatePosition, Duration.zero);
+      expect(handler.mediaItem.value?.duration, const Duration(seconds: 60));
 
       player.loading!.complete();
       await change;

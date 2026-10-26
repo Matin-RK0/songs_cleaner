@@ -22,6 +22,7 @@ import '../screens/groups_tab.dart';
 import '../screens/songs_tab.dart';
 import '../models/home_tab_presentation.dart';
 import '../widgets/home_action_visibility.dart';
+import '../widgets/song_list_scroll.dart';
 import '../../application/providers/library_controller.dart';
 import '../../application/providers/library_sync_scheduler.dart';
 
@@ -41,6 +42,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
   AppLifecycleListener? _lifecycleListener;
   late int _lastTabIndex;
   late List<HomeTab> _tabs;
+  bool _locateCurrentAfterTabChange = false;
 
   @override
   void initState() {
@@ -78,6 +80,10 @@ class _HomeShellState extends ConsumerState<HomeShell>
 
   void _onTabChanged() {
     if (_tabController.indexIsChanging) return;
+    if (_locateCurrentAfterTabChange) {
+      _locateCurrentAfterTabChange = false;
+      if (_tabs[_tabController.index] == HomeTab.songs) _scrollToCurrent();
+    }
     if (_tabController.index == _lastTabIndex) return;
     _lastTabIndex = _tabController.index;
     if (_tabs[_lastTabIndex] == HomeTab.songs) {
@@ -337,25 +343,22 @@ class _HomeShellState extends ConsumerState<HomeShell>
   }
 
   void _scrollToCurrent() {
-    final currentId = ref.read(playerProvider).current?.id;
-    if (currentId == null) return;
+    if (ref.read(playerProvider).current == null) return;
     final songsIndex = _tabs.indexOf(HomeTab.songs);
-    if (_tabController.index != songsIndex) {
+    if (_tabController.index != songsIndex || _tabController.indexIsChanging) {
+      _locateCurrentAfterTabChange = true;
       _tabController.animateTo(songsIndex);
+      return;
     }
-    final songs = ref.read(libraryProvider).value?.visibleSongs ?? const [];
-    final index = songs.indexWhere((song) => song.id == currentId);
-    if (index < 0) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_songsScrollController.hasClients) return;
-      final target = (index * 76.0).clamp(
-        0.0,
-        _songsScrollController.position.maxScrollExtent,
-      );
-      _songsScrollController.animateTo(
-        target,
-        duration: AppMotion.normal,
-        curve: AppMotion.standard,
+      if (!mounted || _tabs[_tabController.index] != HomeTab.songs) return;
+      final currentId = ref.read(playerProvider).current?.id;
+      if (currentId == null) return;
+      scrollToSong(
+        controller: _songsScrollController,
+        songs: ref.read(libraryProvider).value?.visibleSongs ?? const [],
+        songId: currentId,
+        reduceMotion: MediaQuery.disableAnimationsOf(context),
       );
     });
   }

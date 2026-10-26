@@ -35,6 +35,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   static const int _maxAutoSkipsOnError = 3;
   static const int _positionSaveIntervalMs = 5000;
+  static const Duration _notificationPositionTolerance = Duration(seconds: 1);
 
   final AudioPlayer _player;
 
@@ -194,6 +195,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       _hydratedFromStorage = false;
       _publishQueueMediaItems();
       mediaItem.add(_mediaItemFor(_queue.current!));
+      _broadcastState(_player.playbackEvent);
       _touchQueue();
     }
     return true;
@@ -214,6 +216,18 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   void _onPositionChanged(Duration position) {
     if (isChangingSource) return;
+    final state = playbackState.value;
+    // Android extrapolates the notification clock between playback events.
+    // Repair drift without publishing every position tick to the media session.
+    if (_queue.current != null &&
+        _player.playing &&
+        _player.processingState == ProcessingState.ready &&
+        (!state.playing ||
+            state.processingState != AudioProcessingState.ready ||
+            (state.position - position).abs() >=
+                _notificationPositionTolerance)) {
+      _broadcastState(_player.playbackEvent);
+    }
     final ms = position.inMilliseconds;
     final last = _lastSavedPositionMs;
     if (!_player.playing) {
@@ -366,6 +380,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     }
     _publishQueueMediaItems();
     mediaItem.add(_mediaItemFor(_queue.current!));
+    _broadcastState(_player.playbackEvent);
     _touchQueue();
     await _persistSession();
     if (playImmediately) await _player.play();
@@ -944,6 +959,18 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     // Once the user closes the app, keep the state idle so no listener revives
     // the notification during the shutdown sequence.
     if (_closing) return;
+    final currentItem = mediaItem.value;
+    final loadedDuration = _player.duration;
+    // MediaStore durations can be approximate. Use the decoder's duration for
+    // the seek bar, but never attach an outgoing source's duration to a new song.
+    if (!isChangingSource &&
+        currentItem != null &&
+        currentItem.id == 'song_${_queue.current?.id}' &&
+        loadedDuration != null &&
+        loadedDuration > Duration.zero &&
+        currentItem.duration != loadedDuration) {
+      mediaItem.add(currentItem.copyWith(duration: loadedDuration));
+    }
     final playing = _player.playing;
     final hasActiveSong = _queue.current != null;
     final controls = hasActiveSong
