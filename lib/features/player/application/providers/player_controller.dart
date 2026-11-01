@@ -51,7 +51,9 @@ Future<MusicPlayerHandler> initializeMusicPlayerHandler({
       androidNotificationChannelId: 'com.example.songs_cleaner.playback',
       androidNotificationChannelName: 'پخش موزیک',
       androidNotificationIcon: 'drawable/ic_notif_applogo',
-      androidResumeOnClick: true,
+      // Remove the notification when the session stops instead of detaching
+      // a resumable notification with only Android's default play action.
+      androidResumeOnClick: false,
       androidNotificationOngoing: false,
       androidStopForegroundOnPause: false,
     ),

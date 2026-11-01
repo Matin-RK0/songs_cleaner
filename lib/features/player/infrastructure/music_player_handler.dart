@@ -29,7 +29,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     _initialization = _restorePersistedQueue();
     final savedSpeed = settings?.loadPlaybackSpeed(1) ?? 1;
     _player.setSpeed(savedSpeed);
-    _listenToAudioFocus();
+    _audioFocusInitialization = _listenToAudioFocus();
     _player.currentIndexStream.listen(_onPlaylistIndexChanged);
   }
 
@@ -49,6 +49,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   int _consecutiveLoadFailures = 0;
   int _lastSavedPositionMs = -1;
   bool _closing = false;
+  Future<void>? _closeFuture;
+  late Future<void> _audioFocusInitialization;
   bool _gaplessEnabled = false;
   bool _loadingGaplessSources = false;
   Duration? _pendingPosition;
@@ -130,6 +132,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   void _onPlaylistIndexChanged(int? index) {
+    if (_closing) return;
     if (!_gaplessEnabled || _loadingGaplessSources || index == null) return;
     if (_pendingPosition != null || index != _player.currentIndex) return;
     if (index < 0 || index >= _queue.length) return;
@@ -357,6 +360,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> loadAndPlay(List<Song> songs, {int startIndex = 0}) async {
     await _initialization;
     if (songs.isEmpty) return;
+    await _prepareForPlayback();
     _queue.load(songs, startIndex: startIndex);
     await _loadCurrent(playImmediately: true);
   }
@@ -425,6 +429,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   @override
   Future<void> play() async {
     await _initialization;
+    await _prepareForPlayback();
     if (_queue.current == null) {
       final newestSong = await DeviceMusicDataSource(
         OnAudioQuery(),
@@ -434,7 +439,27 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       await _loadCurrent(playImmediately: true);
       return;
     }
-    await _player.play();
+    final playback = _player.play();
+    // just_audio's play future completes when playback ends, not when it
+    // starts. Publish immediately so all media clients see the resumed state.
+    _broadcastState(_player.playbackEvent);
+    await playback;
+  }
+
+  Future<void> _prepareForPlayback() async {
+    // A headset command may arrive while shutdown is still saving the session.
+    // Finish that teardown before reactivating the same handler.
+    await _closeFuture;
+    if (!_closing) return;
+    _closing = false;
+    _closeFuture = null;
+    _audioFocusInitialization = _listenToAudioFocus();
+    _publishQueueMediaItems();
+    final song = _queue.current;
+    if (song != null) mediaItem.add(_mediaItemFor(song));
+    _broadcastState(_player.playbackEvent);
+    _touchQueue();
+    await _audioFocusInitialization;
   }
 
   @override
@@ -753,10 +778,12 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   /// The paused queue and position are persisted first so the next launch can
   /// resume exactly where the user left off, then the media notification and
   /// foreground services are torn down and the Android task is finished.
-  Future<void> closeApp() async {
-    if (_closing) return;
+  Future<void> closeApp() => _closeFuture ??= _closeApp();
+
+  Future<void> _closeApp() async {
     _closing = true;
     _sleepTimer?.cancel();
+    await _audioFocusInitialization;
     await _interruptionSubscription?.cancel();
     await _noisySubscription?.cancel();
     await _player.pause();
@@ -771,6 +798,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
         processingState: AudioProcessingState.idle,
         playing: false,
         controls: const [],
+        systemActions: const {},
+        androidCompactActionIndices: const [],
       ),
     );
     await super.stop();
@@ -852,6 +881,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   // ---------------------------------------------------------------------------
 
   Future<void> _onPlayerStateChanged(PlayerState state) async {
+    if (_closing) return;
     if (isChangingSource) {
       _broadcastState(_player.playbackEvent);
       return;
