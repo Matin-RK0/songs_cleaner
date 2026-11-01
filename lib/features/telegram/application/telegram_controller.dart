@@ -343,7 +343,7 @@ class TelegramController extends Notifier<TelegramState> {
     });
   }
 
-  Future<bool> clearCache({bool signOut = false}) async {
+  Future<bool> clearCache() async {
     var cleared = false;
     await _run((_) async {
       _refreshOnIdle = false;
@@ -356,7 +356,6 @@ class TelegramController extends Notifier<TelegramState> {
           cacheRevision: state.cacheRevision + 1,
         );
         ref.invalidate(telegramArtworkLoaderProvider);
-        if (signOut) await _logout();
         cleared = true;
       } finally {
         if (ref.mounted) {

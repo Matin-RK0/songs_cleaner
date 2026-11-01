@@ -622,20 +622,8 @@ abstract class AppLocalizations {
   /// No description provided for @telegramClearCacheHint.
   ///
   /// In fa, this message translates to:
-  /// **'کاورها، تصاویر چت و فهرست آفلاین چت‌ها و آهنگ‌ها پاک می‌شوند. فایل‌های موسیقی، پیشرفت دانلودها و تنظیمات حفظ می‌شوند. نشست و دیتابیس داخلی تلگرام باقی می‌مانند، مگر گزینهٔ خروج را هم انتخاب کنی. اگر تلگرام متصل نباشد، پاک‌سازی باقی‌مانده تصاویر با اتصال بعدی تکمیل می‌شود. تصاویر و فهرست‌ها هنگام مرور یا به‌روزرسانی دوباره بارگذاری می‌شوند.'**
+  /// **'کاورها، تصاویر چت و فهرست آفلاین چت‌ها و آهنگ‌ها پاک می‌شوند. از حساب خارج نمی‌شوی؛ نشست ورود، دیتابیس داخلی تلگرام، فایل‌های موسیقی، پیشرفت دانلودها و تنظیمات حفظ می‌شوند. اگر تلگرام متصل نباشد، پاک‌سازی باقی‌مانده تصاویر با اتصال بعدی تکمیل می‌شود. تصاویر و فهرست‌ها هنگام مرور یا به‌روزرسانی دوباره بارگذاری می‌شوند.'**
   String get telegramClearCacheHint;
-
-  /// No description provided for @telegramClearCacheSignOut.
-  ///
-  /// In fa, this message translates to:
-  /// **'حذف نشست و خروج از حساب هم انجام شود'**
-  String get telegramClearCacheSignOut;
-
-  /// No description provided for @telegramClearCacheSignOutHint.
-  ///
-  /// In fa, this message translates to:
-  /// **'نشست تلگرام این اپ پایان می‌یابد و فهرست‌ها و تنظیمات تلگرام بازنشانی می‌شوند. دانلودهای جاری متوقف می‌شوند. فایل‌های موسیقی گوشی حفظ می‌شوند.'**
-  String get telegramClearCacheSignOutHint;
 
   /// No description provided for @telegramCacheCleared.
   ///

@@ -7,7 +7,6 @@ import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_sheet_actions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../application/telegram_controller.dart';
-import '../../domain/telegram_models.dart';
 
 class TelegramCacheTile extends ConsumerWidget {
   const TelegramCacheTile({super.key});
@@ -82,51 +81,28 @@ Future<void> showTelegramCacheDialog(
   WidgetRef ref,
 ) async {
   final l10n = context.l10n;
-  final canSignOut = ref.read(telegramProvider).auth == TelegramAuth.ready;
-  var signOut = false;
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (dialogContext) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: Text(l10n.telegramClearCache),
-        scrollable: true,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.telegramClearCacheHint),
-            if (canSignOut) ...[
-              const SizedBox(height: AppSpacing.md),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                value: signOut,
-                title: Text(l10n.telegramClearCacheSignOut),
-                subtitle: Text(l10n.telegramClearCacheSignOutHint),
-                onChanged: (value) => setState(() => signOut = value ?? false),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: AppSheetActions(
-              primaryLabel: l10n.telegramClearCache,
-              onPrimary: () => Navigator.pop(dialogContext, true),
-              cancelLabel: l10n.cancel,
-              onCancel: () => Navigator.pop(dialogContext, false),
-              destructive: true,
-            ),
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.telegramClearCache),
+      scrollable: true,
+      content: Text(l10n.telegramClearCacheHint),
+      actions: [
+        SizedBox(
+          width: double.infinity,
+          child: AppSheetActions(
+            primaryLabel: l10n.telegramClearCache,
+            onPrimary: () => Navigator.pop(dialogContext, true),
+            cancelLabel: l10n.cancel,
+            onCancel: () => Navigator.pop(dialogContext, false),
+            destructive: true,
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
   if (confirmed != true || !context.mounted) return;
-  final success = await ref
-      .read(telegramProvider.notifier)
-      .clearCache(signOut: signOut);
+  final success = await ref.read(telegramProvider.notifier).clearCache();
   if (!context.mounted) return;
   showAppSnackBar(
     context,

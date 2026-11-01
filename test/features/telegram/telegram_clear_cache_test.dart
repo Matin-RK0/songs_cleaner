@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songs_cleaner/core/l10n/generated/app_localizations.dart';
 import 'package:songs_cleaner/core/theme/app_theme.dart';
@@ -55,6 +56,10 @@ void main() {
   test(
     'offline cleanup deletes private images and metadata, retaining music, database and queue',
     () async {
+      FlutterSecureStorage.setMockInitialValues({
+        'telegram.session.active': 'true',
+        'telegram.database.key': 'existing-encryption-key',
+      });
       final dir = await Directory.systemTemp.createTemp('telegram-clear-');
       addTearDown(() => dir.delete(recursive: true));
       Future<File> file(String relative) async {
@@ -110,6 +115,11 @@ void main() {
       expect(await reopened.loadBindings(), seed['bindings']);
       expect(await reopened.loadPreferences(), seed['preferences']);
       expect(await reopened.savedTransfers(), hasLength(1));
+      expect(await reopened.hasSession(), isTrue);
+      expect(
+        await const FlutterSecureStorage().read(key: 'telegram.database.key'),
+        'existing-encryption-key',
+      );
       final saved =
           jsonDecode(await File('${dir.path}/library-v1.json').readAsString())
               as Map;
@@ -255,31 +265,30 @@ void main() {
     },
   );
 
-  test(
-    'duplicate clears share busy protection; sign-out is explicit',
-    () async {
-      final repository = FakeTelegramRepository()
-        ..pendingCacheClear = Completer<void>();
-      final container = containerFor(repository);
-      final controller = container.read(telegramProvider.notifier);
-      await _settle();
-      final first = controller.clearCache();
-      expect(container.read(telegramProvider).clearingCache, isTrue);
-      expect(await controller.clearCache(), isFalse);
-      expect(repository.clearCacheCalls, 1);
-      repository.pendingCacheClear!.complete();
-      expect(await first, isTrue);
-      expect(container.read(telegramProvider).clearingCache, isFalse);
-      expect(repository.logoutCalls, 0);
-      expect(await controller.clearCache(signOut: true), isTrue);
-      expect(repository.logoutCalls, 1);
-      expect(container.read(telegramProvider).auth, TelegramAuth.disconnected);
-    },
-  );
+  test('duplicate and repeated clears never sign out', () async {
+    final repository = FakeTelegramRepository()
+      ..pendingCacheClear = Completer<void>();
+    final container = containerFor(repository);
+    final controller = container.read(telegramProvider.notifier);
+    await _settle();
+    final first = controller.clearCache();
+    expect(container.read(telegramProvider).clearingCache, isTrue);
+    expect(await controller.clearCache(), isFalse);
+    expect(repository.clearCacheCalls, 1);
+    repository.pendingCacheClear!.complete();
+    expect(await first, isTrue);
+    expect(container.read(telegramProvider).clearingCache, isFalse);
+    expect(repository.logoutCalls, 0);
+    repository.events.add(TelegramAuth.ready);
+    await _settle();
+    expect(await controller.clearCache(), isTrue);
+    expect(repository.logoutCalls, 0);
+    expect(container.read(telegramProvider).auth, TelegramAuth.ready);
+  });
 
   for (final locale in ['en', 'fa']) {
     testWidgets(
-      'cache button explains session choice and supports cancel and clear in $locale',
+      'cache button preserves session and supports cancel and repeated clear in $locale',
       (tester) async {
         tester.view.physicalSize = const Size(320, 640);
         tester.view.devicePixelRatio = 1;
@@ -317,10 +326,7 @@ void main() {
         await tester.tap(find.byType(ListTile));
         await tester.pumpAndSettle();
         expect(find.text(l10n.telegramClearCacheHint), findsOneWidget);
-        expect(
-          tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
-          isFalse,
-        );
+        expect(find.byType(CheckboxListTile), findsNothing);
         await tester.tap(find.text(l10n.cancel));
         await tester.pumpAndSettle();
         expect(repository.clearCacheCalls, 0);
@@ -335,14 +341,14 @@ void main() {
         expect(find.text(l10n.telegramCacheCleared), findsOneWidget);
         await tester.tap(find.byType(ListTile));
         await tester.pumpAndSettle();
-        await tester.ensureVisible(find.byType(CheckboxListTile));
-        await tester.tap(find.byType(CheckboxListTile));
-        await tester.pumpAndSettle();
+        expect(find.byType(CheckboxListTile), findsNothing);
         await tester.tap(
           find.widgetWithText(FilledButton, l10n.telegramClearCache),
         );
         await tester.pumpAndSettle();
-        expect(repository.logoutCalls, 1);
+        expect(repository.clearCacheCalls, 2);
+        expect(repository.logoutCalls, 0);
+        expect(container.read(telegramProvider).auth, TelegramAuth.ready);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       },
