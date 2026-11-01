@@ -341,6 +341,14 @@
   "audioFocusTitle": "رفتار هنگام وقفه صوتی",
   "audioFocusPause": "توقف و ادامه خودکار",
   "audioFocusDuck": "کاهش موقت صدا",
+  "audioDuckingVolumeTitle": "صدای موسیقی هنگام وقفه",
+  "audioDuckingVolumeHint": "درصدی از صدای قبلی؛ از وقفهٔ بعدی اعمال می‌شود.",
+  "audioDuckingPercent": "{percent}٪",
+  "@audioDuckingPercent": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
   "audioFocusIgnore": "ادامه پخش",
   "playlistsTab": "پلی‌لیست‌ها",
   "smartPlaylistsSection": "پلی‌لیست‌های هوشمند",

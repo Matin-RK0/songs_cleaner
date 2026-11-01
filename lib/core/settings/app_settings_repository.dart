@@ -165,6 +165,8 @@ class AppSettingsRepository {
   static const String _equalizerEnabledKey = 'audio.equalizer.enabled';
   static const String _equalizerGainsKey = 'audio.equalizer.gains';
   static const String _audioFocusModeKey = 'audio.focusMode';
+  static const String _audioDuckingPercentKey = 'audio.duckingPercent';
+  static const int defaultAudioDuckingPercent = 30;
   static const String _gaplessPlaybackKey = 'audio.gaplessPlayback';
   static const String _themeModeKey = 'appearance.themeMode';
   static const String _primaryColorIndexKey = 'appearance.primaryColorIndex';
@@ -325,6 +327,13 @@ class AppSettingsRepository {
 
   Future<void> saveAudioFocusMode(int index) =>
       _prefs.setInt(_audioFocusModeKey, index);
+
+  int loadAudioDuckingPercent() =>
+      (_prefs.getInt(_audioDuckingPercentKey) ?? defaultAudioDuckingPercent)
+          .clamp(0, 100);
+
+  Future<void> saveAudioDuckingPercent(int percent) =>
+      _prefs.setInt(_audioDuckingPercentKey, percent.clamp(0, 100));
 
   bool loadGaplessPlayback(bool fallback) =>
       _prefs.getBool(_gaplessPlaybackKey) ?? fallback;

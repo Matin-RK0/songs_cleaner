@@ -969,6 +969,18 @@ class AppLocalizationsFa extends AppLocalizations {
   String get audioFocusDuck => 'کاهش موقت صدا';
 
   @override
+  String get audioDuckingVolumeTitle => 'صدای موسیقی هنگام وقفه';
+
+  @override
+  String get audioDuckingVolumeHint =>
+      'درصدی از صدای قبلی؛ از وقفهٔ بعدی اعمال می‌شود.';
+
+  @override
+  String audioDuckingPercent(int percent) {
+    return '$percent٪';
+  }
+
+  @override
   String get audioFocusIgnore => 'ادامه پخش';
 
   @override

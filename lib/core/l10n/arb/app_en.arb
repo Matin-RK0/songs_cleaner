@@ -306,6 +306,14 @@
   "audioFocusTitle": "Audio interruptions",
   "audioFocusPause": "Pause and resume",
   "audioFocusDuck": "Lower volume temporarily",
+  "audioDuckingVolumeTitle": "Music volume during interruptions",
+  "audioDuckingVolumeHint": "Percentage of the previous volume. Applied at the next interruption.",
+  "audioDuckingPercent": "{percent}%",
+  "@audioDuckingPercent": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
   "audioFocusIgnore": "Keep playing",
   "playlistsTab": "Playlists",
   "smartPlaylistsSection": "Smart playlists",

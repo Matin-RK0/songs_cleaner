@@ -1819,6 +1819,24 @@ abstract class AppLocalizations {
   /// **'کاهش موقت صدا'**
   String get audioFocusDuck;
 
+  /// No description provided for @audioDuckingVolumeTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'صدای موسیقی هنگام وقفه'**
+  String get audioDuckingVolumeTitle;
+
+  /// No description provided for @audioDuckingVolumeHint.
+  ///
+  /// In fa, this message translates to:
+  /// **'درصدی از صدای قبلی؛ از وقفهٔ بعدی اعمال می‌شود.'**
+  String get audioDuckingVolumeHint;
+
+  /// No description provided for @audioDuckingPercent.
+  ///
+  /// In fa, this message translates to:
+  /// **'{percent}٪'**
+  String audioDuckingPercent(int percent);
+
   /// No description provided for @audioFocusIgnore.
   ///
   /// In fa, this message translates to:

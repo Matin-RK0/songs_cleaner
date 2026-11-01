@@ -3,6 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/settings/app_settings_repository.dart';
 import '../../domain/audio_focus_mode.dart';
 
+final audioDuckingPercentProvider =
+    NotifierProvider<AudioDuckingPercentController, int>(
+      AudioDuckingPercentController.new,
+    );
+
+class AudioDuckingPercentController extends Notifier<int> {
+  @override
+  int build() =>
+      ref.watch(appSettingsRepositoryProvider).loadAudioDuckingPercent();
+
+  Future<void> setPercent(int percent) async {
+    final repository = ref.read(appSettingsRepositoryProvider);
+    await repository.saveAudioDuckingPercent(percent);
+    if (ref.mounted) state = repository.loadAudioDuckingPercent();
+  }
+}
+
 final audioFocusModeProvider =
     NotifierProvider<AudioFocusModeController, AudioFocusMode>(
       AudioFocusModeController.new,

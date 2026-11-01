@@ -113,7 +113,10 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       if (mode == AudioFocusMode.duck) {
         if (_player.playing) {
           _volumeBeforeDucking = _player.volume;
-          _player.setVolume(_player.volume * 0.5);
+          final percent =
+              settings?.loadAudioDuckingPercent() ??
+              AppSettingsRepository.defaultAudioDuckingPercent;
+          _player.setVolume(_player.volume * percent / 100);
         }
         return;
       }

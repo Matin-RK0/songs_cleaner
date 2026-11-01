@@ -970,6 +970,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get audioFocusDuck => 'Lower volume temporarily';
 
   @override
+  String get audioDuckingVolumeTitle => 'Music volume during interruptions';
+
+  @override
+  String get audioDuckingVolumeHint =>
+      'Percentage of the previous volume. Applied at the next interruption.';
+
+  @override
+  String audioDuckingPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
   String get audioFocusIgnore => 'Keep playing';
 
   @override

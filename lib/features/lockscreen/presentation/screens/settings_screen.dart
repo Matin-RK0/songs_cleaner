@@ -22,6 +22,7 @@ import '../../../player/application/providers/audio_focus_controller.dart';
 import '../../../player/domain/audio_focus_mode.dart';
 import '../../../library/presentation/widgets/home_tabs_setting_tile.dart';
 import '../../../player/presentation/widgets/widget_background_setting_tile.dart';
+import '../../../player/presentation/widgets/audio_ducking_setting_tile.dart';
 import '../../../telegram/presentation/widgets/telegram_cache_controls.dart';
 import '../../application/providers/lock_screen_controller.dart';
 import '../widgets/settings_section.dart';
@@ -484,6 +485,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           trailing: const SettingsChevron(),
                           onTap: _showAudioFocusSheet,
                         ),
+                        if (audioFocusMode == AudioFocusMode.duck)
+                          const AudioDuckingSettingTile(),
                         ListTile(
                           leading: Icon(
                             Icons.history_rounded,
