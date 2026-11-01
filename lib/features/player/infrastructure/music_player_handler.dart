@@ -12,13 +12,20 @@ import '../../library/infrastructure/data_sources/device_music_data_source.dart'
 import '../domain/playback_enums.dart';
 import '../domain/audio_focus_mode.dart';
 import '../domain/playback_queue.dart';
+import 'playback_notification_service.dart';
 
 /// Glue between [AudioService] (notification, background, headset buttons)
 /// and [AudioPlayer]. Owns the play queue and repeat/shuffle rules so both
 /// in-app actions and notification actions behave identically. Also mirrors
 /// the session into [AppSettingsRepository] so it survives app restarts.
 class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
-  MusicPlayerHandler(this._player, {this.settings, this.mediaCatalog}) {
+  MusicPlayerHandler(
+    this._player, {
+    this.settings,
+    this.mediaCatalog,
+    Future<void> Function()? dismissNotification,
+  }) : _dismissNotification =
+           dismissNotification ?? PlaybackNotificationService.dismiss {
     _player.playbackEventStream.listen((event) {
       if (_gaplessEnabled) _onPlaylistIndexChanged(_player.currentIndex);
       _broadcastState(event);
@@ -38,6 +45,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   static const Duration _notificationPositionTolerance = Duration(seconds: 1);
 
   final AudioPlayer _player;
+  final Future<void> Function() _dismissNotification;
 
   /// Persists the session across restarts; null disables persistence (tests).
   final AppSettingsRepository? settings;
@@ -512,6 +520,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   Future<void> next({bool wrap = true}) async {
     await _initialization;
+    await _prepareForPlayback();
     if (!_queue.isNotEmpty) return;
     if (!_queue.next(wrap: wrap)) {
       await stopAndClearQueue();
@@ -526,6 +535,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   Future<void> previous() async {
     await _initialization;
+    await _prepareForPlayback();
     if (!_queue.isNotEmpty) return;
     final goToPrevious = settings?.loadPreviousGoesToPrevious(false) ?? false;
     if (!goToPrevious && _player.position > const Duration(seconds: 3)) {
@@ -776,11 +786,11 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   /// Writes the current session snapshot to settings immediately.
   Future<void> persistSession() => _persistSession();
 
-  /// Fully closes the app from the media notification's close control.
+  /// Closes playback from the media notification's close control.
   ///
   /// The paused queue and position are persisted first so the next launch can
   /// resume exactly where the user left off, then the media notification and
-  /// foreground services are torn down and the Android task is finished.
+  /// foreground playback service are stopped without discarding the queue.
   Future<void> closeApp() => _closeFuture ??= _closeApp();
 
   Future<void> _closeApp() async {
@@ -806,6 +816,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       ),
     );
     await super.stop();
+    await _dismissNotification();
   }
 
   @override

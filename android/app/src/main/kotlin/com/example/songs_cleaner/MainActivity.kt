@@ -11,14 +11,13 @@ import androidx.core.content.FileProvider
 import java.io.File
 import android.net.Uri
 import java.io.IOException
-import java.util.WeakHashMap
 import com.ryanheise.audioservice.AudioServiceActivity
+import com.ryanheise.audioservice.PlaybackNotificationPlugin
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : AudioServiceActivity() {
     private var pendingWidgetAction: String? = null
-    private var widgetChannel: MethodChannel? = null
     private var widgetEngine: FlutterEngine? = null
 
     override fun onUserInteraction() {
@@ -44,13 +43,15 @@ class MainActivity : AudioServiceActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        if (!flutterEngine.plugins.has(PlaybackNotificationPlugin::class.java)) {
+            flutterEngine.plugins.add(PlaybackNotificationPlugin())
+        }
         widgetEngine = flutterEngine
-        if (!readyWidgetEngines.containsKey(flutterEngine)) {
-            readyWidgetEngines[flutterEngine] = false
-            flutterEngine.addEngineLifecycleListener(object : FlutterEngine.EngineLifecycleListener {
-                override fun onPreEngineRestart() { readyWidgetEngines[flutterEngine] = false }
-                override fun onEngineWillDestroy() { readyWidgetEngines.remove(flutterEngine) }
-            })
+        NowPlayingWidgetPlugin.register(flutterEngine)
+        pendingWidgetAction?.let { action ->
+            (flutterEngine.plugins.get(NowPlayingWidgetPlugin::class.java) as? NowPlayingWidgetPlugin)
+                ?.dispatchAction(action)
+            pendingWidgetAction = null
         }
         if (!flutterEngine.plugins.has(TelegramMusicPlugin::class.java)) {
             flutterEngine.plugins.add(TelegramMusicPlugin())
@@ -188,45 +189,6 @@ class MainActivity : AudioServiceActivity() {
                 else -> result.notImplemented()
             }
         }
-        val nowPlayingWidgetChannel = MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            NOW_PLAYING_WIDGET_CHANNEL,
-        )
-        widgetChannel = nowPlayingWidgetChannel
-        nowPlayingWidgetChannel.setMethodCallHandler { call, result ->
-            when (call.method) {
-                "update" -> {
-                    getSharedPreferences(NowPlayingWidgetProvider.PREFS, MODE_PRIVATE)
-                        .edit()
-                        .putString(NowPlayingWidgetProvider.TITLE, call.argument<String>("title"))
-                        .putString(NowPlayingWidgetProvider.ARTIST, call.argument<String>("artist"))
-                        .putInt(NowPlayingWidgetProvider.SONG_ID, call.argument<Int>("songId") ?: -1)
-                        .putBoolean(NowPlayingWidgetProvider.PLAYING, call.argument<Boolean>("playing") ?: false)
-                        .apply()
-                    NowPlayingWidgetProvider.updateAll(this)
-                    result.success(null)
-                }
-                "setBackgroundColor" -> {
-                    val color = call.argument<Number>("color")?.toInt()
-                    val editor = getSharedPreferences(NowPlayingWidgetProvider.PREFS, MODE_PRIVATE)
-                        .edit()
-                    if (color == null) {
-                        editor.remove(NowPlayingWidgetProvider.BACKGROUND_COLOR)
-                    } else {
-                        editor.putInt(NowPlayingWidgetProvider.BACKGROUND_COLOR, color)
-                    }
-                    editor.apply()
-                    NowPlayingWidgetProvider.updateAll(this)
-                    result.success(null)
-                }
-                "consumeAction" -> {
-                    widgetEngine?.let { readyWidgetEngines[it] = true }
-                    result.success(pendingWidgetAction)
-                    pendingWidgetAction = null
-                }
-                else -> result.notImplemented()
-            }
-        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -263,7 +225,6 @@ class MainActivity : AudioServiceActivity() {
     }
 
     private companion object {
-        val readyWidgetEngines = WeakHashMap<FlutterEngine, Boolean>()
         const val LOCK_SCREEN_CHANNEL =
             "com.example.songs_cleaner/lock_screen"
         const val TAG_EDITOR_CHANNEL =
@@ -272,8 +233,6 @@ class MainActivity : AudioServiceActivity() {
             "com.example.songs_cleaner/file_transfer"
         const val SAVE_FILE_REQUEST = 4101
         const val OPEN_FILE_REQUEST = 4102
-        const val NOW_PLAYING_WIDGET_CHANNEL =
-            "com.example.songs_cleaner/now_playing_widget"
     }
 
     private fun rememberWidgetAction(intent: Intent?) {
@@ -284,8 +243,9 @@ class MainActivity : AudioServiceActivity() {
             action == TelegramDownloadService.OPEN_DOWNLOADS
         ) {
             pendingWidgetAction = action
-            if (widgetEngine?.let { readyWidgetEngines[it] } == true && widgetChannel != null) {
-                widgetChannel?.invokeMethod("widgetAction", action)
+            val plugin = widgetEngine?.plugins?.get(NowPlayingWidgetPlugin::class.java) as? NowPlayingWidgetPlugin
+            if (plugin != null) {
+                plugin.dispatchAction(action)
                 pendingWidgetAction = null
             }
         }

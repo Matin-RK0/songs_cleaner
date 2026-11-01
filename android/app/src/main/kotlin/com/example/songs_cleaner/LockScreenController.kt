@@ -88,11 +88,15 @@ object LockScreenController {
 
     fun attach(host: Activity, methodChannel: MethodChannel) {
         activity = host
-        appContext = host.applicationContext
-        enabled = loadEnabled(host)
-        channel = methodChannel
-        registerReceiver(host.applicationContext)
+        attachEngine(host.applicationContext, methodChannel)
         if (playerShown) applyLockedFlags(host, wakeScreenOnPresentation)
+    }
+
+    fun attachEngine(context: Context, methodChannel: MethodChannel) {
+        appContext = context.applicationContext
+        enabled = loadEnabled(context)
+        channel = methodChannel
+        registerReceiver(context.applicationContext)
     }
 
     fun detach(host: Activity) {

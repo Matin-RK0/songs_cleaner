@@ -41,6 +41,9 @@
         <service android:name=".TelegramDownloadService" android:exported="false"
             android:foregroundServiceType="dataSync" />
         <receiver
+            android:name=".WidgetPlaybackReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".NowPlayingWidgetProvider"
             android:exported="true">
             <intent-filter>

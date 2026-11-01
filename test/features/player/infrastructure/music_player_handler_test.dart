@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:songs_cleaner/core/settings/app_settings_repository.dart';
 import 'package:songs_cleaner/features/library/domain/entities/song.dart';
 import 'package:songs_cleaner/features/player/infrastructure/music_player_handler.dart';
 
@@ -89,6 +91,125 @@ class _Player extends Fake implements AudioPlayer {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test(
+    'cold media play waits for saved source and resumes without a UI',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final settings = AppSettingsRepository(
+        await SharedPreferences.getInstance(),
+      );
+      await settings.savePlaybackSession(
+        const SavedPlaybackSession(
+          queueSongIds: [1],
+          currentSongId: 1,
+          positionMs: 23000,
+          repeatModeIndex: 0,
+          shuffled: false,
+          tracks: [
+            SavedPlaybackTrack(
+              id: 1,
+              title: 'Track 1',
+              artist: 'Artist',
+              album: '',
+              durationMs: 60000,
+              path: '/1.mp3',
+            ),
+          ],
+        ),
+      );
+      final player = _Player()..loading = Completer<void>();
+      final handler = MusicPlayerHandler(player, settings: settings);
+      addTearDown(player.close);
+
+      final play = handler.click(MediaButton.media);
+      await Future<void>.delayed(Duration.zero);
+      expect(player.playing, isFalse);
+      player.loading!.complete();
+      await play;
+
+      expect(player.playing, isTrue);
+      expect(player.position, const Duration(seconds: 23));
+      expect(handler.mediaItem.value?.id, 'song_1');
+      expect(handler.playbackState.value.playing, isTrue);
+      expect(
+        handler.playbackState.value.controls,
+        contains(MediaControl.pause),
+      );
+      await handler.closeApp();
+    },
+  );
+
+  for (final next in [true, false]) {
+    test(
+      'widget ${next ? 'next' : 'previous'} reactivates a closed handler',
+      () async {
+        final player = _Player();
+        final handler = MusicPlayerHandler(player);
+        addTearDown(player.close);
+        await handler.loadAndPlay([
+          _song(1, 60),
+          _song(2, 60),
+        ], startIndex: next ? 0 : 1);
+        await handler.closeApp();
+
+        if (next) {
+          await handler.skipToNext();
+        } else {
+          await handler.skipToPrevious();
+        }
+        player.events.add(player.playbackEvent);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(player.playing, isTrue);
+        expect(handler.playbackState.value.playing, isTrue);
+        expect(handler.mediaItem.value?.id, next ? 'song_2' : 'song_1');
+        await handler.closeApp();
+      },
+    );
+  }
+
+  test(
+    'notification close removes native notification after publishing idle',
+    () async {
+      final player = _Player();
+      var dismissals = 0;
+      late final MusicPlayerHandler handler;
+      handler = MusicPlayerHandler(
+        player,
+        dismissNotification: () async {
+          dismissals++;
+          expect(player.playing, isFalse);
+          expect(handler.mediaItem.value, isNull);
+          expect(handler.queue.value, isEmpty);
+          expect(
+            handler.playbackState.value.processingState,
+            AudioProcessingState.idle,
+          );
+          expect(handler.playbackState.value.controls, isEmpty);
+        },
+      );
+      addTearDown(player.close);
+      await handler.loadAndPlay([_song(1, 60)]);
+      player.position = const Duration(seconds: 23);
+
+      await handler.customAction('closePlayer');
+      await handler.customAction('closePlayer');
+      expect(dismissals, 1);
+
+      player.events.add(player.playbackEvent);
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        handler.playbackState.value.processingState,
+        AudioProcessingState.idle,
+      );
+      await handler.play();
+      expect(player.position, const Duration(seconds: 23));
+      expect(handler.mediaItem.value?.id, 'song_1');
+      await handler.customAction('closePlayer');
+      expect(dismissals, 2);
+    },
+  );
 
   test(
     'headset play after close restores metadata and playing state',
