@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
@@ -16,7 +15,9 @@ import 'features/playlists/infrastructure/repositories/playlist_repository_impl.
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // AudioService also starts this entrypoint without an Activity. Awaiting
+  // SystemChrome here never completes in that case (even if an Activity is
+  // attached later). Android owns the portrait policy in AndroidManifest.xml.
 
   final equalizer = AndroidEqualizer();
   final player = AudioPlayer(
