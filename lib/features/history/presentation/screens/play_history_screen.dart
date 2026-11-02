@@ -130,9 +130,12 @@ class _HistoryList extends ConsumerWidget {
               trailingLabel: MaterialLocalizations.of(
                 context,
               ).formatTimeOfDay(TimeOfDay.fromDateTime(item.entry.playedAt)),
-              onTap: () => ref.read(playerProvider.notifier).playFromList([
-                item.song,
-              ], startIndex: 0),
+              onTap: () => ref
+                  .read(playerProvider.notifier)
+                  .playFromContext(
+                    entries.map((entry) => entry.song).toList(growable: false),
+                    selected: item.song,
+                  ),
             ),
           ],
         );

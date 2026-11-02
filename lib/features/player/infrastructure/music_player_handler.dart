@@ -12,6 +12,7 @@ import '../../library/infrastructure/data_sources/device_music_data_source.dart'
 import '../domain/playback_enums.dart';
 import '../domain/audio_focus_mode.dart';
 import '../domain/playback_queue.dart';
+import '../domain/playback_selection.dart';
 import 'playback_notification_service.dart';
 
 /// Glue between [AudioService] (notification, background, headset buttons)
@@ -23,8 +24,12 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     this._player, {
     this.settings,
     this.mediaCatalog,
+    Future<List<Song>> Function()? loadFallbackSongs,
     Future<void> Function()? dismissNotification,
-  }) : _dismissNotification =
+  }) : _loadFallbackSongs =
+           loadFallbackSongs ??
+           DeviceMusicDataSource(OnAudioQuery()).fetchExistingSongsNewestFirst,
+       _dismissNotification =
            dismissNotification ?? PlaybackNotificationService.dismiss {
     _player.playbackEventStream.listen((event) {
       if (_gaplessEnabled) _onPlaylistIndexChanged(_player.currentIndex);
@@ -46,6 +51,10 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   final AudioPlayer _player;
   final Future<void> Function() _dismissNotification;
+  final Future<List<Song>> Function() _loadFallbackSongs;
+  int _playbackRequestRevision = 0;
+  int _deferredRequestRevision = 0;
+  int _reservedPlaybackRevision = 0;
 
   /// Persists the session across restarts; null disables persistence (tests).
   final AppSettingsRepository? settings;
@@ -166,6 +175,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   List<Song> get queueSongs => _queue.songs;
   int get currentIndex => _queue.currentIndex;
   Song? get currentSong => _queue.current;
+  bool get canSkipTracks => _queue.length > 1;
 
   bool get isChangingSource => _pendingPosition != null;
 
@@ -369,11 +379,55 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   // ---------------------------------------------------------------------------
 
   Future<void> loadAndPlay(List<Song> songs, {int startIndex = 0}) async {
-    await _initialization;
     if (songs.isEmpty) return;
+    final request = ++_playbackRequestRevision;
+    await _initialization;
+    if (request != _playbackRequestRevision) return;
     await _prepareForPlayback();
+    if (request != _playbackRequestRevision) return;
     _queue.load(songs, startIndex: startIndex);
     await _loadCurrent(playImmediately: true);
+  }
+
+  /// Reserves an explicit deferred selection (e.g. download-and-play).
+  /// Later user transport/selection actions always take precedence.
+  int reservePlaybackRequest() {
+    // Reserving a download must not cancel a song that is still loading now.
+    _reservedPlaybackRevision = _playbackRequestRevision;
+    return ++_deferredRequestRevision;
+  }
+
+  bool _isCurrentDeferredRequest(int request) =>
+      request == _deferredRequestRevision &&
+      _reservedPlaybackRevision == _playbackRequestRevision;
+
+  Future<bool> playRequestedSong(
+    Song song, {
+    required int request,
+    List<Song> fallbackSongs = const [],
+  }) async {
+    await _initialization;
+    if (!_isCurrentDeferredRequest(request)) return false;
+    await _prepareForPlayback();
+    if (!_isCurrentDeferredRequest(request)) return false;
+    final playbackRevision = ++_playbackRequestRevision;
+    if (_queue.current == null) {
+      final selection = PlaybackSelection(fallbackSongs, selected: song);
+      _queue.load(selection.songs, startIndex: selection.startIndex);
+    } else {
+      var index = _queue.songs.indexWhere(
+        (item) =>
+            item.id == song.id ||
+            (song.path.isNotEmpty && item.path == song.path),
+      );
+      if (index < 0) {
+        _queue.playNext(song);
+        index = _queue.currentIndex + 1;
+      }
+      _queue.jumpTo(index);
+    }
+    await _loadCurrent(playImmediately: true);
+    return playbackRevision == _playbackRequestRevision;
   }
 
   Future<void> _loadGaplessSources({
@@ -381,6 +435,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     required bool playImmediately,
   }) async {
     if (_queue.current == null) return;
+    final request = _playbackRequestRevision;
     final revision = _beginSourceChange(position: position);
     _loadingGaplessSources = true;
     try {
@@ -398,7 +453,9 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     _broadcastState(_player.playbackEvent);
     _touchQueue();
     await _persistSession();
-    if (playImmediately) await _player.play();
+    if (playImmediately && request == _playbackRequestRevision) {
+      await _player.play();
+    }
   }
 
   Future<void> setGaplessPlayback(bool enabled) async {
@@ -439,14 +496,15 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> play() async {
+    final request = ++_playbackRequestRevision;
     await _initialization;
+    if (request != _playbackRequestRevision) return;
     await _prepareForPlayback();
+    if (request != _playbackRequestRevision) return;
     if (_queue.current == null) {
-      final newestSong = await DeviceMusicDataSource(
-        OnAudioQuery(),
-      ).fetchNewestExistingSong();
-      if (newestSong == null) return;
-      _queue.load([newestSong]);
+      final songs = await _loadFallbackSongs();
+      if (songs.isEmpty || request != _playbackRequestRevision) return;
+      _queue.load(songs);
       await _loadCurrent(playImmediately: true);
       return;
     }
@@ -475,13 +533,17 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> pause() async {
+    final request = ++_playbackRequestRevision;
     await _initialization;
+    if (request != _playbackRequestRevision) return;
     await _player.pause();
   }
 
   @override
   Future<void> seek(Duration position) async {
+    final request = ++_playbackRequestRevision;
     await _initialization;
+    if (request != _playbackRequestRevision) return;
     if (isChangingSource) return;
     await _player.seek(position);
   }
@@ -519,9 +581,11 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> next({bool wrap = true}) async {
+    final request = ++_playbackRequestRevision;
     await _initialization;
+    if (request != _playbackRequestRevision || !canSkipTracks) return;
     await _prepareForPlayback();
-    if (!_queue.isNotEmpty) return;
+    if (request != _playbackRequestRevision) return;
     if (!_queue.next(wrap: wrap)) {
       await stopAndClearQueue();
       return;
@@ -534,9 +598,11 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> previous() async {
+    final request = ++_playbackRequestRevision;
     await _initialization;
+    if (request != _playbackRequestRevision || !canSkipTracks) return;
     await _prepareForPlayback();
-    if (!_queue.isNotEmpty) return;
+    if (request != _playbackRequestRevision) return;
     final goToPrevious = settings?.loadPreviousGoesToPrevious(false) ?? false;
     if (!goToPrevious && _player.position > const Duration(seconds: 3)) {
       await _player.seek(Duration.zero);
@@ -551,7 +617,15 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> jumpTo(int index) async {
+    final request = ++_playbackRequestRevision;
     await _initialization;
+    if (request != _playbackRequestRevision ||
+        index < 0 ||
+        index >= _queue.length) {
+      return;
+    }
+    await _prepareForPlayback();
+    if (request != _playbackRequestRevision) return;
     if (!_queue.jumpTo(index)) return;
     if (_gaplessEnabled) {
       await _seekToCurrent();
@@ -646,6 +720,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       _publishQueueMediaItems();
       _touchQueue();
       _persistSession();
+      _broadcastState(_player.playbackEvent);
       return false;
     }
     _queue.removeById(songId);
@@ -673,6 +748,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     _publishQueueMediaItems();
     _touchQueue();
     await _persistSession();
+    _broadcastState(_player.playbackEvent);
     return true;
   }
 
@@ -693,6 +769,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     _touchQueue();
     await _persistSession();
     if (wasEmpty) await _loadCurrent(playImmediately: false);
+    _broadcastState(_player.playbackEvent);
     return true;
   }
 
@@ -714,7 +791,9 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> stopAndClearQueue() async {
+    final request = ++_playbackRequestRevision;
     await _initialization;
+    if (request != _playbackRequestRevision) return;
     _queue.clear();
     _pendingPosition = null;
     _sourceRevision++;
@@ -791,7 +870,10 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   /// The paused queue and position are persisted first so the next launch can
   /// resume exactly where the user left off, then the media notification and
   /// foreground playback service are stopped without discarding the queue.
-  Future<void> closeApp() => _closeFuture ??= _closeApp();
+  Future<void> closeApp() {
+    _playbackRequestRevision++;
+    return _closeFuture ??= _closeApp();
+  }
 
   Future<void> _closeApp() async {
     _closing = true;
@@ -841,11 +923,15 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> playMediaItem(MediaItem mediaItem) async {
+    final request = ++_playbackRequestRevision;
+    await _initialization;
+    if (request != _playbackRequestRevision) return;
     final id = int.tryParse(mediaItem.id.replaceFirst('song_', ''));
     if (id == null) return;
     final index = _queue.songs.indexWhere((song) => song.id == id);
     if (index < 0) {
       final songs = await DeviceMusicDataSource(OnAudioQuery()).fetchSongs();
+      if (request != _playbackRequestRevision) return;
       final songIndex = songs.indexWhere((song) => song.id == id);
       if (songIndex < 0) return;
       await loadAndPlay(songs, startIndex: songIndex);
@@ -900,7 +986,11 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       _broadcastState(_player.playbackEvent);
       return;
     }
-    if (state.processingState == ProcessingState.completed &&
+    // A restored position can already be at EOF. Completion only advances a
+    // live playback, never a paused session loaded during app startup.
+    if (state.playing &&
+        _player.playing &&
+        state.processingState == ProcessingState.completed &&
         _player.processingState == ProcessingState.completed) {
       await _handleCompleted();
       return;
@@ -930,6 +1020,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> _loadCurrent({required bool playImmediately}) async {
+    final request = _playbackRequestRevision;
     final song = _queue.current;
     if (song == null) {
       await stopAndClearQueue();
@@ -953,7 +1044,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       _consecutiveLoadFailures = 0;
       _lastSavedPositionMs = _player.position.inMilliseconds;
       await _persistSession();
-      if (playImmediately || _player.playing) {
+      if (request == _playbackRequestRevision &&
+          (playImmediately || _player.playing)) {
         await _player.play();
       }
     } catch (error) {
@@ -1026,9 +1118,9 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
               label: _localizedLabel('Shuffle', 'پخش تصادفی'),
               name: 'toggleShuffle',
             ),
-            MediaControl.skipToPrevious,
+            if (canSkipTracks) MediaControl.skipToPrevious,
             playing ? MediaControl.pause : MediaControl.play,
-            MediaControl.skipToNext,
+            if (canSkipTracks) MediaControl.skipToNext,
             MediaControl.custom(
               androidIcon: 'drawable/ic_notif_close',
               label: _localizedLabel('Close', 'بستن'),
@@ -1041,7 +1133,9 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       playbackState.value.copyWith(
         controls: controls,
         systemActions: const {MediaAction.seek},
-        androidCompactActionIndices: const [1, 2, 3],
+        androidCompactActionIndices: hasActiveSong
+            ? (canSkipTracks ? const [1, 2, 3] : const [1])
+            : const [],
         processingState: isChangingSource
             ? AudioProcessingState.loading
             : switch (_player.processingState) {

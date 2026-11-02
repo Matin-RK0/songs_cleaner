@@ -137,7 +137,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       physics: const ClampingScrollPhysics(),
                       onSongTap: (items, index) => ref
                           .read(playerProvider.notifier)
-                          .playFromList(items, startIndex: index),
+                          .playFromLibrary(items[index]),
                     ),
                   );
                 },

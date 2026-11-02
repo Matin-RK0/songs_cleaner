@@ -32,10 +32,16 @@ void main() {
   late TelegramDownloadController manager;
   final played = <String>[];
   var disposed = false;
+  var playbackRevision = 0;
+  var preparedPlaybackRequests = 0;
+  Completer<void>? playbackGate;
 
   setUp(() async {
     disposed = false;
     played.clear();
+    playbackRevision = 0;
+    preparedPlaybackRequests = 0;
+    playbackGate = null;
     repository = FakeTelegramRepository();
     activity = FakeDownloadActivity();
     container = ProviderContainer(
@@ -43,8 +49,13 @@ void main() {
         telegramRepositoryProvider.overrideWithValue(repository),
         telegramDownloadActivityProvider.overrideWithValue(activity),
         telegramLibrarySyncProvider.overrideWithValue(() async {}),
-        telegramDownloadPlayerProvider.overrideWithValue((song) async {
-          played.add(song.path);
+        telegramDownloadPlayerProvider.overrideWithValue(() {
+          preparedPlaybackRequests++;
+          final request = ++playbackRevision;
+          return (song) async {
+            if (request == playbackRevision) played.add(song.path);
+            await playbackGate?.future;
+          };
         }),
         allSongsProvider.overrideWithValue([]),
       ],
@@ -55,6 +66,9 @@ void main() {
     await drain();
   });
   tearDown(() async {
+    if (playbackGate != null && !playbackGate!.isCompleted) {
+      playbackGate!.complete();
+    }
     if (!disposed) container.dispose();
     for (final gate in repository.transferGates.values) {
       if (!gate.isCompleted) gate.complete();
@@ -68,6 +82,67 @@ void main() {
     repository.transferGates[audio.fileId] = Completer<void>();
     return audio;
   }
+
+  test('play intent is reserved at enqueue and later selection wins', () async {
+    final audio = gated(1);
+    manager.enqueue(audio, play: true);
+    expect(preparedPlaybackRequests, 1);
+    await drain();
+    playbackRevision++; // User chooses another song while this downloads.
+    repository.transferGates[audio.fileId]!.complete();
+    await manager.waitFor(audio.fileId);
+    expect(played, isEmpty);
+    expect(
+      container.read(telegramDownloadsProvider)[audio.fileId]!.phase,
+      TelegramDownloadPhase.completed,
+    );
+  });
+
+  test('download-and-play can attach to an already running download', () async {
+    final audio = gated(1);
+    manager.enqueue(audio);
+    await drain();
+    expect(preparedPlaybackRequests, 0);
+    manager.enqueue(audio, play: true);
+    expect(preparedPlaybackRequests, 1);
+    repository.transferGates[audio.fileId]!.complete();
+    await manager.waitFor(audio.fileId);
+    expect(played, [repository.downloadedPath]);
+  });
+
+  test(
+    'download completion does not wait for the song to finish playing',
+    () async {
+      playbackGate = Completer<void>();
+      final audio = gated(1);
+      manager.enqueue(audio, play: true);
+      await drain();
+      var completed = false;
+      final download = manager.waitFor(audio.fileId).then((_) {
+        completed = true;
+      });
+      repository.transferGates[audio.fileId]!.complete();
+      await drain();
+      expect(played, [repository.downloadedPath]);
+      expect(completed, isTrue);
+      playbackGate!.complete();
+      await download;
+    },
+  );
+
+  test(
+    'pausing and resuming a download does not restore an old Play intent',
+    () async {
+      final audio = gated(1);
+      manager.enqueue(audio, play: true);
+      await drain();
+      await manager.pause(audio.fileId);
+      await drain();
+      manager.resume(audio.fileId);
+      await manager.waitFor(audio.fileId);
+      expect(played, isEmpty);
+    },
+  );
 
   test(
     'logout waits for an atomic public commit and blocks new transfers until unlocked',

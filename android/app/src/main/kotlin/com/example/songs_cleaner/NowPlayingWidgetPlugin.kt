@@ -23,6 +23,7 @@ class NowPlayingWidgetPlugin : FlutterPlugin {
                             .putString(NowPlayingWidgetProvider.ARTIST, call.argument<String>("artist"))
                             .putInt(NowPlayingWidgetProvider.SONG_ID, call.argument<Int>("songId") ?: -1)
                             .putBoolean(NowPlayingWidgetProvider.PLAYING, call.argument<Boolean>("playing") ?: false)
+                            .putBoolean(NowPlayingWidgetProvider.CAN_SKIP, call.argument<Boolean>("canSkipTracks") ?: false)
                             .apply()
                         NowPlayingWidgetProvider.updateAll(context)
                         result.success(null)

@@ -37,18 +37,18 @@ class DeviceMusicDataSource {
     return fresh;
   }
 
-  /// Returns the newest usable MediaStore item. This is used by a cold-start
-  /// media command before the library UI exists.
-  Future<Song?> fetchNewestExistingSong() async {
+  /// Cold media commands need a full usable queue, even before the UI exists.
+  Future<List<Song>> fetchExistingSongsNewestFirst() async {
     final newestFirst = await fetchSongs()
       ..sort((a, b) => b.dateAddedSeconds.compareTo(a.dateAddedSeconds));
 
+    final existing = <Song>[];
     for (final song in newestFirst) {
       if (await File(song.path).exists()) {
-        return song;
+        existing.add(song);
       }
     }
-    return null;
+    return existing;
   }
 
   Song _mapSong(SongModel model) {

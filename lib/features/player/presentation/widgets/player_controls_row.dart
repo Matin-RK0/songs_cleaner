@@ -17,6 +17,9 @@ class PlayerControlsRow extends ConsumerWidget {
     final l10n = context.l10n;
     final colors = context.colors;
     final playing = ref.watch(playerProvider.select((state) => state.playing));
+    final canSkip = ref.watch(
+      playerProvider.select((state) => state.canSkipTracks),
+    );
     final shuffled = ref.watch(
       playerProvider.select((state) => state.shuffled),
     );
@@ -41,11 +44,13 @@ class PlayerControlsRow extends ConsumerWidget {
           ),
           IconButton(
             tooltip: l10n.previousTooltip,
-            onPressed: () => ref.read(playerProvider.notifier).previous(),
+            onPressed: canSkip
+                ? () => ref.read(playerProvider.notifier).previous()
+                : null,
             icon: Icon(
               Icons.skip_previous_rounded,
               size: 36,
-              color: colors.textHigh,
+              color: canSkip ? colors.textHigh : colors.textLow,
             ),
           ),
           RepaintBoundary(
@@ -90,11 +95,13 @@ class PlayerControlsRow extends ConsumerWidget {
           ),
           IconButton(
             tooltip: l10n.nextTooltip,
-            onPressed: () => ref.read(playerProvider.notifier).next(),
+            onPressed: canSkip
+                ? () => ref.read(playerProvider.notifier).next()
+                : null,
             icon: Icon(
               Icons.skip_next_rounded,
               size: 36,
-              color: colors.textHigh,
+              color: canSkip ? colors.textHigh : colors.textLow,
             ),
           ),
           IconButton(

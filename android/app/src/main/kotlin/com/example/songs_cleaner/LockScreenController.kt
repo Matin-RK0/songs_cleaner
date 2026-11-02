@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.Settings
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
@@ -41,7 +42,7 @@ object LockScreenController {
     private const val ENABLED_KEY = "enabled"
     private const val FLUTTER_PREFS = "FlutterSharedPreferences"
     private const val FLUTTER_ENABLED_KEY = "flutter.lockscreen.enabled"
-    private const val PENDING_PLAY_KEY = "pending_play"
+    private val pendingPlay = PendingPlayRequest(SystemClock::elapsedRealtime)
     private const val TIMEOUT_KEY = "timeout_seconds"
     private var screenWakeDurationMs = 5_000L
 
@@ -122,9 +123,12 @@ object LockScreenController {
         enabled = loadEnabled(context)
         if (!enabled) return
         playbackActive = true
-        setPendingPlay(context, true)
+        pendingPlay.request()
         showOverLockScreen(context.applicationContext)
-        channel?.takeIf { dartReady }?.invokeMethod("playRequested", null)
+        channel?.takeIf { dartReady }?.let {
+            // Live delivery and startup polling must consume the same command.
+            if (pendingPlay.consume()) it.invokeMethod("playRequested", null)
+        }
     }
 
     /** @return true when the intent requested the lock-screen player. */
@@ -439,7 +443,7 @@ object LockScreenController {
                 result.success(show)
             }
             "consumePendingPlay" -> {
-                result.success(consumePendingPlay(context))
+                result.success(pendingPlay.consume())
             }
             "dismiss" -> {
                 dismissFromBack()
@@ -494,18 +498,4 @@ object LockScreenController {
             .getBoolean(FLUTTER_ENABLED_KEY, enabled)
     }
 
-    private fun setPendingPlay(context: Context, pending: Boolean) {
-        context.getSharedPreferences(LOCK_SCREEN_PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(PENDING_PLAY_KEY, pending)
-            .apply()
-    }
-
-    private fun consumePendingPlay(context: Context?): Boolean {
-        if (context == null) return false
-        val prefs = context.getSharedPreferences(LOCK_SCREEN_PREFS, Context.MODE_PRIVATE)
-        val pending = prefs.getBoolean(PENDING_PLAY_KEY, false)
-        if (pending) prefs.edit().putBoolean(PENDING_PLAY_KEY, false).apply()
-        return pending
-    }
 }

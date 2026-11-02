@@ -15,12 +15,14 @@ class NowPlayingWidgetService {
     String? artist,
     int? songId,
     bool playing = false,
+    bool canSkipTracks = false,
   }) async {
     await _channel.invokeMethod<void>('update', {
       'title': title ?? 'Songs Cleaner',
       'artist': artist ?? 'No song playing',
       'songId': songId,
       'playing': playing,
+      'canSkipTracks': canSkipTracks,
     });
   }
 

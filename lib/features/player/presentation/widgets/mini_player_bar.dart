@@ -25,6 +25,9 @@ class MiniPlayerBar extends ConsumerWidget {
     if (song == null) return const SizedBox.shrink();
 
     final playing = ref.watch(playerProvider.select((state) => state.playing));
+    final canSkip = ref.watch(
+      playerProvider.select((state) => state.canSkipTracks),
+    );
     final progress = ref.watch(
       playerProvider.select((state) {
         if (state.duration <= Duration.zero) return 0.0;
@@ -40,8 +43,12 @@ class MiniPlayerBar extends ConsumerWidget {
         width: double.infinity,
         height: height,
         child: _MiniPlayerGestures(
-          onPrevious: () => ref.read(playerProvider.notifier).previous(),
-          onNext: () => ref.read(playerProvider.notifier).next(),
+          onPrevious: canSkip
+              ? () => ref.read(playerProvider.notifier).previous()
+              : null,
+          onNext: canSkip
+              ? () => ref.read(playerProvider.notifier).next()
+              : null,
           child: Material(
             color: colors.surfaceHigh,
             shape: RoundedRectangleBorder(
@@ -185,8 +192,8 @@ class _MiniPlayerGestures extends StatefulWidget {
     required this.child,
   });
 
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
   final Widget child;
 
   @override
@@ -207,10 +214,10 @@ class _MiniPlayerGesturesState extends State<_MiniPlayerGestures> {
       onHorizontalDragEnd: (details) {
         final velocity = details.primaryVelocity ?? 0;
         if (_dx <= -_distanceThreshold || velocity <= -_velocityThreshold) {
-          widget.onNext();
+          widget.onNext?.call();
         } else if (_dx >= _distanceThreshold ||
             velocity >= _velocityThreshold) {
-          widget.onPrevious();
+          widget.onPrevious?.call();
         }
         _dx = 0;
       },

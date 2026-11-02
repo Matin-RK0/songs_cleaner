@@ -38,6 +38,7 @@ class PlayerState {
       (index >= 0 && index < songs.length) ? songs[index] : null;
 
   bool get hasCurrent => current != null;
+  bool get canSkipTracks => songs.length > 1;
 
   bool get isBuffering =>
       processingState == PlayerProcessingState.loading ||

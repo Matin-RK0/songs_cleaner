@@ -27,7 +27,7 @@ class MainActivity : AudioServiceActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        rememberWidgetAction(intent)
+        rememberWidgetAction(intent, allowDispatch = savedInstanceState == null)
         LockScreenController.onActivityCreated(this)
         // A cold start triggered by LockScreenController carries the extra that
         // asks Dart to open the lock-screen player route.
@@ -235,13 +235,19 @@ class MainActivity : AudioServiceActivity() {
         const val OPEN_FILE_REQUEST = 4102
     }
 
-    private fun rememberWidgetAction(intent: Intent?) {
+    private fun rememberWidgetAction(intent: Intent?, allowDispatch: Boolean = true) {
         val action = intent?.action ?: return
         if (action == NowPlayingWidgetProvider.ACTION_PREVIOUS ||
             action == NowPlayingWidgetProvider.ACTION_PLAY_PAUSE ||
             action == NowPlayingWidgetProvider.ACTION_NEXT ||
             action == TelegramDownloadService.OPEN_DOWNLOADS
         ) {
+            // Android retains the launch Intent across task/Activity recreation.
+            // A restored window is not another press of a widget control.
+            intent.action = Intent.ACTION_MAIN
+            if (!allowDispatch ||
+                intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
+            ) return
             pendingWidgetAction = action
             val plugin = widgetEngine?.plugins?.get(NowPlayingWidgetPlugin::class.java) as? NowPlayingWidgetPlugin
             if (plugin != null) {

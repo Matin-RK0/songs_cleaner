@@ -28,6 +28,9 @@ class _Player extends Fake implements AudioPlayer {
   Completer<void>? loading;
   Completer<void>? pausing;
   Completer<void>? playbackCompletion;
+  int playCalls = 0;
+  @override
+  int? currentIndex = 0;
   @override
   Duration position = Duration.zero;
   @override
@@ -39,7 +42,7 @@ class _Player extends Fake implements AudioPlayer {
   @override
   Duration get bufferedPosition => position;
   @override
-  ProcessingState get processingState => ProcessingState.ready;
+  ProcessingState processingState = ProcessingState.ready;
   @override
   PlaybackEvent get playbackEvent => PlaybackEvent(
     processingState: processingState,
@@ -72,6 +75,7 @@ class _Player extends Fake implements AudioPlayer {
 
   @override
   Future<void> play() async {
+    playCalls++;
     playing = true;
     await playbackCompletion?.future;
   }
@@ -80,6 +84,33 @@ class _Player extends Fake implements AudioPlayer {
   Future<void> pause() async {
     await pausing?.future;
     playing = false;
+  }
+
+  @override
+  Future<void> stop() async {
+    playing = false;
+    processingState = ProcessingState.idle;
+  }
+
+  @override
+  Future<Duration?> setAudioSources(
+    List<AudioSource> sources, {
+    bool preload = true,
+    int? initialIndex = 0,
+    Duration? initialPosition = Duration.zero,
+    ShuffleOrder? shuffleOrder,
+  }) async {
+    currentIndex = initialIndex;
+    return setAudioSource(
+      sources[initialIndex ?? 0],
+      initialPosition: initialPosition,
+    );
+  }
+
+  @override
+  Future<void> seek(Duration? position, {int? index}) async {
+    this.position = position ?? Duration.zero;
+    if (index != null) currentIndex = index;
   }
 
   Future<void> close() async {
@@ -91,6 +122,347 @@ class _Player extends Fake implements AudioPlayer {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('explicit cold Play builds a complete fallback queue', () async {
+    final player = _Player();
+    final handler = MusicPlayerHandler(
+      player,
+      loadFallbackSongs: () async => [_song(1, 60), _song(2, 60)],
+    );
+    addTearDown(player.close);
+    expect(player.playCalls, 0);
+    await handler.play();
+    expect(handler.queueSongs.map((song) => song.id), [1, 2]);
+    expect(handler.currentSong?.id, 1);
+    await handler.next();
+    expect(handler.currentSong?.id, 2);
+    await handler.closeApp();
+  });
+
+  test('a newer selection supersedes a slow cold-library fallback', () async {
+    final library = Completer<List<Song>>();
+    final player = _Player();
+    final handler = MusicPlayerHandler(
+      player,
+      loadFallbackSongs: () => library.future,
+    );
+    addTearDown(player.close);
+    final coldPlay = handler.play();
+    await Future<void>.delayed(Duration.zero);
+    await handler.loadAndPlay([_song(3, 60), _song(4, 60)]);
+    library.complete([_song(1, 60), _song(2, 60)]);
+    await coldPlay;
+    expect(handler.queueSongs.map((song) => song.id), [3, 4]);
+    expect(handler.currentSong?.id, 3);
+    expect(player.playCalls, 1);
+    await handler.closeApp();
+  });
+
+  test(
+    'reserving a download does not interrupt an in-flight song selection',
+    () async {
+      final player = _Player()..loading = Completer<void>();
+      final handler = MusicPlayerHandler(player);
+      addTearDown(player.close);
+      final selecting = handler.loadAndPlay([_song(1, 60), _song(2, 60)]);
+      await Future<void>.delayed(Duration.zero);
+      final request = handler.reservePlaybackRequest();
+      player.loading!.complete();
+      await selecting;
+      expect(player.playing, isTrue);
+      expect(handler.currentSong?.id, 1);
+      expect(
+        await handler.playRequestedSong(_song(3, 60), request: request),
+        isTrue,
+      );
+      expect(handler.currentSong?.id, 3);
+      // A fulfilled request is consumed, even if a callback is delivered twice.
+      expect(
+        await handler.playRequestedSong(_song(3, 60), request: request),
+        isFalse,
+      );
+      await handler.closeApp();
+    },
+  );
+
+  test('empty fallback library does not start playback', () async {
+    final player = _Player();
+    final handler = MusicPlayerHandler(
+      player,
+      loadFallbackSongs: () async => [],
+    );
+    addTearDown(player.close);
+    await handler.play();
+    expect(handler.queueSongs, isEmpty);
+    expect(player.playCalls, 0);
+    await handler.closeApp();
+  });
+
+  test(
+    'single-track transport is a no-op and not advertised to media clients',
+    () async {
+      final player = _Player();
+      final handler = MusicPlayerHandler(player);
+      addTearDown(player.close);
+      await handler.loadAndPlay([_song(1, 60)]);
+      player.position = const Duration(seconds: 20);
+      await handler.next();
+      await handler.previous();
+      expect(handler.canSkipTracks, isFalse);
+      expect(player.position, const Duration(seconds: 20));
+      expect(player.playCalls, 1);
+      expect(
+        handler.playbackState.value.controls,
+        isNot(contains(MediaControl.skipToNext)),
+      );
+      expect(
+        handler.playbackState.value.controls,
+        isNot(contains(MediaControl.skipToPrevious)),
+      );
+      expect(handler.playbackState.value.androidCompactActionIndices, [1]);
+      await handler.closeApp();
+    },
+  );
+
+  for (final gapless in [false, true]) {
+    test(
+      'download selection preserves the active queue, gapless=$gapless',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final settings = AppSettingsRepository(
+          await SharedPreferences.getInstance(),
+        );
+        await settings.saveGaplessPlayback(gapless);
+        final player = _Player();
+        final handler = MusicPlayerHandler(player, settings: settings);
+        addTearDown(player.close);
+        await handler.loadAndPlay([_song(1, 60), _song(2, 60), _song(3, 60)]);
+        final request = handler.reservePlaybackRequest();
+        expect(
+          await handler.playRequestedSong(_song(4, 60), request: request),
+          isTrue,
+        );
+        expect(handler.queueSongs.map((song) => song.id), [1, 4, 2, 3]);
+        expect(handler.currentSong?.id, 4);
+        await handler.next();
+        expect(handler.currentSong?.id, 2);
+        await handler.previous();
+        expect(handler.currentSong?.id, 4);
+        await handler.closeApp();
+      },
+    );
+  }
+
+  test(
+    'download already present selects its original slot without reordering',
+    () async {
+      final player = _Player();
+      final handler = MusicPlayerHandler(player);
+      addTearDown(player.close);
+      await handler.loadAndPlay([_song(1, 60), _song(2, 60), _song(3, 60)]);
+      final request = handler.reservePlaybackRequest();
+      await handler.playRequestedSong(_song(3, 60), request: request);
+      expect(handler.queueSongs.map((song) => song.id), [1, 2, 3]);
+      expect(handler.currentSong?.id, 3);
+      await handler.closeApp();
+    },
+  );
+
+  test('download with no prior queue uses the available library', () async {
+    final player = _Player();
+    final handler = MusicPlayerHandler(player);
+    addTearDown(player.close);
+    final request = handler.reservePlaybackRequest();
+    await handler.playRequestedSong(
+      _song(3, 60),
+      request: request,
+      fallbackSongs: [_song(1, 60), _song(2, 60), _song(3, 60)],
+    );
+    expect(handler.queueSongs.map((song) => song.id), [1, 2, 3]);
+    expect(handler.currentSong?.id, 3);
+    await handler.closeApp();
+  });
+
+  for (final action in [
+    'select',
+    'pause',
+    'next',
+    'previous',
+    'seek',
+    'clear',
+    'close',
+    'play',
+  ]) {
+    test('a later $action supersedes pending download playback', () async {
+      final player = _Player();
+      final handler = MusicPlayerHandler(player);
+      addTearDown(player.close);
+      await handler.loadAndPlay([_song(1, 60), _song(2, 60)]);
+      final request = handler.reservePlaybackRequest();
+      switch (action) {
+        case 'select':
+          await handler.loadAndPlay([_song(5, 60), _song(6, 60)]);
+        case 'pause':
+          await handler.pause();
+        case 'next':
+          await handler.next();
+        case 'previous':
+          await handler.previous();
+        case 'seek':
+          await handler.seek(const Duration(seconds: 10));
+        case 'clear':
+          await handler.stopAndClearQueue();
+        case 'close':
+          await handler.closeApp();
+        case 'play':
+          await handler.play();
+      }
+      final queue = handler.queueSongs;
+      final current = handler.currentSong;
+      final plays = player.playCalls;
+      expect(
+        await handler.playRequestedSong(_song(4, 60), request: request),
+        isFalse,
+      );
+      expect(handler.queueSongs, queue);
+      expect(handler.currentSong, current);
+      expect(player.playCalls, plays);
+      await handler.closeApp();
+    });
+  }
+
+  test(
+    'latest download-and-play request wins regardless of finish order',
+    () async {
+      final player = _Player();
+      final handler = MusicPlayerHandler(player);
+      addTearDown(player.close);
+      await handler.loadAndPlay([_song(1, 60), _song(2, 60)]);
+      final first = handler.reservePlaybackRequest();
+      final second = handler.reservePlaybackRequest();
+      expect(
+        await handler.playRequestedSong(_song(3, 60), request: first),
+        isFalse,
+      );
+      expect(
+        await handler.playRequestedSong(_song(4, 60), request: second),
+        isTrue,
+      );
+      expect(handler.currentSong?.id, 4);
+      await handler.closeApp();
+    },
+  );
+
+  test(
+    'pause during deferred source loading prevents a late autoplay',
+    () async {
+      final player = _Player();
+      final handler = MusicPlayerHandler(player);
+      addTearDown(player.close);
+      await handler.loadAndPlay([_song(1, 60), _song(2, 60)]);
+      final request = handler.reservePlaybackRequest();
+      player.loading = Completer<void>();
+      final selecting = handler.playRequestedSong(
+        _song(3, 60),
+        request: request,
+      );
+      await Future<void>.delayed(Duration.zero);
+      await handler.pause();
+      player.loading!.complete();
+      expect(await selecting, isFalse);
+      expect(player.playing, isFalse);
+      expect(player.playCalls, 1);
+      await handler.closeApp();
+    },
+  );
+
+  for (final gapless in [false, true]) {
+    for (final wasPlaying in [false, true]) {
+      test(
+        'startup restores paused even if wasPlaying=$wasPlaying, gapless=$gapless',
+        () async {
+          SharedPreferences.setMockInitialValues({});
+          final settings = AppSettingsRepository(
+            await SharedPreferences.getInstance(),
+          );
+          await settings.saveGaplessPlayback(gapless);
+          await settings.savePlaybackSession(
+            SavedPlaybackSession(
+              queueSongIds: const [1],
+              currentSongId: 1,
+              positionMs: 23000,
+              repeatModeIndex: 0,
+              shuffled: false,
+              wasPlaying: wasPlaying,
+              tracks: const [
+                SavedPlaybackTrack(
+                  id: 1,
+                  title: 'Track 1',
+                  artist: 'Artist',
+                  album: '',
+                  durationMs: 60000,
+                  path: '/1.mp3',
+                ),
+              ],
+            ),
+          );
+          final player = _Player();
+          final handler = MusicPlayerHandler(player, settings: settings);
+          addTearDown(player.close);
+          await handler.refreshRestoredMetadata([_song(1, 60)]);
+
+          expect(handler.currentSong?.id, 1);
+          expect(player.position, const Duration(seconds: 23));
+          expect(player.playing, isFalse);
+          expect(player.playCalls, 0);
+          expect(handler.playbackState.value.playing, isFalse);
+
+          // Opening/recreating the UI may refresh metadata again, not play.
+          await handler.refreshRestoredMetadata([_song(1, 60)]);
+          expect(player.playCalls, 0);
+          await handler.play();
+          expect(player.playing, isTrue);
+          expect(player.playCalls, 1);
+          await handler.closeApp();
+        },
+      );
+    }
+  }
+
+  test(
+    'paused EOF event never advances the queue or starts playback',
+    () async {
+      final player = _Player();
+      final handler = MusicPlayerHandler(player);
+      addTearDown(player.close);
+      await handler.loadAndPlay([_song(1, 60), _song(2, 60)]);
+      await handler.pause();
+      final playCalls = player.playCalls;
+      player.processingState = ProcessingState.completed;
+      player.states.add(PlayerState(false, ProcessingState.completed));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(handler.currentSong?.id, 1);
+      expect(player.playing, isFalse);
+      expect(player.playCalls, playCalls);
+      await handler.closeApp();
+    },
+  );
+
+  test('active EOF still advances playback normally', () async {
+    final player = _Player();
+    final handler = MusicPlayerHandler(player);
+    addTearDown(player.close);
+    await handler.loadAndPlay([_song(1, 60), _song(2, 60)]);
+    player.processingState = ProcessingState.completed;
+    player.states.add(PlayerState(true, ProcessingState.completed));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(handler.currentSong?.id, 2);
+    expect(player.playing, isTrue);
+    expect(player.playCalls, 2);
+    await handler.closeApp();
+  });
 
   test(
     'cold media play waits for saved source and resumes without a UI',

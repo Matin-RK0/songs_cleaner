@@ -37,6 +37,7 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
         const val ARTIST = "artist"
         const val SONG_ID = "song_id"
         const val PLAYING = "playing"
+        const val CAN_SKIP = "can_skip"
         const val BACKGROUND_COLOR = "background_color"
 
         fun updateAll(context: Context, manager: AppWidgetManager = AppWidgetManager.getInstance(context)) {
@@ -66,6 +67,11 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 setTextColor(R.id.widget_artist, if (darkForeground) 0xB3000000.toInt() else 0xFFD0D5DB.toInt())
                 for (id in intArrayOf(R.id.widget_previous, R.id.widget_play_pause, R.id.widget_next)) {
                     setInt(id, "setColorFilter", foreground)
+                }
+                val canSkip = prefs.getBoolean(CAN_SKIP, false)
+                for (id in intArrayOf(R.id.widget_previous, R.id.widget_next)) {
+                    setBoolean(id, "setEnabled", canSkip)
+                    setInt(id, "setImageAlpha", if (canSkip) 255 else 90)
                 }
                 setImageViewResource(
                     R.id.widget_play_pause,

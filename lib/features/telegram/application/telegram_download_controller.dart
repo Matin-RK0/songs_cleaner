@@ -14,20 +14,31 @@ final telegramDownloadActivityProvider = Provider<TelegramDownloadActivity>(
   (ref) => TelegramDownloadActivity(),
 );
 
-final telegramDownloadPlayerProvider = Provider<Future<void> Function(Song)>(
-  (ref) => (song) {
-    var resolved = song;
-    for (final local in ref.read(allSongsProvider)) {
-      if (local.path == song.path) {
-        resolved = local;
-        break;
-      }
-    }
-    return ref.read(playerProvider.notifier).playFromList([
-      resolved,
-    ], startIndex: 0);
-  },
-);
+/// Capture intent at the press, not at download completion. The handler also
+/// sees notification/headset actions, so they supersede this request too.
+final telegramDownloadPlayerProvider =
+    Provider<Future<void> Function(Song) Function()>(
+      (ref) => () {
+        final handler = ref.read(musicPlayerHandlerProvider);
+        final request = handler.reservePlaybackRequest();
+        return (song) async {
+          if (!ref.mounted) return;
+          final library = ref.read(allSongsProvider);
+          var resolved = song;
+          for (final local in library) {
+            if (local.path == song.path) {
+              resolved = local;
+              break;
+            }
+          }
+          await handler.playRequestedSong(
+            resolved,
+            request: request,
+            fallbackSongs: library,
+          );
+        };
+      },
+    );
 
 final telegramDownloadsProvider =
     NotifierProvider<TelegramDownloadController, Map<int, TelegramDownload>>(
@@ -100,6 +111,7 @@ bool _canClearDownload(TelegramDownload job) =>
     job.phase == TelegramDownloadPhase.canceled;
 
 class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
+  final _playRequests = <int, Future<void> Function(Song)>{};
   final _running = <int>{};
   final _stopping = <int>{};
   final _generation = <int, int>{};
@@ -136,6 +148,7 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
       if (auth == TelegramAuth.disconnected) unawaited(pauseAll());
     });
     ref.onDispose(() {
+      _playRequests.clear();
       _flush?.cancel();
       _heartbeat?.cancel();
       for (final completion in _finishes.values) {
@@ -170,7 +183,15 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
   bool enqueue(TelegramAudio audio, {bool play = false}) {
     if (_closing) return false;
     final previous = state[audio.fileId];
-    if (previous?.unfinished == true) return true;
+    if (previous?.unfinished == true) {
+      if (play) {
+        _playRequests[audio.fileId] = ref.read(
+          telegramDownloadPlayerProvider,
+        )();
+        _put(audio.fileId, previous!.copyWith(playWhenReady: true));
+      }
+      return true;
+    }
     if (state.values.where((e) => e.unfinished).length >= maxQueue) {
       return false;
     }
@@ -183,6 +204,7 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
       (terminal.length - 39).clamp(0, terminal.length),
     )) {
       next.remove(id);
+      _playRequests.remove(id);
       if (!_running.contains(id)) _generation.remove(id);
     }
     next[audio.fileId] = TelegramDownload(
@@ -191,6 +213,9 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
       playWhenReady: play,
     );
     _finishes[audio.fileId] = Completer<void>();
+    if (play) {
+      _playRequests[audio.fileId] = ref.read(telegramDownloadPlayerProvider)();
+    }
     state = next;
     _persist();
     _pump();
@@ -323,9 +348,10 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
           stackTrace,
         );
       }
-      if (_current(id, generation) && initial.playWhenReady) {
+      if (_current(id, generation) && state[id]?.playWhenReady == true) {
         final audio = initial.audio;
-        await ref.read(telegramDownloadPlayerProvider)(
+        final playRequest = _playRequests.remove(id);
+        final playback = playRequest?.call(
           Song(
             id: -audio.fileId,
             title: audio.title.isEmpty ? audio.fileName : audio.title,
@@ -339,6 +365,19 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
             dateAddedSeconds: audio.date,
           ),
         );
+        if (playback != null) {
+          // just_audio's play future can last for the entire song. Playback
+          // must not hold a completed download's worker slot or waitFor future.
+          unawaited(
+            playback.catchError((Object error, StackTrace stackTrace) {
+              TelegramDiagnostics.report(
+                'Playing a completed Telegram download',
+                error,
+                stackTrace,
+              );
+            }),
+          );
+        }
       }
     } on TelegramTransferInterrupted {
       /* Pause/cancel already committed their state. */
@@ -355,6 +394,7 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
           id,
           state[id]!.copyWith(
             phase: TelegramDownloadPhase.failed,
+            playWhenReady: false,
             failure: e is TelegramException
                 ? e.failure
                 : TelegramFailure.generic,
@@ -378,6 +418,7 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
               entry.key: entry.value.phase == TelegramDownloadPhase.queued
                   ? entry.value.copyWith(
                       phase: TelegramDownloadPhase.paused,
+                      playWhenReady: false,
                       failure: failure,
                     )
                   : entry.value,
@@ -386,6 +427,7 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
         }
       }
     } finally {
+      if (_current(id, generation)) _playRequests.remove(id);
       _running.remove(id);
       _samples.remove(id);
       _pendingProgress.remove(id);
@@ -479,6 +521,7 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
       return;
     }
     if (!_stopping.add(id)) return;
+    _playRequests.remove(id);
     _generation[id] = (_generation[id] ?? 0) + 1;
     _pendingProgress.remove(id);
     _put(
@@ -577,6 +620,7 @@ class TelegramDownloadController extends Notifier<Map<int, TelegramDownload>> {
     for (final entry in state.entries) {
       if (_canClearDownload(entry.value) && !_running.contains(entry.key)) {
         _generation.remove(entry.key);
+        _playRequests.remove(entry.key);
       }
     }
     state = Map.fromEntries(

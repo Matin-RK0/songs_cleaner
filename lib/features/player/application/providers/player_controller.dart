@@ -7,8 +7,10 @@ import 'package:audio_service/audio_service.dart';
 
 import '../../../../core/settings/app_settings_repository.dart';
 import '../../../library/application/providers/library_controller.dart';
+import '../../../library/application/providers/library_providers.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../domain/playback_enums.dart';
+import '../../domain/playback_selection.dart';
 import '../../infrastructure/music_player_handler.dart';
 import '../../infrastructure/now_playing_widget_service.dart';
 import '../models/player_state.dart';
@@ -221,6 +223,9 @@ class PlayerController extends Notifier<PlayerState> {
   /// Copies the handler's current queue/modes into state (single source of
   /// truth). Safe to call multiple times; also reflects a cleared queue.
   void _mirrorHandler(MusicPlayerHandler handler) {
+    unawaited(
+      _updateWidget(handler, playing: handler.playbackState.value.playing),
+    );
     state = state.copyWith(
       songs: handler.queueSongs,
       index: handler.currentIndex,
@@ -258,6 +263,7 @@ class PlayerController extends Notifier<PlayerState> {
       artist: current?.artist,
       songId: current?.id,
       playing: playing,
+      canSkipTracks: handler.canSkipTracks,
     );
   }
 
@@ -270,6 +276,15 @@ class PlayerController extends Notifier<PlayerState> {
     final handler = await _handler();
     await handler.loadAndPlay(songs, startIndex: startIndex);
   }
+
+  Future<void> playFromContext(List<Song> songs, {required Song selected}) {
+    final selection = PlaybackSelection(songs, selected: selected);
+    return playFromList(selection.songs, startIndex: selection.startIndex);
+  }
+
+  /// Search narrows discovery, not the queue used by transport controls.
+  Future<void> playFromLibrary(Song selected) =>
+      playFromContext(ref.read(allSongsProvider), selected: selected);
 
   /// Builds a fresh shuffled order of the whole list and starts it.
   Future<void> playAllShuffled(List<Song> songs) async {
