@@ -1039,6 +1039,24 @@ abstract class AppLocalizations {
   /// **'تاریخچه پخش پاک شد'**
   String get historyClearedToast;
 
+  /// No description provided for @lockScreenCallPermissionTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'نمایش تماس ورودی بدون مزاحمت پلیر'**
+  String get lockScreenCallPermissionTitle;
+
+  /// No description provided for @lockScreenCallPermissionMessage.
+  ///
+  /// In fa, this message translates to:
+  /// **'اجازهٔ دسترسی به وضعیت تلفن را بدهید تا پلیر سفارشی صفحهٔ قفل هنگام زنگ‌خوردن یا مکالمه کنار برود. فقط وضعیت تماس بررسی می‌شود؛ شماره‌ها و سابقهٔ تماس خوانده نمی‌شوند. بدون این مجوز، پلیر سفارشی صفحهٔ قفل خاموش می‌ماند.'**
+  String get lockScreenCallPermissionMessage;
+
+  /// No description provided for @lockScreenCallPermissionNeeded.
+  ///
+  /// In fa, this message translates to:
+  /// **'پلیر سفارشی صفحهٔ قفل به مجوز تلفن نیاز دارد. اگر درخواست مجوز دیگر نمایش داده نمی‌شود، آن را از تنظیمات سیستمی برنامه فعال کنید.'**
+  String get lockScreenCallPermissionNeeded;
+
   /// No description provided for @appName.
   ///
   /// In fa, this message translates to:

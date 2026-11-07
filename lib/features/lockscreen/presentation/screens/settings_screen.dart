@@ -63,6 +63,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Set while the user is taken to system settings to grant the overlay
   /// permission, so returning with it granted flips the toggle on.
   bool _pendingEnable = false;
+  bool _enablingLockScreen = false;
 
   @override
   void initState() {
@@ -83,9 +84,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final state = ref.read(lockScreenControllerProvider).value;
     if (_pendingEnable && (state?.overlayGranted ?? false)) {
       _pendingEnable = false;
-      await controller.setEnabled(true);
-      if (!mounted) return;
-      showAppSnackBar(context, context.l10n.lockScreenEnabledToast);
+      await _enableLockScreen();
     }
   }
 
@@ -101,9 +100,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
 
     if (state.overlayGranted) {
-      await controller.setEnabled(true);
-      if (!mounted) return;
-      showAppSnackBar(context, l10n.lockScreenEnabledToast);
+      await _enableLockScreen();
       return;
     }
 
@@ -113,6 +110,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await controller.requestOverlayPermission();
     } else {
       _pendingEnable = false;
+    }
+  }
+
+  Future<void> _enableLockScreen() async {
+    if (_enablingLockScreen) return;
+    _enablingLockScreen = true;
+    try {
+      final controller = ref.read(lockScreenControllerProvider.notifier);
+      final l10n = context.l10n;
+      if (!(ref.read(lockScreenControllerProvider).value?.callStateGranted ??
+          false)) {
+        final allow = await showAppConfirmDialog(
+          context: context,
+          title: l10n.lockScreenCallPermissionTitle,
+          message: l10n.lockScreenCallPermissionMessage,
+          confirmLabel: l10n.grantPermission,
+          cancelLabel: l10n.cancel,
+        );
+        if (!allow || !mounted) return;
+        final granted = await controller.requestCallStatePermission();
+        if (!mounted) return;
+        if (!granted) {
+          showAppSnackBar(
+            context,
+            l10n.lockScreenCallPermissionNeeded,
+            error: true,
+          );
+          return;
+        }
+      }
+      final enabled = await controller.setEnabled(true);
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        enabled
+            ? l10n.lockScreenEnabledToast
+            : l10n.lockScreenCallPermissionNeeded,
+        error: !enabled,
+      );
+    } finally {
+      _enablingLockScreen = false;
     }
   }
 

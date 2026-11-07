@@ -539,6 +539,18 @@ class AppLocalizationsFa extends AppLocalizations {
   String get historyClearedToast => 'تاریخچه پخش پاک شد';
 
   @override
+  String get lockScreenCallPermissionTitle =>
+      'نمایش تماس ورودی بدون مزاحمت پلیر';
+
+  @override
+  String get lockScreenCallPermissionMessage =>
+      'اجازهٔ دسترسی به وضعیت تلفن را بدهید تا پلیر سفارشی صفحهٔ قفل هنگام زنگ‌خوردن یا مکالمه کنار برود. فقط وضعیت تماس بررسی می‌شود؛ شماره‌ها و سابقهٔ تماس خوانده نمی‌شوند. بدون این مجوز، پلیر سفارشی صفحهٔ قفل خاموش می‌ماند.';
+
+  @override
+  String get lockScreenCallPermissionNeeded =>
+      'پلیر سفارشی صفحهٔ قفل به مجوز تلفن نیاز دارد. اگر درخواست مجوز دیگر نمایش داده نمی‌شود، آن را از تنظیمات سیستمی برنامه فعال کنید.';
+
+  @override
   String get appName => 'پاک‌کن آهنگ';
 
   @override

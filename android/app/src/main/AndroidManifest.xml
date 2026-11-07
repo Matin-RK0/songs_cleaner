@@ -31,6 +31,8 @@
         over the keyguard when the screen turns on during playback.
     -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Only call state; no call log, phone numbers, or call control. -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <application
         android:label="Songs Cleaner"

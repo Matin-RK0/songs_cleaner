@@ -16,6 +16,7 @@ class LockScreenState {
     required this.supported,
     required this.overlayGranted,
     required this.enabled,
+    this.callStateGranted = false,
     this.timeoutSeconds = 5,
   });
 
@@ -25,7 +26,10 @@ class LockScreenState {
   /// "Display over other apps" permission is granted.
   final bool overlayGranted;
 
-  /// User toggle. Only ever true when [supported] and [overlayGranted].
+  /// Required to keep the custom lock screen out of the way of phone calls.
+  final bool callStateGranted;
+
+  /// Only true when supported and both overlay and call-state access are granted.
   final bool enabled;
   final int timeoutSeconds;
 
@@ -33,12 +37,14 @@ class LockScreenState {
     bool? supported,
     bool? overlayGranted,
     bool? enabled,
+    bool? callStateGranted,
     int? timeoutSeconds,
   }) {
     return LockScreenState(
       supported: supported ?? this.supported,
       overlayGranted: overlayGranted ?? this.overlayGranted,
       enabled: enabled ?? this.enabled,
+      callStateGranted: callStateGranted ?? this.callStateGranted,
       timeoutSeconds: timeoutSeconds ?? this.timeoutSeconds,
     );
   }
@@ -49,9 +55,8 @@ final lockScreenControllerProvider =
       LockScreenController.new,
     );
 
-/// Resolves platform support and the overlay permission, and owns the user
-/// toggle. The stored preference is only honored while the permission is held,
-/// so revoking permission in system settings cleanly disables the feature.
+/// Owns the toggle and gates it on overlay and call-state permissions.
+/// Revoking either permission in system settings disables the custom player.
 class LockScreenController extends AsyncNotifier<LockScreenState> {
   @override
   Future<LockScreenState> build() async {
@@ -60,8 +65,13 @@ class LockScreenController extends AsyncNotifier<LockScreenState> {
 
     final supported = await service.isSupported();
     final overlayGranted = supported && await service.hasOverlayPermission();
+    final callStateGranted =
+        supported && await service.hasCallStatePermission();
     final enabled =
-        supported && overlayGranted && settings.loadLockScreenEnabled(false);
+        supported &&
+        overlayGranted &&
+        callStateGranted &&
+        settings.loadLockScreenEnabled(false);
 
     final timeoutSeconds = settings.loadLockScreenTimeoutSeconds();
     if (supported) {
@@ -72,16 +82,34 @@ class LockScreenController extends AsyncNotifier<LockScreenState> {
       supported: supported,
       overlayGranted: overlayGranted,
       enabled: enabled,
+      callStateGranted: callStateGranted,
       timeoutSeconds: timeoutSeconds,
     );
   }
 
-  Future<void> setEnabled(bool value) async {
+  Future<bool> setEnabled(bool value) async {
     final current = state.value;
-    if (current == null) return;
+    if (current == null) return false;
+    if (value &&
+        (!current.supported ||
+            !current.overlayGranted ||
+            !await ref
+                .read(lockScreenServiceProvider)
+                .hasCallStatePermission())) {
+      return false;
+    }
     state = AsyncData(current.copyWith(enabled: value));
     await ref.read(appSettingsRepositoryProvider).saveLockScreenEnabled(value);
     await ref.read(lockScreenServiceProvider).setEnabled(value);
+    return true;
+  }
+
+  Future<bool> requestCallStatePermission() async {
+    final granted = await ref
+        .read(lockScreenServiceProvider)
+        .requestCallStatePermission();
+    await refreshPermission();
+    return granted;
   }
 
   Future<void> setTimeoutSeconds(int seconds) async {
@@ -98,18 +126,22 @@ class LockScreenController extends AsyncNotifier<LockScreenState> {
   Future<void> requestOverlayPermission() =>
       ref.read(lockScreenServiceProvider).requestOverlayPermission();
 
-  /// Re-reads the overlay permission, e.g. after returning from settings.
+  /// Re-reads permissions, e.g. after returning from system settings.
   Future<void> refreshPermission() async {
     final service = ref.read(lockScreenServiceProvider);
     final supported = state.value?.supported ?? await service.isSupported();
     final overlayGranted = supported && await service.hasOverlayPermission();
+    final callStateGranted =
+        supported && await service.hasCallStatePermission();
     final wasEnabled = state.value?.enabled ?? false;
-    final enabled = supported && overlayGranted && wasEnabled;
+    final enabled =
+        supported && overlayGranted && callStateGranted && wasEnabled;
     state = AsyncData(
       LockScreenState(
         supported: supported,
         overlayGranted: overlayGranted,
         enabled: enabled,
+        callStateGranted: callStateGranted,
         timeoutSeconds:
             state.value?.timeoutSeconds ??
             ref
@@ -117,7 +149,7 @@ class LockScreenController extends AsyncNotifier<LockScreenState> {
                 .loadLockScreenTimeoutSeconds(),
       ),
     );
-    if (!overlayGranted && wasEnabled) {
+    if ((!overlayGranted || !callStateGranted) && wasEnabled) {
       await ref
           .read(appSettingsRepositoryProvider)
           .saveLockScreenEnabled(false);

@@ -41,6 +41,11 @@ class MainActivity : AudioServiceActivity() {
         LockScreenController.onNewIntent(intent)
     }
 
+    override fun onResume() {
+        super.onResume()
+        LockScreenController.onActivityResumed()
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         if (!flutterEngine.plugins.has(PlaybackNotificationPlugin::class.java)) {

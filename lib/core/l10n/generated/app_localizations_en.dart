@@ -540,6 +540,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get historyClearedToast => 'Play history cleared';
 
   @override
+  String get lockScreenCallPermissionTitle => 'Keep incoming calls visible';
+
+  @override
+  String get lockScreenCallPermissionMessage =>
+      'Allow phone-state access so the custom lock-screen player can get out of the way when a call rings or is in progress. Only call state is checked; phone numbers and call history are not read. Without this permission, the custom lock-screen player stays off.';
+
+  @override
+  String get lockScreenCallPermissionNeeded =>
+      'The custom lock-screen player needs Phone permission. If the prompt no longer appears, allow it in the app\'s system settings.';
+
+  @override
   String get appName => 'Songs Cleaner';
 
   @override

@@ -56,6 +56,7 @@ object LockScreenController {
      */
     @Volatile private var appContext: Context? = null
     private var receiver: BroadcastReceiver? = null
+    private var phoneCallGuard: PhoneCallGuard? = null
 
     /** Mirrors the user toggle persisted on the Dart side. */
     @Volatile var enabled = false
@@ -74,6 +75,7 @@ object LockScreenController {
     private val clearScreenWake = Runnable {
         activity?.let { host ->
             if (playerShown) {
+                if (blockPresentationForCall()) return@let
                 val keyguard = host.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
                 // Only the over-keyguard presentation may auto-lock. A Routine
                 // can also open this player while the user is using the phone.
@@ -95,6 +97,7 @@ object LockScreenController {
 
     fun attachEngine(context: Context, methodChannel: MethodChannel) {
         appContext = context.applicationContext
+        ensurePhoneCallGuard(context)
         enabled = loadEnabled(context)
         channel = methodChannel
         registerReceiver(context.applicationContext)
@@ -110,8 +113,13 @@ object LockScreenController {
     fun onActivityCreated(host: Activity) {
         activity = host
         appContext = host.applicationContext
+        ensurePhoneCallGuard(host)
         enabled = loadEnabled(host)
         if (playerShown) applyLockedFlags(host, wakeScreenOnPresentation)
+    }
+
+    fun onActivityResumed() {
+        blockPresentationForCall()
     }
 
     /**
@@ -122,6 +130,8 @@ object LockScreenController {
         appContext = context.applicationContext
         enabled = loadEnabled(context)
         if (!enabled) return
+        ensurePhoneCallGuard(context)
+        if (blockPresentationForCall()) return
         playbackActive = true
         pendingPlay.request()
         showOverLockScreen(context.applicationContext)
@@ -139,6 +149,7 @@ object LockScreenController {
         // so a previous Routine launch cannot wake a newly sleeping display.
         intent.removeExtra(EXTRA_SHOW_PLAYER)
         intent.removeExtra(EXTRA_WAKE_SCREEN)
+        if (!enabled || blockPresentationForCall()) return false
         if (!wakeScreen) {
             val context = appContext ?: return false
             val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
@@ -156,6 +167,7 @@ object LockScreenController {
     /** Resets the wake grace period while the lock-screen player is being used. */
     fun onUserInteraction(host: Activity) {
         if (!playerShown || dismissingKeyguard) return
+        if (blockPresentationForCall()) return
         screenWakeHandler.removeCallbacks(clearScreenWake)
         screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
     }
@@ -194,6 +206,7 @@ object LockScreenController {
         wakeScreenOnPresentation = false
         activity?.let(::clearWakeFlags)
         val context = appContext ?: return
+        if (blockPresentationForCall()) return
         if (!enabled || !playbackActive || !overlayGranted(context)) return
         // Keep the same surface throughout the system's screen-off animation.
         // Relaunching it or toggling SHOW_WHEN_LOCKED here causes a flash.
@@ -204,6 +217,7 @@ object LockScreenController {
     }
 
     private fun onScreenOn() {
+        if (blockPresentationForCall()) return
         if (!enabled || dismissingKeyguard) return
         val context = appContext ?: return
         val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
@@ -230,6 +244,8 @@ object LockScreenController {
             Settings.canDrawOverlays(context)
 
     private fun showOverLockScreen(context: Context, wakeScreen: Boolean = true) {
+        ensurePhoneCallGuard(context)
+        if (blockPresentationForCall()) return
         playerShown = true
         wakeScreenOnPresentation = wakeScreen
         activity?.let { applyLockedFlags(it, wakeScreen) }
@@ -253,6 +269,7 @@ object LockScreenController {
     }
 
     private fun deliverShow() {
+        if (blockPresentationForCall()) return
         val current = channel
         if (current == null || !dartReady) {
             pendingShow = true
@@ -314,7 +331,38 @@ object LockScreenController {
 
     // -- Window flags -----------------------------------------------------------
 
+    private fun ensurePhoneCallGuard(context: Context) {
+        if (phoneCallGuard == null) {
+            phoneCallGuard = PhoneCallGuard(context, ::suspendForCall)
+        }
+    }
+
+    private fun blockPresentationForCall(): Boolean {
+        if (phoneCallGuard?.blocksPlayer() == false) return false
+        suspendForCall()
+        return true
+    }
+
+    private fun suspendForCall() {
+        pendingShow = false
+        pendingPlay.consume()
+        dismissingKeyguard = false
+        screenWakeHandler.removeCallbacks(clearScreenWake)
+        val wasShown = playerShown
+        playerShown = false
+        if (!wasShown) return
+        activity?.let { host ->
+            clearLockedFlags(host)
+            // Clearing SHOW_WHEN_LOCKED alone doesn't yield a foreground task
+            // on every OEM. Yield our task before requesting the existing call UI.
+            if (!host.isFinishing && !host.isDestroyed) host.moveTaskToBack(true)
+        }
+        phoneCallGuard?.showSystemCallScreen()
+        channel?.invokeMethod("hidePlayer", null)
+    }
+
     private fun applyLockedFlags(host: Activity, wakeScreen: Boolean) {
+        if (blockPresentationForCall()) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             host.setShowWhenLocked(true)
             host.setTurnScreenOn(wakeScreen)
@@ -369,6 +417,7 @@ object LockScreenController {
 
     /** Shared by the inactivity timer and the explicit double-tap action. */
     private fun lockScreen(): String {
+        if (blockPresentationForCall()) return "failed"
         val status = ScreenLockAccessibilityService.lockScreen()
         if (status == "locked") {
             // The lock action is asynchronous. Keep the player surface and
@@ -383,6 +432,7 @@ object LockScreenController {
         when (call.method) {
             "register" -> {
                 dartReady = true
+                blockPresentationForCall()
                 val show = pendingShow
                 pendingShow = false
                 result.success(show)
@@ -407,7 +457,7 @@ object LockScreenController {
                 result.success(null)
             }
             "setEnabled" -> {
-                enabled = call.arguments == true
+                enabled = call.arguments == true && phoneCallGuard?.hasPermission() == true
                 context?.getSharedPreferences(LOCK_SCREEN_PREFS, Context.MODE_PRIVATE)
                     ?.edit()
                     ?.putBoolean(ENABLED_KEY, enabled)
@@ -424,7 +474,7 @@ object LockScreenController {
                 screenWakeDurationMs = seconds!!.toLong() * 1000L
                 context?.getSharedPreferences(LOCK_SCREEN_PREFS, Context.MODE_PRIVATE)
                     ?.edit()?.putInt(TIMEOUT_KEY, seconds)?.apply()
-                if (playerShown && !dismissingKeyguard && context != null && isScreenInteractive(context)) {
+                if (!blockPresentationForCall() && playerShown && !dismissingKeyguard && context != null && isScreenInteractive(context)) {
                     screenWakeHandler.removeCallbacks(clearScreenWake)
                     screenWakeHandler.postDelayed(clearScreenWake, screenWakeDurationMs)
                 }
@@ -438,11 +488,13 @@ object LockScreenController {
                 result.success(null)
             }
             "consumePendingShow" -> {
+                blockPresentationForCall()
                 val show = pendingShow
                 pendingShow = false
                 result.success(show)
             }
             "consumePendingPlay" -> {
+                blockPresentationForCall()
                 result.success(pendingPlay.consume())
             }
             "dismiss" -> {

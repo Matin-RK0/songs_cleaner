@@ -28,6 +28,8 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription<LockScreenEvent>? _eventsSub;
   bool _lockScreenOpen = false;
+  bool _lockScreenRequested = false;
+  int _lockScreenEventGeneration = 0;
   final NowPlayingWidgetService _widgetService =
       const NowPlayingWidgetService();
 
@@ -45,10 +47,14 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
     // Announce that Dart can receive show/hide events, then honor a show that
     // the lock screen requested while the app was still booting.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final generation = _lockScreenEventGeneration;
       final pending = await service.register();
       final pendingPlay = await service.consumePendingPlay();
       if (!mounted) return;
-      if (pending) _openLockScreen();
+      // A call may have cancelled the presentation while register was in flight.
+      if (pending && generation == _lockScreenEventGeneration) {
+        _openLockScreen();
+      }
       if (pendingPlay) {
         unawaited(_startPendingPlayback());
       }
@@ -95,8 +101,10 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   void _onLockScreenEvent(LockScreenEvent event) {
     switch (event) {
       case LockScreenEvent.showPlayer:
+        _lockScreenEventGeneration++;
         _openLockScreen();
       case LockScreenEvent.hidePlayer:
+        _lockScreenEventGeneration++;
         _closeLockScreen();
       case LockScreenEvent.playRequested:
         unawaited(_startPendingPlayback());
@@ -111,13 +119,14 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   }
 
   void _openLockScreen() {
+    _lockScreenRequested = true;
     if (_lockScreenOpen) return;
     final navigator = _navigatorKey.currentState;
     if (navigator == null) {
       // Cold audio-service startup can deliver the native request before the
       // MaterialApp has attached its Navigator.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _openLockScreen();
+        if (mounted && _lockScreenRequested) _openLockScreen();
       });
       return;
     }
@@ -128,6 +137,7 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   }
 
   void _closeLockScreen() {
+    _lockScreenRequested = false;
     if (!_lockScreenOpen) return;
     _navigatorKey.currentState?.pop();
   }

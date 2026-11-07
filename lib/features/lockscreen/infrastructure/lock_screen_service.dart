@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 enum ScreenLockResult { locked, permissionRequired, unsupported, failed }
 
@@ -10,7 +11,7 @@ enum LockScreenEvent {
   /// The keyguard turned on while a song was playing: show the player route.
   showPlayer,
 
-  /// The device was unlocked: leave the lock-screen player route.
+  /// The device was unlocked or a call needs priority: leave the player route.
   hidePlayer,
 
   /// A Routine requested playback after the Flutter UI was already running.
@@ -73,6 +74,13 @@ class LockScreenService {
   Future<void> requestOverlayPermission() =>
       _invoke<void>('requestOverlayPermission');
 
+  Future<bool> hasCallStatePermission() async =>
+      _isAndroid && await Permission.phone.isGranted;
+
+  /// Only READ_PHONE_STATE is declared for this permission group in the manifest.
+  Future<bool> requestCallStatePermission() async =>
+      _isAndroid && (await Permission.phone.request()).isGranted;
+
   Future<void> setEnabled(bool enabled) => _invoke<void>('setEnabled', enabled);
 
   Future<void> setTimeoutSeconds(int seconds) =>
@@ -93,8 +101,8 @@ class LockScreenService {
     return pending ?? false;
   }
 
-  /// Requests exit. Native emits hidePlayer only after keyguard dismissal;
-  /// cancelling system authentication keeps the player route visible.
+  /// Requests exit via keyguard dismissal. A phone call can also hide the player;
+  /// cancelling system authentication otherwise keeps the player route visible.
   Future<void> dismiss() => _invoke<void>('dismiss');
 
   Future<ScreenLockResult> lockScreen() async {
