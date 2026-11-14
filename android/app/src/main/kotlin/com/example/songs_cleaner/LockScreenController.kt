@@ -418,13 +418,18 @@ object LockScreenController {
     /** Shared by the inactivity timer and the explicit double-tap action. */
     private fun lockScreen(): String {
         if (blockPresentationForCall()) return "failed"
-        val status = ScreenLockAccessibilityService.lockScreen()
+        val context = appContext ?: return "failed"
+        val status = ScreenLockAccessibilityService.lockScreen(context)
+        onScreenLockResult(status)
+        return status
+    }
+
+    private fun onScreenLockResult(status: String) {
         if (status == "locked") {
             // The lock action is asynchronous. Keep the player surface and
             // SHOW_WHEN_LOCKED stable while Android animates the display off.
             activity?.let(::clearWakeFlags)
         }
-        return status
     }
 
     fun handleMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -502,7 +507,17 @@ object LockScreenController {
                 result.success(null)
             }
             "lockScreen" -> {
-                result.success(lockScreen())
+                if (context == null || blockPresentationForCall()) {
+                    result.success("failed")
+                } else {
+                    ScreenLockAccessibilityService.lockScreenWhenReady(
+                        context,
+                        canLock = { !blockPresentationForCall() },
+                    ) { status ->
+                        onScreenLockResult(status)
+                        result.success(status)
+                    }
+                }
             }
             "requestScreenLockAccess" -> {
                 val host = activity

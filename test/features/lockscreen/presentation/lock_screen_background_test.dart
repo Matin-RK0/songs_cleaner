@@ -98,4 +98,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(calls, isEmpty);
   });
+
+  testWidgets('a disconnected service failure does not request permission', (
+    tester,
+  ) async {
+    status = 'failed';
+    await pumpScreen(tester);
+    await doubleTapBackground(tester);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(calls, ['lockScreen']);
+
+    status = 'locked';
+    await doubleTapBackground(tester);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(calls, ['lockScreen', 'lockScreen']);
+  });
 }

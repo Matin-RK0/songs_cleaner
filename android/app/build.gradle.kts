@@ -45,6 +45,7 @@ dependencies {
     // Its AndroidX media superclass must be visible to Kotlin at compile time.
     implementation("androidx.media:media:1.7.0")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
 }
 
 kotlin {
