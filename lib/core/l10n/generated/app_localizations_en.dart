@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -664,6 +665,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAction => 'Delete from device';
+
+  @override
+  String get holdToDeleteAction => 'Hold to delete from device';
 
   @override
   String get deleteCurrentTooltip => 'Delete current song';

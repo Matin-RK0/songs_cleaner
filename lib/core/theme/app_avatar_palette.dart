@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Semantic foreground/background pairs retain contrast in both theme modes.
 abstract final class AppAvatarPalette {

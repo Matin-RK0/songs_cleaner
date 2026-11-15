@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../extensions/context_l10n.dart';
 import '../theme/app_color_picker_tokens.dart';

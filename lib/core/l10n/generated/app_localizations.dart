@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart' show GlobalWidgetsLocalizations;
+import 'package:material_ui/material_ui.dart' show GlobalMaterialLocalizations;
+import 'package:cupertino_ui/cupertino_ui.dart' show GlobalCupertinoLocalizations;
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
@@ -1278,6 +1280,12 @@ abstract class AppLocalizations {
   /// In fa, this message translates to:
   /// **'حذف از دستگاه'**
   String get deleteAction;
+
+  /// No description provided for @holdToDeleteAction.
+  ///
+  /// In fa, this message translates to:
+  /// **'برای حذف نگه دارید'**
+  String get holdToDeleteAction;
 
   /// No description provided for @deleteCurrentTooltip.
   ///

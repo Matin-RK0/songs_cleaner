@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
@@ -10,6 +10,7 @@ import '../../../../core/widgets/app_feedback.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../application/providers/playlists_controller.dart';
 import 'playlist_name_sheet.dart';
+import 'playlist_artwork.dart';
 
 /// Bottom sheet for adding or removing a song across the user's playlists.
 Future<void> showAddToPlaylistSheet(BuildContext context, Song song) {
@@ -31,7 +32,7 @@ Future<void> showAddSongsToPlaylistSheet(
       borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
     ),
     constraints: BoxConstraints(
-      maxHeight: MediaQuery.of(context).size.height * 0.6,
+      maxHeight: MediaQuery.of(context).size.height * 0.85,
     ),
     builder: (_) =>
         SafeArea(top: false, child: _AddToPlaylistSheet(songs: songs)),
@@ -116,6 +117,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
                 final songIds = songs.map((song) => song.id).toSet();
                 final contains = songIds.every(playlist.contains);
                 return ListTile(
+                  leading: PlaylistArtwork(songIds: playlist.songIds),
                   title: Text(
                     playlist.name,
                     maxLines: 1,

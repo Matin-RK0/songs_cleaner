@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -26,7 +26,9 @@ class PlayerTrackInfo extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.playerTitle.copyWith(color: colors.textHigh),
+            style: AppTypography.nowPlayingTitle.copyWith(
+              color: colors.textHigh,
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -34,7 +36,7 @@ class PlayerTrackInfo extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.playerArtist.copyWith(
+            style: AppTypography.nowPlayingArtist.copyWith(
               color: colors.textMedium,
             ),
           ),

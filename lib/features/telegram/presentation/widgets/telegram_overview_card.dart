@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_radius.dart';

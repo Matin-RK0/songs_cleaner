@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_motion.dart';
+import '../../../../core/theme/app_player_metrics.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
@@ -80,12 +81,12 @@ class _SeekBarState extends ConsumerState<SeekBar>
             children: [
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  trackHeight: 4,
-                  activeTrackColor: colors.primary,
-                  inactiveTrackColor: colors.outline,
-                  thumbColor: colors.primary,
+                  trackHeight: AppPlayerMetrics.trackHeight,
+                  activeTrackColor: colors.textHigh,
+                  inactiveTrackColor: colors.textHigh.withValues(alpha: 0.30),
+                  thumbColor: colors.textHigh,
                   thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 8,
+                    enabledThumbRadius: AppPlayerMetrics.thumbRadius,
                   ),
                   overlayShape: const RoundSliderOverlayShape(
                     overlayRadius: 18,

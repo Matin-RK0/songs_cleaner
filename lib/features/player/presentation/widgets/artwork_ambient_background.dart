@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -16,11 +16,13 @@ class ArtworkAmbientBackground extends ConsumerWidget {
     required this.songId,
     required this.visible,
     required this.child,
+    this.subdued = false,
   });
 
   final int? songId;
   final bool visible;
   final Widget child;
+  final bool subdued;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,18 +34,45 @@ class ArtworkAmbientBackground extends ConsumerWidget {
       fit: StackFit.expand,
       children: [
         ColoredBox(color: tokens.background),
-        _AmbientLights(
-          visible: visible,
-          first: palette?.first ?? tokens.playerGradientTop,
-          second: palette?.second ?? tokens.playerGradientMiddle,
-          third:
-              palette?.third ??
-              Color.lerp(
-                tokens.playerGradientTop,
-                tokens.playerGradientMiddle,
-                0.5,
-              )!,
-        ),
+        if (subdued && visible)
+          RepaintBoundary(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    tokens.background,
+                    Color.alphaBlend(
+                      (palette?.first ?? tokens.playerGradientTop).withValues(
+                        alpha: 0.40,
+                      ),
+                      tokens.background,
+                    ),
+                    Color.alphaBlend(
+                      (palette?.second ?? tokens.playerGradientMiddle)
+                          .withValues(alpha: 0.55),
+                      tokens.background,
+                    ),
+                  ],
+                  stops: const [0.35, 0.75, 1],
+                ),
+              ),
+            ),
+          )
+        else if (!subdued)
+          _AmbientLights(
+            visible: visible,
+            first: palette?.first ?? tokens.playerGradientTop,
+            second: palette?.second ?? tokens.playerGradientMiddle,
+            third:
+                palette?.third ??
+                Color.lerp(
+                  tokens.playerGradientTop,
+                  tokens.playerGradientMiddle,
+                  0.5,
+                )!,
+          ),
         ColoredBox(color: tokens.background.withValues(alpha: 0.20)),
         child,
       ],

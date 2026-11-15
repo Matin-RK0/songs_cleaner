@@ -2,6 +2,52 @@
 
 A local music player with library cleanup and an optional Telegram music library.
 
+## Flutter SDK and UI migration
+
+The project targets **Flutter 3.50.0 / Dart 3.14.0** or newer. Material and
+Cupertino APIs now come from Flutter's official `material_ui` and `cupertino_ui`
+packages, not the deprecated framework exports. See the
+[official migration guide](https://github.com/flutter/packages/tree/main/packages/material_ui#migrating-existing-code-to-this-package).
+Do not suppress deprecation diagnostics or reintroduce `flutter/material.dart`.
+
+Android tooling follows the same SDK's defaults: Gradle **9.5.0** and Android Gradle
+Plugin **9.3.1**, with AGP's built-in Kotlin enabled. Version requirements are
+checked by Flutter; do not bypass build-dependency validation.
+These values match [Flutter 3.50's SDK template constants](https://github.com/flutter/flutter/blob/ab2912035e/packages/flutter_tools/lib/src/android/gradle_utils.dart).
+
+`on_audio_query_android` 1.1.0 has no published built-in-Kotlin migration. Its
+licensed local copy in `third_party/on_audio_query_android` contains the build
+compatibility patch described in `LOCAL_CHANGES.md`. The root dependency override
+selects this copy without modifying the pub cache.
+The migration follows the official
+[app](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers)
+and [plugin](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors)
+guides. `android.newDsl=false` remains the SDK-recommended compatibility setting;
+it is independent of enabling built-in Kotlin.
+
+### Updating translations
+
+After editing `lib/core/l10n/arb/*.arb`, run:
+
+```sh
+dart run tool/generate_localizations.dart
+flutter analyze
+flutter test
+```
+
+Flutter 3.50's `gen-l10n` template still imports the deprecated Material/Cupertino
+localization classes. The wrapper runs that official generator in an isolated
+scratch project using `tool/l10n.yaml`, then replaces only those imports with the
+modern packages. Generated files remain checked in. Automatic SDK generation
+is disabled in `pubspec.yaml` and its configuration lives under `tool/`, so
+`flutter run`, builds and tests cannot overwrite
+the migrated delegates. Use the wrapper rather than invoking `flutter gen-l10n`
+directly; do not edit the generated files by hand. Revisit this workaround when
+the SDK's generator emits the standalone design-library delegates natively.
+
+App and test delegate lists should include `AppLocalizations.delegate` plus
+`GlobalMaterialLocalizations.delegates`, as recommended by the official guide.
+
 ## Telegram music (Android)
 
 The **Telegram** home tab groups music by conversation, group or channel. It uses

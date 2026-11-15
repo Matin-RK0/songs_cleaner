@@ -1,6 +1,17 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 abstract final class AppTypography {
+  static const nowPlayingTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 24,
+    fontWeight: FontWeight.w400,
+  );
+  static const nowPlayingArtist = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+  );
+
   /// Single source of truth for the app font. Component-level styles
   /// (AppBar, TabBar, dialogs, buttons...) replace instead of merge, so every
   /// custom style must carry this explicitly. Colors are applied per theme in

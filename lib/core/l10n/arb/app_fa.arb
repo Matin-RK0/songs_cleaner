@@ -208,6 +208,7 @@
   "grantPermission": "اعطای دسترسی",
   "openSettings": "رفتن به تنظیمات",
   "deleteAction": "حذف از دستگاه",
+  "holdToDeleteAction": "برای حذف نگه دارید",
   "deleteCurrentTooltip": "حذف آهنگ فعلی",
   "deleteConfirmTitle": "این آهنگ حذف شود؟",
   "deleteConfirmMessage": "«{title}» برای همیشه از حافظه دستگاه حذف می‌شود و آهنگ بعدی پخش می‌شود.",

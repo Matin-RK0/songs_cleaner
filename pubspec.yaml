@@ -4,7 +4,8 @@ publish_to: 'none'
 version: 0.1.0+1
 
 environment:
-  sdk: ^3.12.2
+  sdk: ^3.14.0
+  flutter: '>=3.50.0'
 
 dependencies:
   flutter:
@@ -22,15 +23,22 @@ dependencies:
   handy_tdlib_next: 2.3.16
   flutter_secure_storage: ^10.0.0
   path_provider: ^2.1.5
-
+  material_ui: ^1.11.0
+  cupertino_ui: ^1.1.6
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
+dependency_overrides:
+  on_audio_query_android:
+    path: third_party/on_audio_query_android
+
 flutter:
   uses-material-design: true
-  generate: true
+  # SDK 3.50 gen-l10n still emits legacy delegates. Use the checked-in,
+  # migrated output from: dart run tool/generate_localizations.dart
+  generate: false
   fonts:
     - family: Vazirmatn
       fonts:
