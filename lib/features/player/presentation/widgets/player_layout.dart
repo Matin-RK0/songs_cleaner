@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../../core/theme/app_player_metrics.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../library/domain/entities/song.dart';
+import '../../../lockscreen/presentation/widgets/lock_screen_background.dart';
 import 'delete_current_button.dart';
 import 'artwork_ambient_background.dart';
 import 'player_controls_row.dart';
@@ -74,11 +75,13 @@ class PlayerLayout extends StatelessWidget {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: ClipRect(
-                  child: ArtworkAmbientBackground(
-                    songId: song.id,
-                    visible: true,
-                    child: const SizedBox.shrink(),
+                child: IgnorePointer(
+                  child: ClipRect(
+                    child: ArtworkAmbientBackground(
+                      songId: song.id,
+                      visible: true,
+                      child: const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),
@@ -87,12 +90,16 @@ class PlayerLayout extends StatelessWidget {
                   const SizedBox(height: AppSpacing.lg),
                   header,
                   const SizedBox(height: AppSpacing.md),
-                  PlayerArtworkAndInfo(
-                    song: song,
-                    artworkSize: artworkSize,
-                    useHero: useHero,
+                  ScreenLockDoubleTapRegion(
+                    child: PlayerArtworkAndInfo(
+                      song: song,
+                      artworkSize: artworkSize,
+                      useHero: useHero,
+                    ),
                   ),
-                  const Spacer(),
+                  const Expanded(
+                    child: ScreenLockDoubleTapRegion(child: SizedBox.expand()),
+                  ),
                   actions,
                   const SizedBox(height: AppSpacing.sm),
                   SeekBar(key: ValueKey(song.id)),

@@ -8,6 +8,7 @@ import '../../../../core/theme/app_player_metrics.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../cleanup/presentation/cleanup_flow.dart';
+import '../../../lockscreen/presentation/widgets/lock_screen_background.dart';
 import '../../application/providers/player_controller.dart';
 import '../../application/providers/player_preferences_controller.dart';
 import '../widgets/playback_options_sheet.dart';
@@ -27,16 +28,18 @@ class PlayerScreen extends ConsumerWidget {
     return SwipeDownToDismiss(
       child: Scaffold(
         backgroundColor: context.colors.background,
-        body: SafeArea(
-          child: song == null
-              ? const NothingPlayingView()
-              : PlayerLayout(
-                  song: song,
-                  hideQuickDelete: hideQuickDelete,
-                  useHero: true,
-                  header: const _HeaderBar(),
-                  actions: PlayerActions(song: song),
-                ),
+        body: LockScreenBackground(
+          child: SafeArea(
+            child: song == null
+                ? const NothingPlayingView()
+                : PlayerLayout(
+                    song: song,
+                    hideQuickDelete: hideQuickDelete,
+                    useHero: true,
+                    header: const _HeaderBar(),
+                    actions: PlayerActions(song: song),
+                  ),
+          ),
         ),
       ),
     );

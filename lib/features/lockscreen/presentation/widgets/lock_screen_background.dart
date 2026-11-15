@@ -6,7 +6,7 @@ import '../../../../core/widgets/app_feedback.dart';
 import '../../application/providers/lock_screen_controller.dart';
 import '../../infrastructure/lock_screen_service.dart';
 
-/// A separate hit-test layer keeps double-taps on controls out of this gesture.
+/// Owns one lock request/permission flow for background and opted-in regions.
 class LockScreenBackground extends ConsumerStatefulWidget {
   const LockScreenBackground({required this.child, super.key});
 
@@ -55,17 +55,54 @@ class _LockScreenBackgroundState extends ConsumerState<LockScreenBackground> {
   }
 
   @override
-  Widget build(BuildContext context) => Stack(
-    fit: StackFit.expand,
-    children: [
-      Positioned.fill(
-        child: GestureDetector(
-          excludeFromSemantics: true,
-          behavior: HitTestBehavior.opaque,
-          onDoubleTap: _onDoubleTap,
+  Widget build(BuildContext context) => _ScreenLockGestureScope(
+    onDoubleTap: _onDoubleTap,
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            excludeFromSemantics: true,
+            behavior: HitTestBehavior.opaque,
+            onDoubleTap: _onDoubleTap,
+          ),
         ),
-      ),
-      widget.child,
-    ],
+        widget.child,
+      ],
+    ),
   );
+}
+
+/// Opts non-interactive foreground content into the background lock gesture.
+/// No recognizer is installed when used outside a lock-enabled player.
+class ScreenLockDoubleTapRegion extends StatelessWidget {
+  const ScreenLockDoubleTapRegion({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<_ScreenLockGestureScope>();
+    if (scope == null) return child;
+    return GestureDetector(
+      excludeFromSemantics: true,
+      behavior: HitTestBehavior.opaque,
+      onDoubleTap: scope.onDoubleTap,
+      child: child,
+    );
+  }
+}
+
+class _ScreenLockGestureScope extends InheritedWidget {
+  const _ScreenLockGestureScope({
+    required this.onDoubleTap,
+    required super.child,
+  });
+
+  final VoidCallback onDoubleTap;
+
+  @override
+  bool updateShouldNotify(_ScreenLockGestureScope oldWidget) =>
+      oldWidget.onDoubleTap != onDoubleTap;
 }
