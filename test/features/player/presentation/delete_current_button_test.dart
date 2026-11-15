@@ -82,6 +82,13 @@ void main() {
       tester.widget<FilledButton>(button).style!.foregroundColor!.resolve({}),
       const Color(0xFFAA33CC),
     );
+    final style = tester.widget<FilledButton>(button).style!;
+    expect(style.backgroundColor!.resolve({}), Colors.transparent);
+    expect(
+      style.overlayColor!.resolve({WidgetState.pressed}),
+      Colors.transparent,
+    );
+    expect(style.splashFactory, NoSplash.splashFactory);
     await tester.tap(button);
     await tester.pump();
     expect(cleanup.calls, 0);

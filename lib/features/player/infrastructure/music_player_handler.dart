@@ -454,7 +454,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     _touchQueue();
     await _persistSession();
     if (playImmediately && request == _playbackRequestRevision) {
-      await _player.play();
+      unawaited(_startLoadedPlayback());
     }
   }
 
@@ -980,6 +980,28 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   // Internals
   // ---------------------------------------------------------------------------
 
+  /// Loading/removing a track must not wait for that track to finish playing.
+  /// just_audio's play Future lives until pause/stop/EOF, not playback startup.
+  Future<void> _startLoadedPlayback() async {
+    final source = _sourceRevision;
+    final request = _playbackRequestRevision;
+    final song = _queue.current;
+    try {
+      final playback = _player.play();
+      _broadcastState(_player.playbackEvent);
+      await playback;
+    } catch (_) {
+      if (_closing ||
+          source != _sourceRevision ||
+          request != _playbackRequestRevision ||
+          song?.id != _queue.current?.id) {
+        return;
+      }
+      if (song != null) _loadErrors.add(song.title);
+      _broadcastState(_player.playbackEvent);
+    }
+  }
+
   Future<void> _onPlayerStateChanged(PlayerState state) async {
     if (_closing) return;
     if (isChangingSource) {
@@ -1046,7 +1068,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       await _persistSession();
       if (request == _playbackRequestRevision &&
           (playImmediately || _player.playing)) {
-        await _player.play();
+        unawaited(_startLoadedPlayback());
       }
     } catch (error) {
       if (revision != _sourceRevision) return;

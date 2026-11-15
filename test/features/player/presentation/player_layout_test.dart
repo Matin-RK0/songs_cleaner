@@ -119,6 +119,7 @@ void main() {
   }
   for (final size in [
     const Size(320, 568),
+    const Size(360, 740),
     const Size(412, 892),
     const Size(740, 360),
   ]) {

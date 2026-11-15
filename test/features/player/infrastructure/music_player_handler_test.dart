@@ -139,6 +139,28 @@ void main() {
     await handler.closeApp();
   });
 
+  for (final stale in [false, true]) {
+    test('detached play errors are handled; stale source: $stale', () async {
+      final completion = Completer<void>();
+      final player = _Player()..playbackCompletion = completion;
+      final handler = MusicPlayerHandler(player);
+      final errors = <String>[];
+      final subscription = handler.loadErrors.listen(errors.add);
+      addTearDown(subscription.cancel);
+      addTearDown(player.close);
+      await handler.loadAndPlay([_song(1, 60), _song(2, 60)]);
+      if (stale) {
+        player.playbackCompletion = null;
+        await handler.next();
+      }
+      completion.completeError(StateError('playback failed'));
+      await Future<void>.delayed(Duration.zero);
+      expect(errors, stale ? isEmpty : ['Track 1']);
+      expect(handler.currentSong?.id, stale ? 2 : 1);
+      await handler.closeApp();
+    });
+  }
+
   test('a newer selection supersedes a slow cold-library fallback', () async {
     final library = Completer<List<Song>>();
     final player = _Player();
@@ -225,6 +247,40 @@ void main() {
   );
 
   for (final gapless in [false, true]) {
+    test(
+      'removing current track returns while next audio is still playing; gapless=$gapless',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final settings = AppSettingsRepository(
+          await SharedPreferences.getInstance(),
+        );
+        await settings.saveGaplessPlayback(gapless);
+        final playback = Completer<void>();
+        final player = _Player()..playbackCompletion = playback;
+        final handler = MusicPlayerHandler(player, settings: settings);
+        addTearDown(player.close);
+        addTearDown(() {
+          if (!playback.isCompleted) playback.complete();
+        });
+        await handler
+            .loadAndPlay([_song(1, 60), _song(2, 60)])
+            .timeout(const Duration(seconds: 1));
+        expect(handler.playbackState.value.playing, isTrue);
+        expect(playback.isCompleted, isFalse);
+
+        expect(
+          await handler.removeSong(1).timeout(const Duration(seconds: 1)),
+          isTrue,
+        );
+        expect(handler.currentSong?.id, 2);
+        expect(handler.queueSongs.map((song) => song.id), [2]);
+        expect(handler.playbackState.value.playing, isTrue);
+        expect(playback.isCompleted, isFalse);
+        playback.complete();
+        await handler.closeApp();
+      },
+    );
+
     test(
       'download selection preserves the active queue, gapless=$gapless',
       () async {

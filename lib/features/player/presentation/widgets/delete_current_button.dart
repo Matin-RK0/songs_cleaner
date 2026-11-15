@@ -131,11 +131,11 @@ class _DeleteCurrentButtonState extends ConsumerState<DeleteCurrentButton>
                   width: double.infinity,
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: colors.primary.withValues(alpha: 0.12),
+                      backgroundColor: Colors.transparent,
                       foregroundColor: colors.primary,
-                      disabledBackgroundColor: colors.primary.withValues(
-                        alpha: 0.12,
-                      ),
+                      disabledBackgroundColor: Colors.transparent,
+                      overlayColor: Colors.transparent,
+                      splashFactory: NoSplash.splashFactory,
                       disabledForegroundColor: colors.primary.withValues(
                         alpha: 0.65,
                       ),

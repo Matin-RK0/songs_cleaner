@@ -3,12 +3,12 @@ import 'package:material_ui/material_ui.dart';
 abstract final class AppTypography {
   static const nowPlayingTitle = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: FontWeight.w400,
   );
   static const nowPlayingArtist = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: FontWeight.w400,
   );
 

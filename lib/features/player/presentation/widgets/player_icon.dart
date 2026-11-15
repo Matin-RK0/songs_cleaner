@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/theme/app_player_metrics.dart';
@@ -71,17 +73,18 @@ class _PlayerIconPainter extends CustomPainter {
 abstract final class _GlyphPaths {
   // Parsed once, never recreated during playback, animation or list rebuilds.
   static final Map<PlayerGlyph, Path> paths = {
-    PlayerGlyph.play: Path()
-      ..moveTo(7, 3.8)
-      ..quadraticBezierTo(7, 2.3, 8.4, 3.2)
-      ..lineTo(20, 10.8)
-      ..quadraticBezierTo(21.5, 12, 20, 13.2)
-      ..lineTo(8.4, 20.8)
-      ..quadraticBezierTo(7, 21.7, 7, 20.2)
-      ..close(),
+    PlayerGlyph.play: _roundedPolygon(const [
+      Offset(7, 3),
+      Offset(21, 12),
+      Offset(7, 21),
+    ], 2.2),
     PlayerGlyph.pause: Path()
-      ..addRRect(RRect.fromLTRBR(6, 3, 9, 21, const Radius.circular(1.5)))
-      ..addRRect(RRect.fromLTRBR(15, 3, 18, 21, const Radius.circular(1.5))),
+      ..addRRect(
+        RRect.fromLTRBR(5.75, 3, 9.25, 21, const Radius.circular(1.75)),
+      )
+      ..addRRect(
+        RRect.fromLTRBR(14.75, 3, 18.25, 21, const Radius.circular(1.75)),
+      ),
     PlayerGlyph.previous: _skip(false),
     PlayerGlyph.next: _skip(true),
     PlayerGlyph.shuffle: Path()
@@ -147,23 +150,50 @@ abstract final class _GlyphPaths {
 
   static Path _skip(bool forward) {
     final path = Path()
-      ..addRRect(RRect.fromLTRBR(2, 5, 4.5, 19, const Radius.circular(1)))
-      ..moveTo(4.5, 12)
-      ..lineTo(12.5, 5.5)
-      ..quadraticBezierTo(13.5, 4.5, 13.5, 6)
-      ..lineTo(13.5, 18)
-      ..quadraticBezierTo(13.5, 19.5, 12.5, 18.5)
-      ..close()
-      ..moveTo(13, 12)
-      ..lineTo(21, 5.5)
-      ..quadraticBezierTo(22, 4.5, 22, 6)
-      ..lineTo(22, 18)
-      ..quadraticBezierTo(22, 19.5, 21, 18.5)
-      ..close();
+      ..addRRect(RRect.fromLTRBR(2, 5, 4.5, 19, const Radius.circular(1.25)))
+      ..addPath(
+        _roundedPolygon(const [
+          Offset(4.5, 12),
+          Offset(13.5, 5),
+          Offset(13.5, 19),
+        ], 1.6),
+        Offset.zero,
+      )
+      ..addPath(
+        _roundedPolygon(const [
+          Offset(13, 12),
+          Offset(22, 5),
+          Offset(22, 19),
+        ], 1.6),
+        Offset.zero,
+      );
     if (!forward) return path;
     return path
         .transform(Matrix4.diagonal3Values(-1, 1, 1).storage)
         .shift(const Offset(24, 0));
+  }
+
+  static Path _roundedPolygon(List<Offset> points, double radius) {
+    final path = Path();
+    for (var index = 0; index < points.length; index++) {
+      final vertex = points[index];
+      final incoming =
+          points[(index - 1 + points.length) % points.length] - vertex;
+      final outgoing = points[(index + 1) % points.length] - vertex;
+      final distance = math.min(
+        radius,
+        math.min(incoming.distance, outgoing.distance) / 2,
+      );
+      final entry = vertex + incoming / incoming.distance * distance;
+      final exit = vertex + outgoing / outgoing.distance * distance;
+      if (index == 0) {
+        path.moveTo(entry.dx, entry.dy);
+      } else {
+        path.lineTo(entry.dx, entry.dy);
+      }
+      path.quadraticBezierTo(vertex.dx, vertex.dy, exit.dx, exit.dy);
+    }
+    return path..close();
   }
 
   static Path _repeat() => Path()

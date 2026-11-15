@@ -85,6 +85,11 @@ void main() {
           );
           await _pumpTransitions(tester);
           final large = 412 * AppPlayerMetrics.artworkWidthFraction;
+          expect(tester.widget<Text>(find.text('Kalidor')).style!.fontSize, 18);
+          expect(
+            tester.widget<Text>(find.text('Armin Barmaye')).style!.fontSize,
+            12,
+          );
           expect(
             _paintedWidth(tester),
             closeTo(large * AppPlayerMetrics.pausedArtworkScale, 0.01),
