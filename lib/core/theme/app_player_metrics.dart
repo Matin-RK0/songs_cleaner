@@ -17,6 +17,7 @@ abstract final class AppPlayerMetrics {
   static const bottomSpace = 72.0;
   static const deleteExtent = 80.0;
   static const trackHeight = 2.0;
-  static const timeLabelRise = 12.0;
+  static const timeLabelRise = 16.0;
+  static const timeLabelInset = 26.0;
   static const thumbRadius = 7.0;
 }

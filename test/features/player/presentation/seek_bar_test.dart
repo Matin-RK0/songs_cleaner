@@ -64,14 +64,17 @@ void main() {
             ),
           );
           expect(sliderTheme.data.trackHeight, 2);
+          final thumb = sliderTheme.data.thumbShape! as RoundSliderThumbShape;
+          expect(thumb.elevation, 0);
+          expect(thumb.pressedElevation, 0);
           expect(
             tester.getSize(find.byType(Slider)).height,
             greaterThanOrEqualTo(48),
           );
-          expect(tester.getTopLeft(find.text('2:00')).dx, 40);
-          expect(tester.getTopRight(find.text('5:00')).dx, 280);
+          expect(tester.getTopLeft(find.text('2:00')).dx, 26);
+          expect(tester.getTopRight(find.text('5:00')).dx, 294);
           final lineCenter = tester.getCenter(find.byType(Slider)).dy;
-          expect(tester.getTopLeft(find.text('2:00')).dy - lineCenter, 12);
+          expect(tester.getTopLeft(find.text('2:00')).dy - lineCenter, 8);
           for (final value in ['2:00', '5:00']) {
             final style = tester.widget<Text>(find.text(value)).style!;
             expect(style.fontSize, 11);

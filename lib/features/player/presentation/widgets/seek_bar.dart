@@ -87,6 +87,8 @@ class _SeekBarState extends ConsumerState<SeekBar>
                   thumbColor: colors.primary,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: AppPlayerMetrics.thumbRadius,
+                    elevation: 0,
+                    pressedElevation: 0,
                   ),
                   overlayShape: const RoundSliderOverlayShape(
                     overlayRadius: 18,
@@ -119,7 +121,7 @@ class _SeekBarState extends ConsumerState<SeekBar>
                 offset: const Offset(0, -AppPlayerMetrics.timeLabelRise),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xl + AppSpacing.sm,
+                    horizontal: AppPlayerMetrics.timeLabelInset,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
