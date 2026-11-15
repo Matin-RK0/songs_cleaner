@@ -2,6 +2,17 @@
 
 A local music player with library cleanup and an optional Telegram music library.
 
+## Typography
+
+The primary app font is bundled **Roboto**, an approved open-source alternative
+to the reference UI, not Samsung's proprietary typeface. Regular, Medium,
+SemiBold, Bold and ExtraBold are bundled for offline use. **Vazirmatn** is retained
+only as the explicit Persian/Arabic fallback, because Roboto lacks those glyphs.
+The font family and fallback are centralized in `AppTypography`/`AppTheme`.
+Font sources and the redistribution license are recorded in
+`assets/fonts/roboto/SOURCE.md` and `OFL.txt`; the license is registered with
+Flutter's license registry. Font/asset changes require a full app restart.
+
 ## Flutter SDK and UI migration
 
 The project targets **Flutter 3.50.0 / Dart 3.14.0** or newer. Material and

@@ -96,39 +96,48 @@ class _SeekBarState extends ConsumerState<SeekBar>
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.sm,
                   ),
-                  child: Slider(
-                    value: value,
-                    max: maxMs <= 0 ? 1 : maxMs,
-                    onChanged: maxMs <= 0 || isBuffering
-                        ? null
-                        : (newValue) => setState(() => _dragValueMs = newValue),
-                    onChangeEnd: (newValue) async {
-                      await ref
-                          .read(playerProvider.notifier)
-                          .seek(Duration(milliseconds: newValue.round()));
-                      if (mounted) setState(() => _dragValueMs = null);
-                    },
+                  child: SizedBox(
+                    height: AppPlayerMetrics.touchExtent,
+                    child: Slider(
+                      value: value,
+                      max: maxMs <= 0 ? 1 : maxMs,
+                      onChanged: maxMs <= 0 || isBuffering
+                          ? null
+                          : (newValue) =>
+                                setState(() => _dragValueMs = newValue),
+                      onChangeEnd: (newValue) async {
+                        await ref
+                            .read(playerProvider.notifier)
+                            .seek(Duration(milliseconds: newValue.round()));
+                        if (mounted) setState(() => _dragValueMs = null);
+                      },
+                    ),
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      Duration(milliseconds: value.round()).mmss,
-                      style: AppTypography.caption.copyWith(
-                        color: colors.textMedium,
+              Transform.translate(
+                offset: const Offset(0, -AppPlayerMetrics.timeLabelRise),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl + AppSpacing.sm,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        Duration(milliseconds: value.round()).mmss,
+                        style: AppTypography.nowPlayingTime.copyWith(
+                          color: colors.textMedium,
+                        ),
                       ),
-                    ),
-                    Text(
-                      duration.mmss,
-                      style: AppTypography.caption.copyWith(
-                        color: colors.textLow,
+                      Text(
+                        duration.mmss,
+                        style: AppTypography.nowPlayingTime.copyWith(
+                          color: colors.textLow,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],

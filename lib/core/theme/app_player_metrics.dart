@@ -1,9 +1,9 @@
 /// Shared sizing for the full-screen and keyguard players.
 abstract final class AppPlayerMetrics {
-  static const icon = 22.0;
-  static const skipIcon = 26.0;
-  static const playIcon = 36.0;
-  static const transportExtent = 56.0;
+  static const icon = 20.0;
+  static const skipIcon = 24.0;
+  static const playIcon = 32.0;
+  static const transportExtent = 48.0;
   static const touchExtent = 48.0;
   static const artworkWidthFraction = 0.86;
   static const pausedArtworkScale = 0.47 / artworkWidthFraction;
@@ -16,6 +16,7 @@ abstract final class AppPlayerMetrics {
   static const chromeHeight = 448.0;
   static const bottomSpace = 72.0;
   static const deleteExtent = 80.0;
-  static const trackHeight = 3.0;
+  static const trackHeight = 2.0;
+  static const timeLabelRise = 12.0;
   static const thumbRadius = 7.0;
 }

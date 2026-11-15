@@ -7,6 +7,7 @@ import 'package:on_audio_query/on_audio_query.dart';
 
 import 'app/app.dart';
 import 'core/settings/app_settings_repository.dart';
+import 'core/theme/app_font_licenses.dart';
 import 'features/player/application/providers/player_controller.dart';
 import 'features/player/application/providers/equalizer_controller.dart';
 import 'features/library/infrastructure/data_sources/device_music_data_source.dart';
@@ -15,6 +16,7 @@ import 'features/playlists/infrastructure/repositories/playlist_repository_impl.
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AppFontLicenses.register();
   // AudioService also starts this entrypoint without an Activity. Awaiting
   // SystemChrome here never completes in that case (even if an Activity is
   // attached later). Android owns the portrait policy in AndroidManifest.xml.

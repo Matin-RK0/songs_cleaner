@@ -45,6 +45,7 @@ abstract final class AppTheme {
       useMaterial3: true,
       brightness: brightness,
       fontFamily: AppTypography.fontFamily,
+      fontFamilyFallback: AppTypography.fontFamilyFallback,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: tokens.background,
       splashFactory: InkRipple.splashFactory,
@@ -76,6 +77,7 @@ abstract final class AppTheme {
         backgroundColor: tokens.snackBarBackground,
         contentTextStyle: TextStyle(
           fontFamily: AppTypography.fontFamily,
+          fontFamilyFallback: AppTypography.fontFamilyFallback,
           color: tokens.snackBarContent,
         ),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
@@ -153,6 +155,7 @@ abstract final class AppTheme {
         fillColor: tokens.surfaceHigh,
         hintStyle: TextStyle(
           fontFamily: AppTypography.fontFamily,
+          fontFamilyFallback: AppTypography.fontFamilyFallback,
           color: tokens.textLow,
         ),
         border: OutlineInputBorder(

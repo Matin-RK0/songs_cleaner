@@ -22,10 +22,21 @@ enum PlayerGlyph {
   more,
 }
 
-class PlayerIcon extends StatelessWidget {
+class PlayerIcon extends StatefulWidget {
   const PlayerIcon(this.glyph, {super.key});
 
   final PlayerGlyph glyph;
+
+  @override
+  State<PlayerIcon> createState() => _PlayerIconState();
+}
+
+class _PlayerIconState extends State<PlayerIcon> {
+  @override
+  void reassemble() {
+    super.reassemble();
+    _GlyphPaths.invalidate();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,16 +44,17 @@ class PlayerIcon extends StatelessWidget {
     final size = theme.size ?? AppPlayerMetrics.icon;
     return CustomPaint(
       size: Size.square(size),
-      painter: _PlayerIconPainter(glyph, theme.color!),
+      painter: _PlayerIconPainter(widget.glyph, theme.color!),
     );
   }
 }
 
 class _PlayerIconPainter extends CustomPainter {
-  const _PlayerIconPainter(this.glyph, this.color);
+  _PlayerIconPainter(this.glyph, this.color) : path = _GlyphPaths.paths[glyph]!;
 
   final PlayerGlyph glyph;
   final Color color;
+  final Path path;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -62,29 +74,29 @@ class _PlayerIconPainter extends CustomPainter {
       ..strokeWidth = 1.65
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(_GlyphPaths.paths[glyph]!, paint);
+    canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant _PlayerIconPainter oldDelegate) =>
-      oldDelegate.glyph != glyph || oldDelegate.color != color;
+      oldDelegate.path != path || oldDelegate.color != color;
 }
 
 abstract final class _GlyphPaths {
-  // Parsed once, never recreated during playback, animation or list rebuilds.
-  static final Map<PlayerGlyph, Path> paths = {
+  // Cached across frames/builds, but refreshed after code changes in debug.
+  static Map<PlayerGlyph, Path>? _cache;
+  static Map<PlayerGlyph, Path> get paths => _cache ??= _createPaths();
+  static void invalidate() => _cache = null;
+
+  static Map<PlayerGlyph, Path> _createPaths() => {
     PlayerGlyph.play: _roundedPolygon(const [
       Offset(7, 3),
       Offset(21, 12),
       Offset(7, 21),
-    ], 2.2),
+    ], 4),
     PlayerGlyph.pause: Path()
-      ..addRRect(
-        RRect.fromLTRBR(5.75, 3, 9.25, 21, const Radius.circular(1.75)),
-      )
-      ..addRRect(
-        RRect.fromLTRBR(14.75, 3, 18.25, 21, const Radius.circular(1.75)),
-      ),
+      ..addRRect(RRect.fromLTRBR(6, 4, 10, 20, const Radius.circular(2)))
+      ..addRRect(RRect.fromLTRBR(14, 4, 18, 20, const Radius.circular(2))),
     PlayerGlyph.previous: _skip(false),
     PlayerGlyph.next: _skip(true),
     PlayerGlyph.shuffle: Path()
@@ -150,13 +162,13 @@ abstract final class _GlyphPaths {
 
   static Path _skip(bool forward) {
     final path = Path()
-      ..addRRect(RRect.fromLTRBR(2, 5, 4.5, 19, const Radius.circular(1.25)))
+      ..addRRect(RRect.fromLTRBR(2, 5, 5, 19, const Radius.circular(1.5)))
       ..addPath(
         _roundedPolygon(const [
           Offset(4.5, 12),
           Offset(13.5, 5),
           Offset(13.5, 19),
-        ], 1.6),
+        ], 3),
         Offset.zero,
       )
       ..addPath(
@@ -164,7 +176,7 @@ abstract final class _GlyphPaths {
           Offset(13, 12),
           Offset(22, 5),
           Offset(22, 19),
-        ], 1.6),
+        ], 3),
         Offset.zero,
       );
     if (!forward) return path;
