@@ -10,10 +10,10 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../cleanup/presentation/cleanup_flow.dart';
 import '../../application/providers/player_controller.dart';
 import '../../application/providers/player_preferences_controller.dart';
-import '../widgets/artwork_ambient_background.dart';
 import '../widgets/playback_options_sheet.dart';
 import '../widgets/player_actions.dart';
 import '../widgets/player_layout.dart';
+import '../widgets/player_icon.dart';
 import '../widgets/player_state_views.dart';
 import '../widgets/swipe_down_to_dismiss.dart';
 
@@ -27,21 +27,16 @@ class PlayerScreen extends ConsumerWidget {
     return SwipeDownToDismiss(
       child: Scaffold(
         backgroundColor: context.colors.background,
-        body: ArtworkAmbientBackground(
-          subdued: true,
-          songId: song?.id,
-          visible: song != null,
-          child: SafeArea(
-            child: song == null
-                ? const NothingPlayingView()
-                : PlayerLayout(
-                    song: song,
-                    hideQuickDelete: hideQuickDelete,
-                    useHero: true,
-                    header: const _HeaderBar(),
-                    actions: PlayerActions(song: song),
-                  ),
-          ),
+        body: SafeArea(
+          child: song == null
+              ? const NothingPlayingView()
+              : PlayerLayout(
+                  song: song,
+                  hideQuickDelete: hideQuickDelete,
+                  useHero: true,
+                  header: const _HeaderBar(),
+                  actions: PlayerActions(song: song),
+                ),
         ),
       ),
     );
@@ -62,15 +57,17 @@ class _HeaderBar extends ConsumerWidget {
         children: [
           IconButton(
             tooltip: l10n.backTooltip,
+            color: context.colors.primary,
             iconSize: AppPlayerMetrics.icon,
-            icon: const Icon(Icons.keyboard_arrow_down_rounded),
+            icon: const PlayerIcon(PlayerGlyph.collapse),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
           const Spacer(),
           IconButton(
             tooltip: l10n.equalizerTitle,
+            color: context.colors.primary,
             iconSize: AppPlayerMetrics.icon,
-            icon: const Icon(Icons.graphic_eq_rounded),
+            icon: const PlayerIcon(PlayerGlyph.equalizer),
             onPressed: () =>
                 Navigator.of(context).pushNamed(RouteNames.equalizer),
           ),
@@ -78,7 +75,14 @@ class _HeaderBar extends ConsumerWidget {
             tooltip: l10n.playbackOptionsTitle,
             borderRadius: AppRadius.xl,
             color: context.colors.surfaceElevated,
-            icon: const Icon(Icons.more_vert_rounded),
+            iconSize: AppPlayerMetrics.icon,
+            icon: IconTheme(
+              data: IconThemeData(
+                color: context.colors.primary,
+                size: AppPlayerMetrics.icon,
+              ),
+              child: const PlayerIcon(PlayerGlyph.more),
+            ),
             onSelected: (action) {
               switch (action) {
                 case _PlayerMenu.delete:
@@ -89,16 +93,14 @@ class _HeaderBar extends ConsumerWidget {
                 case _PlayerMenu.details:
                   final song = ref.read(playerProvider).current;
                   if (song != null) {
-                    Navigator.of(
-                      context,
-                    ).pushNamed(RouteNames.songDetails, arguments: song.id);
+                    Navigator.of(context)
+                        .pushNamed(RouteNames.songDetails, arguments: song.id);
                   }
                 case _PlayerMenu.lyrics:
                   final song = ref.read(playerProvider).current;
                   if (song != null) {
-                    Navigator.of(
-                      context,
-                    ).pushNamed(RouteNames.lyrics, arguments: song);
+                    Navigator.of(context)
+                        .pushNamed(RouteNames.lyrics, arguments: song);
                   }
                 case _PlayerMenu.options:
                   showPlaybackOptionsSheet(context, ref);

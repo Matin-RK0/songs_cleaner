@@ -7,9 +7,9 @@ import '../../../../core/theme/app_player_metrics.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../player/application/providers/player_preferences_controller.dart';
-import '../../../player/presentation/widgets/artwork_ambient_background.dart';
 import '../../../player/presentation/widgets/player_actions.dart';
 import '../../../player/presentation/widgets/player_layout.dart';
+import '../../../player/presentation/widgets/player_icon.dart';
 import '../../../player/presentation/widgets/player_state_views.dart';
 import '../../application/providers/lock_screen_controller.dart';
 import '../widgets/lock_screen_background.dart';
@@ -29,41 +29,38 @@ class LockScreenPlayerScreen extends ConsumerWidget {
       },
       child: Scaffold(
         backgroundColor: context.colors.background,
-        body: ArtworkAmbientBackground(
-          subdued: true,
-          songId: song?.id,
-          visible: song != null,
-          child: LockScreenBackground(
-            child: SafeArea(
-              child: song == null
-                  ? const NothingPlayingView()
-                  : PlayerLayout(
-                      song: song,
-                      hideQuickDelete: hideQuickDelete,
-                      actions: PlayerActions(song: song, locked: true),
-                      header: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              tooltip: context.l10n.backTooltip,
-                              iconSize: AppPlayerMetrics.icon,
-                              icon: const Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                              ),
-                              onPressed: () =>
-                                  ref.read(lockScreenServiceProvider).dismiss(),
-                            ),
-                            const Spacer(),
-                            const Icon(Icons.lock_outline_rounded),
-                            const SizedBox(width: AppSpacing.md),
-                          ],
-                        ),
+        body: LockScreenBackground(
+          child: SafeArea(
+            child: song == null
+                ? const NothingPlayingView()
+                : PlayerLayout(
+                    song: song,
+                    hideQuickDelete: hideQuickDelete,
+                    actions: PlayerActions(song: song, locked: true),
+                    header: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            color: context.colors.primary,
+                            tooltip: context.l10n.backTooltip,
+                            iconSize: AppPlayerMetrics.icon,
+                            icon: const PlayerIcon(PlayerGlyph.collapse),
+                            onPressed: () =>
+                                ref.read(lockScreenServiceProvider).dismiss(),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.lock_outline_rounded,
+                            color: context.colors.primary,
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                        ],
                       ),
                     ),
-            ),
+                  ),
           ),
         ),
       ),

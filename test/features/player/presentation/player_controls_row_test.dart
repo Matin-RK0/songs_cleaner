@@ -6,6 +6,8 @@ import 'package:songs_cleaner/features/library/domain/entities/song.dart';
 import 'package:songs_cleaner/features/player/application/models/player_state.dart';
 import 'package:songs_cleaner/features/player/application/providers/player_controller.dart';
 import 'package:songs_cleaner/features/player/presentation/widgets/player_controls_row.dart';
+import 'package:songs_cleaner/features/player/presentation/widgets/player_icon.dart';
+import 'package:songs_cleaner/core/theme/app_player_metrics.dart';
 
 Song _song(int id) => Song(
   id: id,
@@ -57,19 +59,12 @@ void main() {
           ),
         ),
       );
-      final next = find.widgetWithIcon(IconButton, Icons.skip_next_rounded);
-      final previous = find.widgetWithIcon(
-        IconButton,
-        Icons.skip_previous_rounded,
-      );
+      final next = _button(PlayerGlyph.next);
+      final previous = _button(PlayerGlyph.previous);
       expect(tester.widget<IconButton>(next).onPressed, isNull);
       expect(tester.widget<IconButton>(previous).onPressed, isNull);
       expect(
-        tester
-            .widget<IconButton>(
-              find.widgetWithIcon(IconButton, Icons.play_arrow_rounded),
-            )
-            .onPressed,
+        tester.widget<IconButton>(_button(PlayerGlyph.play)).onPressed,
         isNotNull,
       );
 
@@ -81,6 +76,18 @@ void main() {
       await tester.tap(previous);
       expect(player.nextCalls, 1);
       expect(player.previousCalls, 1);
+      for (final element in find.byType(IconButton).evaluate()) {
+        final size = tester.getSize(find.byWidget(element.widget));
+        expect(size.width, greaterThanOrEqualTo(AppPlayerMetrics.touchExtent));
+        expect(size.height, greaterThanOrEqualTo(AppPlayerMetrics.touchExtent));
+      }
     });
   }
 }
+
+Finder _button(PlayerGlyph glyph) => find.ancestor(
+  of: find.byWidgetPredicate(
+    (widget) => widget is PlayerIcon && widget.glyph == glyph,
+  ),
+  matching: find.byType(IconButton),
+);

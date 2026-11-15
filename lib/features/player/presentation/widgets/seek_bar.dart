@@ -82,9 +82,9 @@ class _SeekBarState extends ConsumerState<SeekBar>
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   trackHeight: AppPlayerMetrics.trackHeight,
-                  activeTrackColor: colors.textHigh,
-                  inactiveTrackColor: colors.textHigh.withValues(alpha: 0.30),
-                  thumbColor: colors.textHigh,
+                  activeTrackColor: colors.primary,
+                  inactiveTrackColor: colors.primary.withValues(alpha: 0.25),
+                  thumbColor: colors.primary,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: AppPlayerMetrics.thumbRadius,
                   ),

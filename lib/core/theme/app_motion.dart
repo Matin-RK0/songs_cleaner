@@ -1,6 +1,8 @@
 import 'package:flutter/animation.dart';
+import 'package:flutter/gestures.dart' show kLongPressTimeout;
 
 abstract final class AppMotion {
+  static const holdToDelete = kLongPressTimeout;
   static const double songEntryDistance = 12;
   static const double songExitDistance = 20;
   static const double songMaxMoveRows = 3;

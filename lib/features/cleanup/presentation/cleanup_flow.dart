@@ -17,46 +17,54 @@ Future<void> deleteSongFlow(
   bool useTrash = true,
 }) async {
   final l10n = context.l10n;
+  // Deleting advances the queue and may unmount the initiating row/button.
+  // The route's Scaffold survives both track changes and an empty queue.
+  final feedbackContext = Scaffold.maybeOf(context)?.context ?? context;
+  final container = ProviderScope.containerOf(context, listen: false);
   final result = await ref
       .read(cleanupServiceProvider)
       .deleteFromDevice(song, useTrash: useTrash);
-  if (!context.mounted) return;
+  if (!feedbackContext.mounted) return;
 
   switch (result) {
     case CleanupSuccess(:final entry):
       if (!useTrash || entry == null) {
-        showAppSnackBar(context, l10n.songDeletedToast(song.title));
+        showAppSnackBar(feedbackContext, l10n.songDeletedToast(song.title));
         return;
       }
       showAppUndoSnackBar(
-        context,
+        feedbackContext,
         l10n.songDeletedToast(song.title),
         actionLabel: l10n.undoAction,
         onUndo: () async {
           try {
-            await ref.read(trashServiceProvider).restore(entry);
-            await ref.read(libraryProvider.notifier).refresh();
+            await container.read(trashServiceProvider).restore(entry);
+            await container.read(libraryProvider.notifier).refresh();
           } catch (_) {
-            if (context.mounted) {
-              showAppSnackBar(context, l10n.trashRestoreFailed, error: true);
+            if (feedbackContext.mounted) {
+              showAppSnackBar(
+                feedbackContext,
+                l10n.trashRestoreFailed,
+                error: true,
+              );
             }
           }
         },
       );
     case CleanupPermissionMissing():
       final openSettings = await showAppConfirmDialog(
-        context: context,
+        context: feedbackContext,
         title: l10n.permissionTitle,
         message: l10n.permissionFilesMessage,
         confirmLabel: l10n.openSettings,
         cancelLabel: l10n.cancel,
       );
-      if (openSettings && context.mounted) {
-        await ref.read(mediaPermissionsProvider).openPermissionSettings();
+      if (openSettings && feedbackContext.mounted) {
+        await container.read(mediaPermissionsProvider).openPermissionSettings();
       }
     case CleanupFailed():
       showAppSnackBar(
-        context,
+        feedbackContext,
         l10n.songDeleteFailedToast(song.title),
         error: true,
       );

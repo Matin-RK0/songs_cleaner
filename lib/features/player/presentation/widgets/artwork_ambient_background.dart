@@ -8,8 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_motion.dart';
 import '../../application/providers/artwork_palette_provider.dart';
 
-/// Artwork-derived ambient lighting shared by the full and lock-screen player.
-/// The lights use gradients instead of blur and are isolated from controls.
+/// Artwork-derived light, clipped by the player to the area below the cover.
 class ArtworkAmbientBackground extends ConsumerWidget {
   const ArtworkAmbientBackground({
     super.key,
@@ -30,50 +29,57 @@ class ArtworkAmbientBackground extends ConsumerWidget {
     final palette = songId == null
         ? null
         : ref.watch(artworkPaletteProvider(songId!)).value;
+    final first = palette?.first ?? tokens.playerGradientTop;
+    final second = palette?.second ?? tokens.playerGradientMiddle;
     return Stack(
       fit: StackFit.expand,
       children: [
         ColoredBox(color: tokens.background),
-        if (subdued && visible)
+        if (visible)
           RepaintBoundary(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    tokens.background,
-                    Color.alphaBlend(
-                      (palette?.first ?? tokens.playerGradientTop).withValues(
-                        alpha: 0.40,
+            child: subdued
+                ? DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          tokens.background,
+                          Color.alphaBlend(
+                            first.withValues(alpha: 0.40),
+                            tokens.background,
+                          ),
+                          Color.alphaBlend(
+                            second.withValues(alpha: 0.55),
+                            tokens.background,
+                          ),
+                        ],
                       ),
-                      tokens.background,
                     ),
-                    Color.alphaBlend(
-                      (palette?.second ?? tokens.playerGradientMiddle)
-                          .withValues(alpha: 0.55),
-                      tokens.background,
-                    ),
-                  ],
-                  stops: const [0.35, 0.75, 1],
-                ),
-              ),
-            ),
-          )
-        else if (!subdued)
-          _AmbientLights(
-            visible: visible,
-            first: palette?.first ?? tokens.playerGradientTop,
-            second: palette?.second ?? tokens.playerGradientMiddle,
-            third:
-                palette?.third ??
-                Color.lerp(
-                  tokens.playerGradientTop,
-                  tokens.playerGradientMiddle,
-                  0.5,
-                )!,
+                  )
+                : _AmbientLights(
+                    colors: [
+                      first,
+                      second,
+                      palette?.third ?? Color.lerp(first, second, 0.5)!,
+                    ],
+                  ),
           ),
         ColoredBox(color: tokens.background.withValues(alpha: 0.20)),
+        if (!subdued)
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  tokens.background,
+                  tokens.background.withValues(alpha: 0),
+                ],
+                stops: const [0, 0.28],
+              ),
+            ),
+          ),
         child,
       ],
     );
@@ -81,224 +87,134 @@ class ArtworkAmbientBackground extends ConsumerWidget {
 }
 
 class _AmbientLights extends StatefulWidget {
-  const _AmbientLights({
-    required this.visible,
-    required this.first,
-    required this.second,
-    required this.third,
-  });
-
-  final bool visible;
-  final Color first;
-  final Color second;
-  final Color third;
+  const _AmbientLights({required this.colors});
+  final List<Color> colors;
 
   @override
   State<_AmbientLights> createState() => _AmbientLightsState();
 }
 
 class _AmbientLightsState extends State<_AmbientLights>
-    with TickerProviderStateMixin {
-  late final AnimationController _motionController;
-  late final AnimationController _secondMotionController;
-  late final AnimationController _thirdMotionController;
-  late final AnimationController _paletteController;
-  late final AnimationController _visibilityController;
-  late final _AmbientPath _firstPath;
-  late final _AmbientPath _secondPath;
-  late final _AmbientPath _thirdPath;
-  late ColorTween _firstColor;
-  late ColorTween _secondColor;
-  late ColorTween _thirdColor;
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  late final AnimationController _motion;
+  late final List<_AmbientPath> _paths;
+  bool _enabled = false;
+  bool _resumed = true;
 
   @override
   void initState() {
     super.initState();
-    _motionController = AnimationController(
+    _motion = AnimationController(
       vsync: this,
       duration: AppMotion.ambientPrimary,
-    );
-    _secondMotionController = AnimationController(
-      vsync: this,
-      duration: AppMotion.ambientPrimary,
-    );
-    _thirdMotionController = AnimationController(
-      vsync: this,
-      duration: AppMotion.ambientPrimary,
-    );
-    _paletteController = AnimationController(
-      vsync: this,
-      duration: AppMotion.normal,
-    );
-    _visibilityController = AnimationController(
-      vsync: this,
-      duration: AppMotion.normal,
-      value: widget.visible ? 1 : 0,
     );
     final random = math.Random();
-    _firstPath = _AmbientPath.random(random);
-    _secondPath = _AmbientPath.random(random);
-    _thirdPath = _AmbientPath.random(random);
-    _firstColor = ColorTween(begin: widget.first, end: widget.first);
-    _secondColor = ColorTween(begin: widget.second, end: widget.second);
-    _thirdColor = ColorTween(begin: widget.third, end: widget.third);
+    _paths = List.generate(3, (_) => _AmbientPath.random(random));
+    _resumed =
+        WidgetsBinding.instance.lifecycleState == null ||
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _enabled =
+        !MediaQuery.disableAnimationsOf(context) &&
+        TickerMode.valuesOf(context).enabled &&
+        (ModalRoute.isCurrentOf(context) ?? true);
+    _syncMotion();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _resumed = state == AppLifecycleState.resumed;
+    _syncMotion();
+  }
+
+  void _syncMotion() {
+    if (!_enabled || !_resumed) {
+      _motion.stop();
+      return;
+    }
+    if (_motion.isAnimating) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !widget.visible) return;
-      _motionController.repeat();
-      _secondMotionController.repeat();
-      _thirdMotionController.repeat();
+      if (mounted && _enabled && _resumed && !_motion.isAnimating) {
+        _motion.repeat();
+      }
     });
   }
 
   @override
-  void didUpdateWidget(covariant _AmbientLights oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.first != widget.first ||
-        oldWidget.second != widget.second ||
-        oldWidget.third != widget.third) {
-      _firstColor = ColorTween(
-        begin: _firstColor.evaluate(_paletteController),
-        end: widget.first,
-      );
-      _secondColor = ColorTween(
-        begin: _secondColor.evaluate(_paletteController),
-        end: widget.second,
-      );
-      _thirdColor = ColorTween(
-        begin: _thirdColor.evaluate(_paletteController),
-        end: widget.third,
-      );
-      _paletteController.forward(from: 0);
-    }
-    if (oldWidget.visible != widget.visible) {
-      if (widget.visible) {
-        _visibilityController.forward();
-        _motionController.repeat();
-        _secondMotionController.repeat();
-        _thirdMotionController.repeat();
-      } else {
-        _visibilityController.reverse();
-        _motionController.stop();
-        _secondMotionController.stop();
-        _thirdMotionController.stop();
-      }
-    }
-  }
-
-  @override
   void dispose() {
-    _motionController.dispose();
-    _secondMotionController.dispose();
-    _thirdMotionController.dispose();
-    _paletteController.dispose();
-    _visibilityController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    _motion.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _visibilityController,
-      child: RepaintBoundary(
-        child: IgnorePointer(
-          child: AnimatedBuilder(
-            animation: Listenable.merge([
-              _motionController,
-              _secondMotionController,
-              _thirdMotionController,
-              _paletteController,
-            ]),
-            builder: (context, _) => LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth;
-                final height = constraints.maxHeight;
-                return Stack(
-                  children: [
-                    _light(
-                      color: _firstColor.evaluate(_paletteController)!,
-                      centerX: _firstPath.position(_motionController.value).dx,
-                      centerY: _firstPath.position(_motionController.value).dy,
-                      viewportWidth: width,
-                      viewportHeight: height,
-                      size: width * 2.05,
+    return IgnorePointer(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final height = constraints.maxHeight;
+          final size = width * 2;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              for (var index = 0; index < _paths.length; index++)
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  width: size,
+                  height: size,
+                  child: AnimatedBuilder(
+                    animation: _motion,
+                    child: RepaintBoundary(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              widget.colors[index].withValues(alpha: 0.32),
+                              widget.colors[index].withValues(alpha: 0.14),
+                              Colors.transparent,
+                            ],
+                            stops: const [0, 0.62, 1],
+                          ),
+                        ),
+                      ),
                     ),
-                    _light(
-                      color: _secondColor.evaluate(_paletteController)!,
-                      centerX: _secondPath
-                          .position(_secondMotionController.value)
-                          .dx,
-                      centerY: _secondPath
-                          .position(_secondMotionController.value)
-                          .dy,
-                      viewportWidth: width,
-                      viewportHeight: height,
-                      size: width * 1.95,
-                    ),
-                    _light(
-                      color: _thirdColor.evaluate(_paletteController)!,
-                      centerX: _thirdPath
-                          .position(_thirdMotionController.value)
-                          .dx,
-                      centerY: _thirdPath
-                          .position(_thirdMotionController.value)
-                          .dy,
-                      viewportWidth: width,
-                      viewportHeight: height,
-                      size: width * 1.88,
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _light({
-    required Color color,
-    required double centerX,
-    required double centerY,
-    required double viewportWidth,
-    required double viewportHeight,
-    required double size,
-  }) {
-    return Positioned(
-      left: centerX * viewportWidth - size / 2,
-      top: centerY * viewportHeight - size / 2,
-      width: size,
-      height: size,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [
-              color.withValues(alpha: 0.32),
-              color.withValues(alpha: 0.14),
-              Colors.transparent,
+                    builder: (_, child) {
+                      final position = _paths[index].position(_motion.value);
+                      return Transform.translate(
+                        offset: Offset(
+                          position.dx * width - size / 2,
+                          position.dy * height - size / 2,
+                        ),
+                        child: child,
+                      );
+                    },
+                  ),
+                ),
             ],
-            stops: const [0, 0.62, 1],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 }
 
-/// A closed, random smooth path whose arc-length lookup keeps motion linear.
+/// Random closed paths are cached once; only their transform changes per frame.
 class _AmbientPath {
   _AmbientPath(Path path) : _metric = path.computeMetrics().first;
-
   final ui.PathMetric _metric;
 
   static _AmbientPath random(math.Random random) {
-    final points = List<Offset>.generate(
+    final points = List.generate(
       7,
-      (_) => Offset(
-        -0.55 + random.nextDouble() * 2.10,
-        -0.55 + random.nextDouble() * 2.10,
-      ),
+      (_) => Offset(random.nextDouble(), random.nextDouble()),
     );
     final path = Path()..moveTo(points.first.dx, points.first.dy);
     for (var index = 0; index < points.length; index++) {
@@ -306,25 +222,14 @@ class _AmbientPath {
       final next = points[(index + 1) % points.length];
       final previous = points[(index - 1 + points.length) % points.length];
       final afterNext = points[(index + 2) % points.length];
-      final controlStart = current + (next - previous) / 6;
-      final controlEnd = next - (afterNext - current) / 6;
-      path.cubicTo(
-        controlStart.dx,
-        controlStart.dy,
-        controlEnd.dx,
-        controlEnd.dy,
-        next.dx,
-        next.dy,
-      );
+      final start = current + (next - previous) / 6;
+      final end = next - (afterNext - current) / 6;
+      path.cubicTo(start.dx, start.dy, end.dx, end.dy, next.dx, next.dy);
     }
-    path.close();
-    return _AmbientPath(path);
+    return _AmbientPath(path..close());
   }
 
-  Offset position(double progress) {
-    final tangent = _metric.getTangentForOffset(
-      _metric.length * progress.clamp(0.0, 1.0),
-    );
-    return tangent?.position ?? Offset.zero;
-  }
+  Offset position(double progress) =>
+      _metric.getTangentForOffset(_metric.length * progress)?.position ??
+      Offset.zero;
 }

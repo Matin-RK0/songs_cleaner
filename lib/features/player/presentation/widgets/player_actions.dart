@@ -9,6 +9,7 @@ import '../../../library/application/providers/library_stats_controller.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../../playlists/presentation/widgets/add_to_playlist_sheet.dart';
 import 'queue_sheet.dart';
+import 'player_icon.dart';
 
 class PlayerActions extends ConsumerWidget {
   const PlayerActions({super.key, required this.song, this.locked = false});
@@ -30,8 +31,9 @@ class PlayerActions extends ConsumerWidget {
           if (!locked)
             IconButton(
               tooltip: l10n.queueTitle,
+              color: context.colors.primary,
               iconSize: AppPlayerMetrics.icon,
-              icon: const Icon(Icons.queue_music_rounded),
+              icon: const PlayerIcon(PlayerGlyph.queue),
               onPressed: () => showQueueSheet(context),
             )
           else
@@ -40,10 +42,10 @@ class PlayerActions extends ConsumerWidget {
             tooltip: favorite ? l10n.removeFromFavorites : l10n.addToFavorites,
             iconSize: AppPlayerMetrics.icon,
             color: favorite
-                ? context.colors.textHigh
-                : context.colors.textMedium,
-            icon: Icon(
-              favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                ? context.colors.primary
+                : context.colors.primary.withValues(alpha: 0.65),
+            icon: PlayerIcon(
+              favorite ? PlayerGlyph.favorite : PlayerGlyph.favoriteOutline,
             ),
             onPressed: () =>
                 ref.read(libraryStatsProvider.notifier).toggleFavorite(song.id),
@@ -51,8 +53,9 @@ class PlayerActions extends ConsumerWidget {
           if (!locked)
             IconButton(
               tooltip: l10n.addToPlaylist,
+              color: context.colors.primary,
               iconSize: AppPlayerMetrics.icon,
-              icon: const Icon(Icons.add_rounded),
+              icon: const PlayerIcon(PlayerGlyph.add),
               onPressed: () => showAddToPlaylistSheet(context, song),
             )
           else

@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_player_metrics.dart';
 import '../../application/providers/player_controller.dart';
 import '../../domain/playback_enums.dart';
+import 'player_icon.dart';
 
 /// Transport controls shared by the full and lock-screen players.
 class PlayerControlsRow extends ConsumerWidget {
@@ -37,48 +37,32 @@ class PlayerControlsRow extends ConsumerWidget {
           IconButton(
             tooltip: l10n.shuffleTooltip,
             onPressed: () => ref.read(playerProvider.notifier).toggleShuffle(),
-            icon: Icon(
-              Icons.shuffle_rounded,
-              size: AppPlayerMetrics.icon,
-              color: shuffled ? colors.primary : colors.textMedium,
-            ),
+            iconSize: AppPlayerMetrics.icon,
+            color: shuffled ? colors.primary : colors.textMedium,
+            icon: const PlayerIcon(PlayerGlyph.shuffle),
           ),
           IconButton(
             tooltip: l10n.previousTooltip,
             onPressed: canSkip
                 ? () => ref.read(playerProvider.notifier).previous()
                 : null,
-            icon: Icon(
-              Icons.skip_previous_rounded,
-              size: AppPlayerMetrics.skipIcon,
-              color: canSkip ? colors.textHigh : colors.textLow,
-            ),
+            iconSize: AppPlayerMetrics.skipIcon,
+            color: colors.primary,
+            disabledColor: colors.textLow,
+            icon: const PlayerIcon(PlayerGlyph.previous),
           ),
           RepaintBoundary(
-            child: AnimatedScale(
-              scale: playing ? 1 : 0.94,
-              duration: AppMotion.fast,
-              curve: AppMotion.standard,
-              child: IconButton(
-                tooltip: playing ? l10n.pauseTooltip : l10n.playTooltip,
-                onPressed: () => ref.read(playerProvider.notifier).playPause(),
-                constraints: const BoxConstraints.tightFor(
-                  width: AppPlayerMetrics.transportExtent,
-                  height: AppPlayerMetrics.transportExtent,
-                ),
-                padding: EdgeInsets.zero,
-                iconSize: AppPlayerMetrics.playIcon,
-                icon: AnimatedSwitcher(
-                  duration: AppMotion.fast,
-                  transitionBuilder: (child, animation) =>
-                      ScaleTransition(scale: animation, child: child),
-                  child: Icon(
-                    playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    key: ValueKey(playing),
-                    color: colors.textHigh,
-                  ),
-                ),
+            child: IconButton(
+              tooltip: playing ? l10n.pauseTooltip : l10n.playTooltip,
+              onPressed: () => ref.read(playerProvider.notifier).playPause(),
+              constraints: const BoxConstraints.tightFor(
+                width: AppPlayerMetrics.transportExtent,
+                height: AppPlayerMetrics.transportExtent,
               ),
+              padding: EdgeInsets.zero,
+              iconSize: AppPlayerMetrics.playIcon,
+              color: colors.primary,
+              icon: PlayerIcon(playing ? PlayerGlyph.pause : PlayerGlyph.play),
             ),
           ),
           IconButton(
@@ -86,11 +70,10 @@ class PlayerControlsRow extends ConsumerWidget {
             onPressed: canSkip
                 ? () => ref.read(playerProvider.notifier).next()
                 : null,
-            icon: Icon(
-              Icons.skip_next_rounded,
-              size: AppPlayerMetrics.skipIcon,
-              color: canSkip ? colors.textHigh : colors.textLow,
-            ),
+            iconSize: AppPlayerMetrics.skipIcon,
+            color: colors.primary,
+            disabledColor: colors.textLow,
+            icon: const PlayerIcon(PlayerGlyph.next),
           ),
           IconButton(
             tooltip: switch (repeatMode) {
@@ -100,16 +83,14 @@ class PlayerControlsRow extends ConsumerWidget {
             },
             onPressed: () =>
                 ref.read(playerProvider.notifier).cycleRepeatMode(),
-            icon: Icon(
-              switch (repeatMode) {
-                RepeatMode.off => Icons.repeat_rounded,
-                RepeatMode.all => Icons.repeat_rounded,
-                RepeatMode.one => Icons.repeat_one_rounded,
-              },
-              size: AppPlayerMetrics.icon,
-              color: repeatMode == RepeatMode.off
-                  ? colors.textMedium
-                  : colors.primary,
+            iconSize: AppPlayerMetrics.icon,
+            color: repeatMode == RepeatMode.off
+                ? colors.textMedium
+                : colors.primary,
+            icon: PlayerIcon(
+              repeatMode == RepeatMode.one
+                  ? PlayerGlyph.repeatOne
+                  : PlayerGlyph.repeat,
             ),
           ),
         ],

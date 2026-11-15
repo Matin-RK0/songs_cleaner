@@ -17,6 +17,9 @@ import 'package:songs_cleaner/features/player/presentation/widgets/player_contro
 import 'package:songs_cleaner/features/player/presentation/widgets/seek_bar.dart';
 import 'package:songs_cleaner/features/player/presentation/widgets/delete_current_button.dart';
 import 'package:songs_cleaner/core/theme/app_spacing.dart';
+import 'package:songs_cleaner/core/theme/app_player_metrics.dart';
+import 'package:songs_cleaner/features/player/presentation/widgets/player_icon.dart';
+import 'package:songs_cleaner/core/theme/app_theme.dart';
 
 const _song = Song(
   id: 1,
@@ -62,6 +65,11 @@ void main() {
             songArtworkProvider.overrideWith((ref, request) async => null),
           ],
           child: MaterialApp(
+            theme: AppTheme.dark(primary: const Color(0xFFAA33CC)),
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            ),
             locale: const Locale('fa'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -73,13 +81,26 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
-      expect(
-        find.byIcon(Icons.add_rounded),
-        locked ? findsNothing : findsOneWidget,
+      expect(_glyph(PlayerGlyph.favoriteOutline), findsOneWidget);
+      final playButton = find.ancestor(
+        of: _glyph(PlayerGlyph.play),
+        matching: find.byType(IconButton),
       );
+      expect(
+        tester.widget<IconButton>(playButton).color,
+        const Color(0xFFAA33CC),
+      );
+      final sliderTheme = find.descendant(
+        of: find.byType(SeekBar),
+        matching: find.byType(SliderTheme),
+      );
+      expect(
+        tester.widget<SliderTheme>(sliderTheme).data.thumbColor,
+        const Color(0xFFAA33CC),
+      );
+      expect(_glyph(PlayerGlyph.add), locked ? findsNothing : findsOneWidget);
       if (!locked) {
-        await tester.tap(find.byIcon(Icons.more_vert_rounded));
+        await tester.tap(_glyph(PlayerGlyph.more));
         await tester.pumpAndSettle();
         expect(
           find.byWidgetPredicate((widget) => widget is PopupMenuItem),
@@ -88,7 +109,7 @@ void main() {
         // Dismiss the menu, then verify the queue retains transport controls.
         await tester.tapAt(const Offset(10, 400));
         await tester.pumpAndSettle();
-        await tester.tap(find.byIcon(Icons.queue_music_rounded));
+        await tester.tap(_glyph(PlayerGlyph.queue));
         await tester.pumpAndSettle();
         expect(find.byType(QueueSheetContent), findsOneWidget);
         expect(find.text('1/1'), findsOneWidget);
@@ -119,9 +140,10 @@ void main() {
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
                 builder: (context, child) => MediaQuery(
-                  data: MediaQuery.of(
-                    context,
-                  ).copyWith(textScaler: TextScaler.linear(scale)),
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: TextScaler.linear(scale),
+                    disableAnimations: true,
+                  ),
                   child: child!,
                 ),
                 home: Scaffold(
@@ -165,7 +187,10 @@ void main() {
               )
               .dy;
           if (size.height >= 892 && scale == 1) {
-            expect(contentBottom - lastBottom, AppSpacing.lg);
+            expect(
+              contentBottom - lastBottom,
+              hideDelete ? AppPlayerMetrics.bottomSpace : AppSpacing.lg,
+            );
           }
           expect(
             tester.getTopLeft(find.byType(SeekBar)).dy,
@@ -176,3 +201,7 @@ void main() {
     }
   }
 }
+
+Finder _glyph(PlayerGlyph glyph) => find.byWidgetPredicate(
+  (widget) => widget is PlayerIcon && widget.glyph == glyph,
+);
