@@ -1722,8 +1722,14 @@ abstract class AppLocalizations {
   /// No description provided for @screenLockFailed.
   ///
   /// In fa, this message translates to:
-  /// **'خاموش کردن صفحه انجام نشد. سرویس دسترس‌پذیری را بررسی و دوباره تلاش کنید.'**
+  /// **'اندروید نتوانست صفحه را خاموش کند. دوباره تلاش کنید.'**
   String get screenLockFailed;
+
+  /// No description provided for @screenLockServiceUnavailable.
+  ///
+  /// In fa, this message translates to:
+  /// **'دسترسی خاموش کردن صفحه فعال است، اما سرویس دسترس‌پذیری متصل نیست. قفل گوشی را باز کنید و سرویس دسترس‌پذیری برنامه را در تنظیمات خاموش و روشن کنید.'**
+  String get screenLockServiceUnavailable;
 
   /// No description provided for @lockScreenTimeoutSeconds.
   ///

@@ -46,6 +46,8 @@ class _LockScreenBackgroundState extends ConsumerState<LockScreenBackground> {
           }
         case ScreenLockResult.unsupported:
           showAppSnackBar(context, l10n.screenLockUnsupported, error: true);
+        case ScreenLockResult.unavailable:
+          showAppSnackBar(context, l10n.screenLockServiceUnavailable, error: true);
         case ScreenLockResult.failed:
           showAppSnackBar(context, l10n.screenLockFailed, error: true);
       }

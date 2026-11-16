@@ -911,7 +911,11 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get screenLockFailed =>
-      'خاموش کردن صفحه انجام نشد. سرویس دسترس‌پذیری را بررسی و دوباره تلاش کنید.';
+      'اندروید نتوانست صفحه را خاموش کند. دوباره تلاش کنید.';
+
+  @override
+  String get screenLockServiceUnavailable =>
+      'دسترسی خاموش کردن صفحه فعال است، اما سرویس دسترس‌پذیری متصل نیست. قفل گوشی را باز کنید و سرویس دسترس‌پذیری برنامه را در تنظیمات خاموش و روشن کنید.';
 
   @override
   String lockScreenTimeoutSeconds(int seconds) {

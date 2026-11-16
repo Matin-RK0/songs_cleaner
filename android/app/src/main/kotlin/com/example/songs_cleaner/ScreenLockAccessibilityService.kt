@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 
 /** Performs locks requested by the player gesture or its inactivity timer; reads no window content. */
@@ -35,7 +36,8 @@ class ScreenLockAccessibilityService : AccessibilityService() {
     companion object {
         private var instance: ScreenLockAccessibilityService? = null
         private val handler = Handler(Looper.getMainLooper())
-        private const val CONNECTION_TIMEOUT_MS = 1500L
+        private const val CONNECTION_TIMEOUT_MS = 5000L
+        private const val ACTION_RETRY_TIMEOUT_MS = 1500L
         private const val CONNECTION_RETRY_MS = 100L
 
         fun lockScreen(context: Context): String {
@@ -52,6 +54,7 @@ class ScreenLockAccessibilityService : AccessibilityService() {
         ) {
             val appContext = context.applicationContext
             val deadline = SystemClock.uptimeMillis() + CONNECTION_TIMEOUT_MS
+            var actionDeadline: Long? = null
             val attempt = object : Runnable {
                 override fun run() {
                     if (!canLock()) {
@@ -59,11 +62,24 @@ class ScreenLockAccessibilityService : AccessibilityService() {
                         return
                     }
                     val status = lockScreen(appContext)
-                    if (status == "unavailable" && SystemClock.uptimeMillis() < deadline) {
+                    val now = SystemClock.uptimeMillis()
+                    if (status == "failed" && actionDeadline == null) {
+                        // A bound service can briefly reject actions during startup.
+                        actionDeadline = now + ACTION_RETRY_TIMEOUT_MS
+                    }
+                    val retry = when (status) {
+                        "unavailable" -> now < deadline
+                        "failed" -> now < minOf(deadline, actionDeadline!!)
+                        else -> false
+                    }
+                    if (retry) {
                         handler.postDelayed(this, CONNECTION_RETRY_MS)
                     } else {
-                        // A disconnected, enabled service is not a missing permission.
-                        onResult(if (status == "unavailable") "failed" else status)
+                        if (status == "unavailable" || status == "failed") {
+                            Log.w("ScreenLock", "Lock request ended: status=$status, connected=${instance != null}")
+                        }
+                        // Preserve disconnection: permission may still be granted.
+                        onResult(status)
                     }
                 }
             }

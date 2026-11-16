@@ -912,7 +912,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get screenLockFailed =>
-      'Could not turn off the screen. Check the accessibility service and try again.';
+      'Android could not turn off the screen. Try again.';
+
+  @override
+  String get screenLockServiceUnavailable =>
+      'Screen-off access is enabled, but the accessibility service is disconnected. Unlock your phone and turn the app\'s accessibility service off and on in Settings.';
 
   @override
   String lockScreenTimeoutSeconds(int seconds) {

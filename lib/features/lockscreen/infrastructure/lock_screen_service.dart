@@ -4,7 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-enum ScreenLockResult { locked, permissionRequired, unsupported, failed }
+enum ScreenLockResult {
+  locked,
+  permissionRequired,
+  unsupported,
+  unavailable,
+  failed,
+}
 
 /// Commands pushed from the native lock-screen controller to Dart.
 enum LockScreenEvent {
@@ -110,6 +116,7 @@ class LockScreenService {
       'locked' => ScreenLockResult.locked,
       'permissionRequired' => ScreenLockResult.permissionRequired,
       'unsupported' => ScreenLockResult.unsupported,
+      'unavailable' => ScreenLockResult.unavailable,
       _ => ScreenLockResult.failed,
     };
   }

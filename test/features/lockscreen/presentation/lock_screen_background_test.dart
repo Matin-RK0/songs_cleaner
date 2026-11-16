@@ -102,15 +102,33 @@ void main() {
   testWidgets('a disconnected service failure does not request permission', (
     tester,
   ) async {
-    status = 'failed';
+    status = 'unavailable';
     await pumpScreen(tester);
     await doubleTapBackground(tester);
     expect(find.byType(AlertDialog), findsNothing);
     expect(calls, ['lockScreen']);
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(LockScreenBackground)),
+    );
+    expect(find.text(l10n.screenLockServiceUnavailable), findsOneWidget);
 
     status = 'locked';
     await doubleTapBackground(tester);
     expect(find.byType(AlertDialog), findsNothing);
     expect(calls, ['lockScreen', 'lockScreen']);
+  });
+
+  testWidgets('a rejected action shows failure without permission prompt', (
+    tester,
+  ) async {
+    status = 'failed';
+    await pumpScreen(tester);
+    await doubleTapBackground(tester);
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(LockScreenBackground)),
+    );
+    expect(find.text(l10n.screenLockFailed), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(calls, ['lockScreen']);
   });
 }
