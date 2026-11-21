@@ -117,7 +117,10 @@ class _AddToPlaylistSheet extends ConsumerWidget {
                 final songIds = songs.map((song) => song.id).toSet();
                 final contains = songIds.every(playlist.contains);
                 return ListTile(
-                  leading: PlaylistArtwork(songIds: playlist.songIds),
+                  leading: PlaylistArtwork(
+                    songIds: playlist.songIds,
+                    coverPath: playlist.coverPath,
+                  ),
                   title: Text(
                     playlist.name,
                     maxLines: 1,

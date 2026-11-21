@@ -10,13 +10,12 @@ import '../../../../core/settings/home_tab_settings_controller.dart';
 import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_feedback.dart';
+import '../../../../core/widgets/alphabet_index_rail.dart';
 import '../../../player/application/providers/notification_gate_controller.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../player/presentation/widgets/mini_player_bar.dart';
 import '../../../player/presentation/widgets/notification_permission_banner.dart';
-import '../../../playlists/application/providers/playlists_controller.dart';
 import '../../../playlists/presentation/screens/playlists_tab.dart';
-import '../../../playlists/presentation/widgets/playlist_name_sheet.dart';
 import '../../../telegram/presentation/screens/telegram_tab.dart';
 import '../screens/groups_tab.dart';
 import '../screens/songs_tab.dart';
@@ -89,21 +88,8 @@ class _HomeShellState extends ConsumerState<HomeShell>
     if (_tabs[_lastTabIndex] == HomeTab.songs) {
       ref.read(librarySyncSchedulerProvider).onSongsTabSelected();
     }
-    // Swap the floating action (shuffle vs. new playlist) for the active tab.
+    // Update tab-specific actions after the page settles.
     setState(() {});
-  }
-
-  Future<void> _createPlaylist() async {
-    final l10n = context.l10n;
-    final name = await showPlaylistNameSheet(
-      context: context,
-      title: l10n.newPlaylist,
-      actionLabel: l10n.createAction,
-    );
-    if (name == null) return;
-    final playlist = await ref.read(playlistsProvider.notifier).create(name);
-    if (!mounted) return;
-    showAppSnackBar(context, l10n.playlistCreatedToast(playlist.name));
   }
 
   Future<void> _refreshLibrary() async {
@@ -151,6 +137,14 @@ class _HomeShellState extends ConsumerState<HomeShell>
     final activeTab = _tabs[_tabController.index];
     final onPlaylistsTab = activeTab == HomeTab.playlists;
     final onTelegramTab = activeTab == HomeTab.telegram;
+    final railInset =
+        activeTab == HomeTab.songs &&
+            ref.watch(
+              songsAlphabetIndexProvider.select((index) => index.length > 1),
+            )
+        ? AlphabetIndexRail.width
+        : 0.0;
+    final bottomOverlay = hasCurrent ? MiniPlayerBar.height : 0.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -232,10 +226,13 @@ class _HomeShellState extends ConsumerState<HomeShell>
                           child: switch (tab) {
                             HomeTab.songs => SongsTab(
                               scrollController: _songsScrollController,
+                              bottomOverlayInset: bottomOverlay,
                             ),
                             HomeTab.artists => GroupsTab(isArtists: true),
                             HomeTab.albums => GroupsTab(isArtists: false),
-                            HomeTab.playlists => const PlaylistsTab(),
+                            HomeTab.playlists => PlaylistsTab(
+                              bottomOverlayInset: bottomOverlay,
+                            ),
                             HomeTab.telegram => const TelegramTab(),
                           },
                         ),
@@ -253,22 +250,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
               child: const MiniPlayerBar(),
             ),
             PositionedDirectional(
-              end: AppSpacing.md,
-              bottom: hasCurrent
-                  ? MiniPlayerBar.height + AppSpacing.md
-                  : AppSpacing.md,
-              child: HomeActionVisibility(
-                visible: onPlaylistsTab,
-                child: FloatingActionButton(
-                  heroTag: 'new-playlist',
-                  tooltip: l10n.newPlaylist,
-                  onPressed: _createPlaylist,
-                  child: const Icon(Icons.add_rounded),
-                ),
-              ),
-            ),
-            PositionedDirectional(
-              end: AppSpacing.md,
+              end: AppSpacing.md + railInset,
               bottom: hasCurrent
                   ? MiniPlayerBar.height + AppSpacing.md
                   : AppSpacing.md,
@@ -308,7 +290,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
               ),
             ),
             PositionedDirectional(
-              end: AppSpacing.md + 64,
+              end: AppSpacing.md + 64 + railInset,
               bottom: hasCurrent
                   ? MiniPlayerBar.height + AppSpacing.md
                   : AppSpacing.md,

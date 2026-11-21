@@ -8,4 +8,7 @@ enum SmartPlaylistKind {
 
   /// Songs ordered by how many times they were played.
   mostPlayed,
+
+  /// Unique tracks from the playback history, most recent first.
+  recentlyPlayed,
 }

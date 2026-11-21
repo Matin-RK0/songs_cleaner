@@ -2,19 +2,14 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../../library/domain/entities/song.dart';
 import '../../../library/presentation/widgets/artwork_image.dart';
+import 'playlist_track_menu.dart';
 
-const double _tileArtworkSize = 52;
-
-/// Sliver song list for a playlist. Custom playlists pass [onReorder] to enable
-/// drag handles; smart playlists omit it and stay read-only. Long-press exposes
-/// the play/remove actions without stealing the drag gesture.
 class PlaylistSongSliver extends StatelessWidget {
   const PlaylistSongSliver({
     super.key,
@@ -23,211 +18,147 @@ class PlaylistSongSliver extends StatelessWidget {
     required this.onSongTap,
     this.onReorder,
     this.onRemove,
-    this.selectedSongIds = const <int>{},
+    this.selectedSongIds = const {},
     this.onSelectionChanged,
+    this.selectionMode = false,
+    this.showTrackMenu = false,
   });
 
+  static const itemExtent = AppSpacing.trackRowHeight;
   final List<Song> songs;
   final int? currentSongId;
-  final void Function(List<Song> songs, int index) onSongTap;
-  final void Function(int oldIndex, int newIndex)? onReorder;
+  final void Function(List<Song>, int) onSongTap;
+  final void Function(int, int)? onReorder;
   final ValueChanged<Song>? onRemove;
   final Set<int> selectedSongIds;
   final ValueChanged<int>? onSelectionChanged;
+  final bool selectionMode;
+  final bool showTrackMenu;
 
   @override
   Widget build(BuildContext context) {
-    final reorder = selectedSongIds.isEmpty ? onReorder : null;
+    final reorder = onReorder;
     if (reorder != null) {
       return SliverReorderableList(
         itemCount: songs.length,
+        itemExtent: itemExtent,
         onReorderItem: reorder,
-        proxyDecorator: _proxyDecorator,
-        itemBuilder: (context, index) =>
-            _tile(context, index: index, song: songs[index], dragIndex: index),
+        proxyDecorator: (child, _, _) =>
+            Material(color: context.colors.surfaceHigh, child: child),
+        itemBuilder: (_, index) => _tile(index, dragIndex: index),
       );
     }
-    return SliverList.builder(
+    return SliverFixedExtentList.builder(
       itemCount: songs.length,
-      itemBuilder: (context, index) =>
-          _tile(context, index: index, song: songs[index]),
+      itemExtent: itemExtent,
+      itemBuilder: (_, index) => _tile(index),
     );
   }
 
-  Widget _tile(
-    BuildContext context, {
-    required int index,
-    required Song song,
-    int? dragIndex,
-  }) {
-    return PlaylistSongTile(
+  Widget _tile(int index, {int? dragIndex}) {
+    final song = songs[index];
+    final changeSelection = onSelectionChanged;
+    void play() => onSongTap(songs, index);
+    return _PlaylistTrackRow(
       key: ValueKey(song.id),
       song: song,
       isCurrent: song.id == currentSongId,
-      dragIndex: dragIndex,
+      selectionMode: selectionMode,
       selected: selectedSongIds.contains(song.id),
-      onTap: onSelectionChanged != null && selectedSongIds.isNotEmpty
-          ? () => onSelectionChanged!(song.id)
-          : () => onSongTap(songs, index),
-      onSelectionLongPress: onSelectionChanged == null
+      onTap: selectionMode && changeSelection != null
+          ? () => changeSelection(song.id)
+          : play,
+      onLongPress: changeSelection == null
           ? null
-          : () => onSelectionChanged!(song.id),
-      onRemove: onRemove == null ? null : () => onRemove!(song),
+          : () => changeSelection(song.id),
+      trailing: !selectionMode && showTrackMenu
+          ? PlaylistTrackMenu(
+              song: song,
+              onPlay: play,
+              onRemove: onRemove == null ? null : () => onRemove!(song),
+            )
+          : null,
+      dragIndex: dragIndex,
     );
-  }
-
-  static Widget _proxyDecorator(
-    Widget child,
-    int index,
-    Animation<double> animation,
-  ) {
-    return Material(color: Colors.transparent, elevation: 0, child: child);
   }
 }
 
-class PlaylistSongTile extends StatelessWidget {
-  const PlaylistSongTile({
+class _PlaylistTrackRow extends StatelessWidget {
+  const _PlaylistTrackRow({
     super.key,
     required this.song,
     required this.isCurrent,
+    required this.selectionMode,
+    required this.selected,
     required this.onTap,
+    this.onLongPress,
     this.dragIndex,
-    this.onRemove,
-    this.selected = false,
-    this.onSelectionLongPress,
+    this.trailing,
   });
 
   final Song song;
   final bool isCurrent;
-  final VoidCallback onTap;
-  final int? dragIndex;
-  final VoidCallback? onRemove;
+  final bool selectionMode;
   final bool selected;
-  final VoidCallback? onSelectionLongPress;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final int? dragIndex;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: AppSpacing.xs),
-      child: AnimatedContainer(
-        duration: AppMotion.fast,
-        curve: AppMotion.standard,
-        decoration: ShapeDecoration(
-          color: selected ? colors.surfaceHigh : Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.lg,
-            side: BorderSide(
-              color: selected
-                  ? colors.primary.withValues(alpha: 0.35)
-                  : Colors.transparent,
-            ),
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            onLongPress:
-                onSelectionLongPress ??
-                (onRemove == null ? null : () => _showActions(context)),
-            splashColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            child: ListTile(
-              contentPadding: const EdgeInsetsDirectional.fromSTEB(
-                AppSpacing.sm,
-                AppSpacing.xs,
-                AppSpacing.xs,
-                AppSpacing.xs,
-              ),
-              minVerticalPadding: 0,
-              leading: ArtworkImage(
-                songId: song.id,
-                size: _tileArtworkSize,
-                borderRadius: AppRadius.md,
-              ),
-              title: Text(
-                song.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.songTitle.copyWith(
-                  fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
-                  color: isCurrent ? colors.primary : colors.textHigh,
-                ),
-              ),
-              subtitle: Text(
-                '${song.artist.isEmpty ? context.l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.songSubtitle.copyWith(
-                  color: colors.textMedium,
-                ),
-              ),
-              trailing: selected
-                  ? Icon(Icons.check_circle_rounded, color: colors.primary)
-                  : dragIndex == null
-                  ? null
-                  : Semantics(
-                      label: context.l10n.reorderTooltip,
-                      child: ReorderableDragStartListener(
-                        index: dragIndex!,
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.only(
-                            start: AppSpacing.sm,
-                            end: AppSpacing.xs,
-                          ),
-                          child: Icon(
-                            Icons.drag_handle_rounded,
-                            color: colors.textLow,
-                          ),
-                        ),
-                      ),
-                    ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showActions(BuildContext context) {
     final l10n = context.l10n;
-    final colors = context.colors;
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      backgroundColor: colors.surfaceHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
-      ),
-      builder: (sheetContext) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.play_arrow_rounded),
-              title: Text(l10n.playTooltipShort),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                onTap();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.remove_circle_outline_rounded),
-              iconColor: colors.danger,
-              textColor: colors.danger,
-              title: Text(l10n.removeFromPlaylist),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                onRemove?.call();
-              },
-            ),
-          ],
+    final drag = dragIndex;
+    return Material(
+      borderRadius: AppRadius.md,
+      color: selected ? colors.surfaceHigh : Colors.transparent,
+      child: ListTile(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        selected: selected,
+        contentPadding: AppSpacing.hSmVXs,
+        leading: ArtworkImage(
+          songId: song.id,
+          size: AppSpacing.avatarSize,
+          borderRadius: AppRadius.md,
         ),
+        title: Text(
+          song.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTypography.songTitle.copyWith(
+            color: isCurrent ? colors.primary : colors.textHigh,
+          ),
+        ),
+        subtitle: Text(
+          '${song.artist.isEmpty ? l10n.unknownArtist : song.artist}  ·  ${song.duration.mmss}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTypography.songSubtitle.copyWith(color: colors.textMedium),
+        ),
+        trailing: drag != null
+            ? Semantics(
+                label: l10n.reorderTooltip,
+                child: ReorderableDragStartListener(
+                  index: drag,
+                  child: SizedBox.square(
+                    dimension: kMinInteractiveDimension,
+                    child: Icon(
+                      Icons.drag_handle_rounded,
+                      color: colors.textLow,
+                    ),
+                  ),
+                ),
+              )
+            : selectionMode
+            ? Icon(
+                selected
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                color: selected ? colors.primary : colors.textLow,
+              )
+            : trailing,
       ),
     );
   }

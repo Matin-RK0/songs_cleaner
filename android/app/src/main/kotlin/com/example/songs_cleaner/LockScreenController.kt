@@ -16,6 +16,9 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
+import com.ryanheise.audioservice.AudioServicePlugin
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
@@ -42,12 +45,15 @@ object LockScreenController {
     private const val ENABLED_KEY = "enabled"
     private const val FLUTTER_PREFS = "FlutterSharedPreferences"
     private const val FLUTTER_ENABLED_KEY = "flutter.lockscreen.enabled"
+    private const val CHANNEL_NAME = "com.example.songs_cleaner/lock_screen"
     private val pendingPlay = PendingPlayRequest(SystemClock::elapsedRealtime)
+    private val pendingPlaybackPresentation = PendingPlayRequest(SystemClock::elapsedRealtime)
     private const val TIMEOUT_KEY = "timeout_seconds"
     private var screenWakeDurationMs = 5_000L
 
     @Volatile private var activity: Activity? = null
     @Volatile private var channel: MethodChannel? = null
+    private var channelMessenger: BinaryMessenger? = null
 
     /**
      * Application context kept for the whole process. Playback keeps the process
@@ -89,18 +95,46 @@ object LockScreenController {
 
     // -- Lifecycle --------------------------------------------------------------
 
-    fun attach(host: Activity, methodChannel: MethodChannel) {
+    fun attach(host: Activity, engine: FlutterEngine) {
         activity = host
-        attachEngine(host.applicationContext, methodChannel)
+        attachEngine(host.applicationContext, engine)
         if (playerShown) applyLockedFlags(host, wakeScreenOnPresentation)
     }
 
-    fun attachEngine(context: Context, methodChannel: MethodChannel) {
+    fun attachEngine(context: Context, engine: FlutterEngine) {
         appContext = context.applicationContext
         ensurePhoneCallGuard(context)
         enabled = loadEnabled(context)
-        channel = methodChannel
+        val messenger = engine.dartExecutor.binaryMessenger
+        if (channelMessenger !== messenger) {
+            // audio_service can dispose a headless engine while the process lives.
+            resetPlaybackBridge()
+            channelMessenger = messenger
+            channel = MethodChannel(messenger, CHANNEL_NAME).apply {
+                setMethodCallHandler(::handleMethodCall)
+            }
+            engine.addEngineLifecycleListener(object : FlutterEngine.EngineLifecycleListener {
+                override fun onPreEngineRestart() {
+                    if (channelMessenger === messenger) resetPlaybackBridge()
+                }
+
+                override fun onEngineWillDestroy() {
+                    if (channelMessenger !== messenger) return
+                    channel = null
+                    channelMessenger = null
+                    resetPlaybackBridge()
+                }
+            })
+        }
         registerReceiver(context.applicationContext)
+    }
+
+    private fun resetPlaybackBridge() {
+        dartReady = false
+        playbackActive = false
+        pendingPlay.consume()
+        pendingPlaybackPresentation.consume()
+        onUserPresent()
     }
 
     fun detach(host: Activity) {
@@ -124,7 +158,7 @@ object LockScreenController {
 
     /**
      * Called by the media-button receiver before Flutter/Activity exists.
-     * It only requests the UI; audio_service remains the playback owner.
+     * Boot the shared engine without showing an Activity until playback is active.
      */
     fun showFromMediaButton(context: Context) {
         appContext = context.applicationContext
@@ -132,9 +166,13 @@ object LockScreenController {
         if (!enabled) return
         ensurePhoneCallGuard(context)
         if (blockPresentationForCall()) return
-        playbackActive = true
+        attachEngine(context, AudioServicePlugin.getFlutterEngine(context.applicationContext))
+        if (playbackActive) {
+            showOverLockScreen(context.applicationContext)
+            return
+        }
         pendingPlay.request()
-        showOverLockScreen(context.applicationContext)
+        pendingPlaybackPresentation.request()
         channel?.takeIf { dartReady }?.let {
             // Live delivery and startup polling must consume the same command.
             if (pendingPlay.consume()) it.invokeMethod("playRequested", null)
@@ -149,13 +187,11 @@ object LockScreenController {
         // so a previous Routine launch cannot wake a newly sleeping display.
         intent.removeExtra(EXTRA_SHOW_PLAYER)
         intent.removeExtra(EXTRA_WAKE_SCREEN)
-        if (!enabled || blockPresentationForCall()) return false
+        if (!enabled || !playbackActive || blockPresentationForCall()) return false
         if (!wakeScreen) {
             val context = appContext ?: return false
             val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-            if (!enabled || !playbackActive ||
-                (isScreenInteractive(context) && !keyguard.isKeyguardLocked)
-            ) return false
+            if (isScreenInteractive(context) && !keyguard.isKeyguardLocked) return false
         }
         playerShown = true
         wakeScreenOnPresentation = wakeScreen
@@ -244,6 +280,7 @@ object LockScreenController {
             Settings.canDrawOverlays(context)
 
     private fun showOverLockScreen(context: Context, wakeScreen: Boolean = true) {
+        if (!enabled || !playbackActive) return
         ensurePhoneCallGuard(context)
         if (blockPresentationForCall()) return
         playerShown = true
@@ -262,13 +299,14 @@ object LockScreenController {
         try {
             context.startActivity(intent)
         } catch (_: Exception) {
-            playerShown = false
+            onUserPresent()
             return
         }
         deliverShow()
     }
 
     private fun deliverShow() {
+        if (!enabled || !playbackActive || !playerShown) return
         if (blockPresentationForCall()) return
         val current = channel
         if (current == null || !dartReady) {
@@ -323,12 +361,6 @@ object LockScreenController {
         })
     }
 
-    private fun dismissIfShown() {
-        if (!playerShown) return
-        playerShown = false
-        activity?.let(::clearLockedFlags)
-    }
-
     // -- Window flags -----------------------------------------------------------
 
     private fun ensurePhoneCallGuard(context: Context) {
@@ -346,6 +378,7 @@ object LockScreenController {
     private fun suspendForCall() {
         pendingShow = false
         pendingPlay.consume()
+        pendingPlaybackPresentation.consume()
         dismissingKeyguard = false
         screenWakeHandler.removeCallbacks(clearScreenWake)
         val wasShown = playerShown
@@ -362,6 +395,7 @@ object LockScreenController {
     }
 
     private fun applyLockedFlags(host: Activity, wakeScreen: Boolean) {
+        if (!enabled || !playbackActive) return
         if (blockPresentationForCall()) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             host.setShowWhenLocked(true)
@@ -438,7 +472,7 @@ object LockScreenController {
             "register" -> {
                 dartReady = true
                 blockPresentationForCall()
-                val show = pendingShow
+                val show = pendingShow && enabled && playbackActive && playerShown
                 pendingShow = false
                 result.success(show)
             }
@@ -467,7 +501,11 @@ object LockScreenController {
                     ?.edit()
                     ?.putBoolean(ENABLED_KEY, enabled)
                     ?.apply()
-                if (!enabled) dismissIfShown()
+                if (!enabled) {
+                    pendingPlay.consume()
+                    pendingPlaybackPresentation.consume()
+                    onUserPresent()
+                }
                 result.success(null)
             }
             "setTimeoutSeconds" -> {
@@ -487,20 +525,26 @@ object LockScreenController {
             }
             "setPlaybackActive" -> {
                 playbackActive = call.arguments == true
-                if (!playbackActive && context != null && !isScreenInteractive(context)) {
+                if (!playbackActive) {
                     onUserPresent()
+                } else if (pendingPlaybackPresentation.consume() && context != null) {
+                    showOverLockScreen(context)
                 }
                 result.success(null)
             }
             "consumePendingShow" -> {
                 blockPresentationForCall()
-                val show = pendingShow
+                val show = pendingShow && enabled && playbackActive && playerShown
                 pendingShow = false
                 result.success(show)
             }
             "consumePendingPlay" -> {
                 blockPresentationForCall()
                 result.success(pendingPlay.consume())
+            }
+            "finishPlayRequest" -> {
+                pendingPlaybackPresentation.consume()
+                result.success(null)
             }
             "dismiss" -> {
                 dismissFromBack()

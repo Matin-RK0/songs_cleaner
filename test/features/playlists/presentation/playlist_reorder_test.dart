@@ -120,6 +120,20 @@ void main() {
     expect(displayedOrder(tester), <int>[3, 1, 2]);
     expect(container.read(playlistsProvider).single.songIds, <int>[3, 1, 2]);
   });
+
+  testWidgets('dragging a visible track never moves an unavailable file', (
+    tester,
+  ) async {
+    await pumpHarness(tester);
+    final controller = container.read(playlistsProvider.notifier);
+    await controller.addSong(playlistId, 99);
+    await controller.reorder(playlistId, 3, 1);
+    final visible = container.read(playlistSongsProvider(playlistId));
+    expect(visible.map((song) => song.id), [1, 2, 3]);
+    await controller.reorderVisible(playlistId, visible, 1, 2);
+    expect(controller.playlistById(playlistId)!.songIds, [1, 99, 3, 2]);
+    await tester.pumpAndSettle();
+  });
 }
 
 /// Mirrors the production wiring in `PlaylistDetailScreen`: the sliver renders

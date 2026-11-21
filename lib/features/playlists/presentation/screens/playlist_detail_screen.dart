@@ -1,34 +1,41 @@
-import 'package:material_ui/material_ui.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
-import '../../../../core/l10n/generated/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_motion.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../core/utils/duration_format.dart';
+import '../../../../core/widgets/alphabet_index_rail.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_state_views.dart';
-import '../../../player/application/providers/player_controller.dart';
-import '../../../../app/router/route_names.dart';
 import '../../../library/domain/entities/song.dart';
+import '../../../player/application/providers/player_controller.dart';
+import '../../../player/presentation/widgets/mini_player_bar.dart';
+import '../../application/playlist_transfer_service.dart';
 import '../../application/providers/playlist_providers.dart';
 import '../../application/providers/playlists_controller.dart';
-import '../../application/playlist_transfer_service.dart';
 import '../../domain/entities/playlist.dart';
 import '../../domain/entities/smart_playlist.dart';
-import '../widgets/playlist_artwork.dart';
+import '../../domain/playlist_order.dart';
+import '../widgets/playlist_detail_header.dart';
 import '../widgets/playlist_name_sheet.dart';
 import '../widgets/playlist_song_sliver.dart';
+import '../widgets/playlist_sort_button.dart';
+import '../widgets/smart_playlist_presentation.dart';
 
-enum _PlaylistAction { rename, delete }
+enum _PlaylistAction {
+  edit,
+  rename,
+  cover,
+  resetCover,
+  share,
+  equalizer,
+  settings,
+  delete,
+}
 
-const double _artworkSize = 168;
-
-/// Detail view for a custom playlist or a smart playlist. Custom playlists
-/// support reordering and removal; smart playlists are read-only.
 class PlaylistDetailScreen extends ConsumerStatefulWidget {
   const PlaylistDetailScreen({super.key, required this.args});
 
@@ -40,493 +47,444 @@ class PlaylistDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
-  final Set<int> _selectedIds = <int>{};
+  final _scroll = ScrollController();
+  final _headerKey = GlobalKey();
+  final _selected = <int>{};
+  var _editing = false;
+  var _smartOrder = PlaylistTrackOrder.custom;
 
-  void _toggleSelection(int songId) {
-    setState(() {
-      if (!_selectedIds.remove(songId)) _selectedIds.add(songId);
-    });
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
-
-  void _clearSelection() => setState(_selectedIds.clear);
 
   @override
   Widget build(BuildContext context) {
-    final ref = this.ref;
     final l10n = context.l10n;
-    final args = widget.args;
-    final customId = args.playlistId;
-    final smartKind = args.smartKind;
-
+    final id = widget.args.playlistId;
+    final kind = widget.args.smartKind;
     Playlist? playlist;
-    List<Song> songs;
-    String title;
-
-    if (customId != null) {
-      playlist = _playlistById(ref.watch(playlistsProvider), customId);
-      songs = ref.watch(playlistSongsProvider(customId));
-      title = playlist?.name ?? '';
-    } else {
-      songs = ref.watch(smartPlaylistSongsProvider(smartKind!));
-      title = _smartTitle(l10n, smartKind);
+    if (id != null) {
+      ref.watch(playlistsProvider);
+      playlist = ref.read(playlistsProvider.notifier).playlistById(id);
+      if (playlist == null) {
+        return Scaffold(
+          appBar: AppBar(),
+          body: AppEmptyState(
+            icon: Icons.queue_music_rounded,
+            title: l10n.playlistEmptySongsTitle,
+          ),
+        );
+      }
     }
 
-    // The playlist can vanish while open (e.g. deleted from this screen).
-    if (customId != null && playlist == null) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: AppEmptyState(
-          icon: Icons.queue_music_rounded,
-          title: l10n.playlistEmptySongsTitle,
-          message: l10n.playlistEmptySongsMessage,
-        ),
-      );
-    }
-
+    final order = playlist?.trackOrder ?? _smartOrder;
+    final view = ref.watch(playlistTrackViewProvider((id, kind, order)));
+    final songs = view.songs;
+    final title = playlist?.name ?? kind!.title(l10n);
     final currentId = ref.watch(
       playerProvider.select((state) => state.current?.id),
     );
-    final isCustom = playlist != null;
+    final controller = ref.read(playlistsProvider.notifier);
+    final player = ref.read(playerProvider.notifier);
+    final editable = playlist != null && _editing;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(
+          l10n.playlistsTab,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
-          if (songs.isNotEmpty)
+          if (playlist != null) ...[
             IconButton(
-              tooltip: l10n.shuffleTooltip,
-              icon: const Icon(Icons.shuffle_rounded),
-              onPressed: () =>
-                  ref.read(playerProvider.notifier).playAllShuffled(songs),
+              tooltip: playlist.isFavorite
+                  ? l10n.removeFromFavorites
+                  : l10n.addToFavorites,
+              isSelected: playlist.isFavorite,
+              selectedIcon: Icon(
+                Icons.favorite_rounded,
+                color: context.colors.danger,
+              ),
+              icon: const Icon(Icons.favorite_border_rounded),
+              onPressed: () => controller.toggleFavorite(id!),
             ),
-          if (isCustom)
             IconButton(
-              tooltip: l10n.sharePlaylists,
-              icon: const Icon(Icons.share_outlined),
-              onPressed: () => _sharePlaylist(context, playlist!, songs),
+              tooltip: l10n.playlistAddTracks,
+              icon: const Icon(Icons.add_rounded),
+              onPressed: () => _addTracks(playlist!),
             ),
-          if (isCustom)
-            IconButton(
-              tooltip: l10n.settingsTitle,
-              icon: const Icon(Icons.more_vert_rounded),
-              onPressed: () => _showActions(context, ref, playlist!),
-            ),
+          ],
+          _PlaylistMenu(
+            playlist: playlist,
+            editing: editable,
+            hasSongs: songs.isNotEmpty,
+            onSelected: (action) => _onAction(action, playlist, songs),
+          ),
         ],
       ),
-      body: songs.isEmpty
-          ? _EmptyView(kind: smartKind, isCustom: isCustom)
-          : Column(
-              children: [
-                AnimatedSwitcher(
-                  duration: AppMotion.fast,
-                  switchInCurve: AppMotion.standard,
-                  switchOutCurve: AppMotion.standard,
-                  transitionBuilder: (child, animation) => SizeTransition(
-                    sizeFactor: animation,
-                    alignment: AlignmentDirectional.topCenter,
-                    child: FadeTransition(opacity: animation, child: child),
-                  ),
-                  child: _selectedIds.isEmpty || !isCustom
-                      ? const SizedBox.shrink(
-                          key: ValueKey('no-playlist-selection'),
-                        )
-                      : _PlaylistSelectionToolbar(
-                          key: const ValueKey('playlist-selection'),
-                          count: _selectedIds.length,
-                          onClose: _clearSelection,
-                          onSelectAll: () => setState(() {
-                            _selectedIds
-                              ..clear()
-                              ..addAll(songs.map((song) => song.id));
-                          }),
-                          onPlay: () {
-                            final selected = songs
-                                .where((song) => _selectedIds.contains(song.id))
-                                .toList(growable: false);
-                            if (selected.isEmpty) return;
-                            ref
-                                .read(playerProvider.notifier)
-                                .playFromList(selected, startIndex: 0);
-                            _clearSelection();
-                          },
-                          onRemove: () => _removeSelected(playlist!),
-                        ),
-                ),
-                Expanded(
-                  child: CustomScrollView(
-                    physics: const ClampingScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: _PlaylistHeader(
-                          songs: songs,
-                          heroTag: customId == null
-                              ? null
-                              : 'playlist-art-$customId',
-                          isCustom: isCustom,
-                          onPlayAll: () => ref
-                              .read(playerProvider.notifier)
-                              .playFromList(songs, startIndex: 0),
-                          onShuffle: () => ref
-                              .read(playerProvider.notifier)
-                              .playAllShuffled(songs),
-                        ),
-                      ),
-                      SliverPadding(
-                        padding: const EdgeInsetsDirectional.only(
-                          start: AppSpacing.sm,
-                          end: AppSpacing.sm,
-                        ),
-                        sliver: PlaylistSongSliver(
-                          songs: songs,
-                          currentSongId: currentId,
-                          onSongTap: (list, index) => ref
-                              .read(playerProvider.notifier)
-                              .playFromList(list, startIndex: index),
-                          selectedSongIds: _selectedIds,
-                          onSelectionChanged: isCustom
-                              ? _toggleSelection
-                              : null,
-                          onReorder: isCustom && _selectedIds.isEmpty
-                              ? (oldIndex, newIndex) => ref
-                                    .read(playlistsProvider.notifier)
-                                    .reorder(playlist!.id, oldIndex, newIndex)
-                              : null,
-                          onRemove: isCustom
-                              ? (song) => _removeSingle(playlist!, song)
-                              : null,
-                        ),
-                      ),
-                      const SliverToBoxAdapter(
-                        child: SizedBox(height: AppSpacing.xl + 72),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Future<void> _removeSelected(Playlist playlist) async {
-    if (_selectedIds.isEmpty) return;
-    final count = _selectedIds.length;
-    await ref
-        .read(playlistsProvider.notifier)
-        .removeSongs(playlist.id, _selectedIds);
-    if (!mounted) return;
-    _clearSelection();
-    showAppSnackBar(
-      context,
-      context.l10n.removedFromPlaylistToast(count, playlist.name),
-    );
-  }
-
-  Future<void> _removeSingle(Playlist playlist, Song song) async {
-    await ref.read(playlistsProvider.notifier).removeSong(playlist.id, song.id);
-    if (!mounted) return;
-    showAppSnackBar(
-      context,
-      context.l10n.removedFromPlaylistToast(1, playlist.name),
-    );
-  }
-
-  Future<void> _showActions(
-    BuildContext context,
-    WidgetRef ref,
-    Playlist playlist,
-  ) async {
-    final l10n = context.l10n;
-    final colors = context.colors;
-    final action = await showModalBottomSheet<_PlaylistAction>(
-      context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      backgroundColor: colors.surfaceHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
-      ),
-      builder: (sheetContext) => SafeArea(
+      body: SafeArea(
         top: false,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.edit_rounded),
-              title: Text(l10n.renamePlaylist),
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(_PlaylistAction.rename),
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline_rounded),
-              iconColor: colors.danger,
-              textColor: colors.danger,
-              title: Text(l10n.deletePlaylist),
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(_PlaylistAction.delete),
+            if (editable)
+              PlaylistEditToolbar(
+                count: _selected.length,
+                onDone: _finishEditing,
+                onSelectAll: songs.isEmpty
+                    ? null
+                    : () => setState(() {
+                        if (_selected.length == songs.length) {
+                          _selected.clear();
+                        } else {
+                          _selected.addAll(songs.map((song) => song.id));
+                        }
+                      }),
+                onPlay: _selected.isEmpty
+                    ? null
+                    : () {
+                        final selection = songs
+                            .where((song) => _selected.contains(song.id))
+                            .toList(growable: false);
+                        if (selection.isNotEmpty) {
+                          player.playFromList(selection, startIndex: 0);
+                        }
+                        _finishEditing();
+                      },
+                onRemove: _selected.isEmpty
+                    ? null
+                    : () => _removeTracks(playlist!, Set.of(_selected)),
+              ),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: CustomScrollView(
+                      controller: _scroll,
+                      physics: const ClampingScrollPhysics(),
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Column(
+                            key: _headerKey,
+                            children: [
+                              PlaylistDetailHeader(
+                                title: title,
+                                duration: view.duration,
+                                songCount: songs.length,
+                                artworkIds: view.artworkIds,
+                                playlist: playlist,
+                                emptyIcon:
+                                    kind?.icon ?? Icons.queue_music_rounded,
+                              ),
+                              if (songs.isNotEmpty)
+                                PlaylistTrackControls(
+                                  sort: PlaylistSortButton(
+                                    current: order,
+                                    options: PlaylistTrackOrder.values,
+                                    labelOf: (value) => playlistTrackOrderLabel(
+                                      l10n,
+                                      value,
+                                      custom: playlist != null,
+                                    ),
+                                    onSelected: (value) {
+                                      jumpToListRow(_scroll, 0);
+                                      if (id != null) {
+                                        controller.setTrackOrder(id, value);
+                                      } else {
+                                        setState(() => _smartOrder = value);
+                                      }
+                                    },
+                                  ),
+                                  onPlay: () =>
+                                      player.playFromList(songs, startIndex: 0),
+                                  onShuffle: () =>
+                                      player.playAllShuffled(songs),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (songs.isEmpty)
+                          SliverToBoxAdapter(
+                            child: _EmptyPlaylist(
+                              kind: kind,
+                              onAdd: playlist == null
+                                  ? null
+                                  : () => _addTracks(playlist!),
+                            ),
+                          )
+                        else
+                          SliverPadding(
+                            padding: const EdgeInsetsDirectional.only(
+                              start: AppSpacing.sm,
+                              end: AppSpacing.sm,
+                            ),
+                            sliver: PlaylistSongSliver(
+                              songs: songs,
+                              currentSongId: currentId,
+                              onSongTap: (list, index) =>
+                                  player.playFromList(list, startIndex: index),
+                              selectionMode: editable,
+                              selectedSongIds: _selected,
+                              onSelectionChanged: playlist == null
+                                  ? null
+                                  : _toggleSelection,
+                              onReorder:
+                                  editable &&
+                                      order == PlaylistTrackOrder.custom &&
+                                      _selected.isEmpty
+                                  ? (from, to) => controller.reorderVisible(
+                                      id!,
+                                      songs,
+                                      from,
+                                      to,
+                                    )
+                                  : null,
+                              onRemove: playlist == null
+                                  ? null
+                                  : (song) =>
+                                        _removeTracks(playlist!, {song.id}),
+                              showTrackMenu: true,
+                            ),
+                          ),
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: AppSpacing.lg),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AlphabetIndexRail(
+                    index: view.alphabet,
+                    onJump: (row) {
+                      final header =
+                          _headerKey.currentContext?.size?.height ?? 0;
+                      jumpToListRow(
+                        _scroll,
+                        header + row * PlaylistSongSliver.itemExtent,
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
+      bottomNavigationBar: currentId == null ? null : const MiniPlayerBar(),
     );
-    if (!context.mounted || action == null) return;
+  }
 
+  void _toggleSelection(int id) => setState(() {
+    _editing = true;
+    if (!_selected.remove(id)) _selected.add(id);
+  });
+
+  void _finishEditing() => setState(() {
+    _editing = false;
+    _selected.clear();
+  });
+
+  Future<void> _addTracks(Playlist playlist) async {
+    final added = await Navigator.of(
+      context,
+    ).pushNamed<bool>(RouteNames.playlistTrackPicker, arguments: playlist.id);
+    if (mounted && added == true) {
+      showAppSnackBar(
+        context,
+        context.l10n.addedToPlaylistToast(playlist.name),
+      );
+    }
+  }
+
+  Future<void> _removeTracks(Playlist playlist, Set<int> ids) async {
+    await ref.read(playlistsProvider.notifier).removeSongs(playlist.id, ids);
+    if (!mounted) return;
+    setState(() => _selected.removeAll(ids));
+    showAppSnackBar(
+      context,
+      context.l10n.removedFromPlaylistToast(ids.length, playlist.name),
+    );
+  }
+
+  Future<void> _onAction(
+    _PlaylistAction action,
+    Playlist? playlist,
+    List<Song> songs,
+  ) async {
+    final l10n = context.l10n;
+    final controller = ref.read(playlistsProvider.notifier);
     switch (action) {
+      case _PlaylistAction.edit:
+        if (_editing) {
+          _finishEditing();
+        } else {
+          setState(() => _editing = true);
+        }
       case _PlaylistAction.rename:
         final name = await showPlaylistNameSheet(
           context: context,
           title: l10n.renamePlaylist,
           actionLabel: l10n.saveAction,
-          initialName: playlist.name,
+          initialName: playlist!.name,
         );
-        if (name == null || !context.mounted) return;
-        await ref.read(playlistsProvider.notifier).rename(playlist.id, name);
-        if (!context.mounted) return;
-        showAppSnackBar(context, l10n.playlistRenamedToast);
+        if (name == null || !mounted) return;
+        await controller.rename(playlist.id, name);
+        if (mounted) showAppSnackBar(context, l10n.playlistRenamedToast);
+      case _PlaylistAction.cover:
+      case _PlaylistAction.resetCover:
+        try {
+          if (action == _PlaylistAction.cover) {
+            await controller.pickCover(playlist!.id);
+          } else {
+            await controller.resetCover(playlist!.id);
+          }
+        } on Exception {
+          if (mounted) {
+            showAppSnackBar(context, l10n.playlistCoverFailed, error: true);
+          }
+        }
+      case _PlaylistAction.share:
+        try {
+          final shared = await const PlaylistTransferService().sharePlaylists([
+            playlist!,
+          ], songs);
+          if (shared && mounted) showAppSnackBar(context, l10n.playlistsShared);
+        } on Exception {
+          if (mounted) {
+            showAppSnackBar(context, l10n.playlistTransferFailed, error: true);
+          }
+        }
+      case _PlaylistAction.equalizer:
+        Navigator.of(context).pushNamed(RouteNames.equalizer);
+      case _PlaylistAction.settings:
+        Navigator.of(context).pushNamed(RouteNames.settings);
       case _PlaylistAction.delete:
         final confirmed = await showAppConfirmDialog(
           context: context,
-          title: l10n.deletePlaylistConfirmTitle(playlist.name),
+          title: l10n.deletePlaylistConfirmTitle(playlist!.name),
           message: l10n.deletePlaylistConfirmMessage,
           confirmLabel: l10n.delete,
           cancelLabel: l10n.cancel,
           destructive: true,
         );
-        if (!confirmed || !context.mounted) return;
-        await ref.read(playlistsProvider.notifier).remove(playlist.id);
-        if (!context.mounted) return;
+        if (!confirmed || !mounted) return;
+        await controller.remove(playlist.id);
+        if (!mounted) return;
         showAppSnackBar(context, l10n.playlistDeletedToast(playlist.name));
         Navigator.of(context).maybePop();
     }
   }
-
-  Future<void> _sharePlaylist(
-    BuildContext context,
-    Playlist playlist,
-    List<Song> songs,
-  ) async {
-    try {
-      final shared = await const PlaylistTransferService().sharePlaylists([
-        playlist,
-      ], songs);
-      if (shared && context.mounted) {
-        showAppSnackBar(context, context.l10n.playlistsShared);
-      }
-    } on Exception {
-      if (context.mounted) {
-        showAppSnackBar(
-          context,
-          context.l10n.playlistTransferFailed,
-          error: true,
-        );
-      }
-    }
-  }
 }
 
-class _PlaylistSelectionToolbar extends StatelessWidget {
-  const _PlaylistSelectionToolbar({
-    super.key,
-    required this.count,
-    required this.onClose,
-    required this.onSelectAll,
-    required this.onPlay,
-    required this.onRemove,
+class _PlaylistMenu extends StatelessWidget {
+  const _PlaylistMenu({
+    required this.playlist,
+    required this.editing,
+    required this.hasSongs,
+    required this.onSelected,
   });
 
-  final int count;
-  final VoidCallback onClose;
-  final VoidCallback onSelectAll;
-  final VoidCallback onPlay;
-  final VoidCallback onRemove;
+  final Playlist? playlist;
+  final bool editing;
+  final bool hasSongs;
+  final ValueChanged<_PlaylistAction> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     final l10n = context.l10n;
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        AppSpacing.sm,
-        AppSpacing.xs,
-        AppSpacing.sm,
-        AppSpacing.xs,
-      ),
-      child: AnimatedContainer(
-        duration: AppMotion.fast,
-        curve: AppMotion.standard,
-        height: 60,
-        decoration: ShapeDecoration(
-          color: colors.surfaceHigh,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.lg,
-            side: BorderSide(color: colors.primary.withValues(alpha: 0.24)),
+    return PopupMenuButton<_PlaylistAction>(
+      tooltip: l10n.moreActions,
+      onSelected: onSelected,
+      itemBuilder: (_) => [
+        if (playlist != null) ...[
+          PopupMenuItem(
+            value: _PlaylistAction.edit,
+            enabled: hasSongs || editing,
+            child: Text(
+              editing ? l10n.playlistFinishEditing : l10n.playlistEditTracks,
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            IconButton(
-              tooltip: l10n.cancel,
-              onPressed: onClose,
-              icon: const Icon(Icons.close_rounded),
-            ),
-            Expanded(
-              child: Text(
-                l10n.selectedCount(count),
-                style: AppTypography.emphasisTitle.copyWith(
-                  color: colors.textHigh,
-                ),
-              ),
-            ),
-            IconButton(
-              tooltip: l10n.selectAll,
-              onPressed: onSelectAll,
-              icon: const Icon(Icons.select_all_rounded),
-            ),
-            IconButton(
-              tooltip: l10n.playTooltip,
-              onPressed: onPlay,
-              icon: const Icon(Icons.play_arrow_rounded),
-            ),
-            IconButton(
-              tooltip: l10n.removeFromPlaylist,
-              onPressed: onRemove,
-              color: colors.danger,
-              icon: const Icon(Icons.remove_circle_outline_rounded),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PlaylistHeader extends StatelessWidget {
-  const _PlaylistHeader({
-    required this.songs,
-    required this.isCustom,
-    required this.onPlayAll,
-    required this.onShuffle,
-    this.heroTag,
-  });
-
-  final List<Song> songs;
-  final bool isCustom;
-  final VoidCallback onPlayAll;
-  final VoidCallback onShuffle;
-  final String? heroTag;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final l10n = context.l10n;
-    final total = songs.fold<Duration>(
-      Duration.zero,
-      (sum, song) => sum + song.duration,
-    );
-
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.md,
-      ),
-      child: Column(
-        children: [
-          PlaylistArtwork(
-            songIds: songs.take(4).map((song) => song.id).toList(),
-            size: _artworkSize,
-            borderRadius: AppRadius.xl,
-            heroTag: heroTag,
+          PopupMenuItem(
+            value: _PlaylistAction.rename,
+            child: Text(l10n.renamePlaylist),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            l10n.playlistMetaLabel(songs.length, total.mmss),
-            textAlign: TextAlign.center,
-            style: AppTypography.meta.copyWith(color: colors.textMedium),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              FilledButton.icon(
-                onPressed: onPlayAll,
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: Text(l10n.playTooltipShort),
-                style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.sm + 2,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              OutlinedButton.icon(
-                onPressed: onShuffle,
-                icon: const Icon(Icons.shuffle_rounded),
-                label: Text(l10n.shuffleTooltip),
-                style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.sm + 2,
-                  ),
-                ),
-              ),
-            ],
+          if (Platform.isAndroid)
+            PopupMenuItem(
+              value: _PlaylistAction.cover,
+              child: Text(l10n.playlistChangeCover),
+            ),
+          if (playlist?.coverPath != null)
+            PopupMenuItem(
+              value: _PlaylistAction.resetCover,
+              child: Text(l10n.playlistResetCover),
+            ),
+          PopupMenuItem(
+            value: _PlaylistAction.share,
+            child: Text(l10n.sharePlaylists),
           ),
         ],
-      ),
+        if (Platform.isAndroid)
+          PopupMenuItem(
+            value: _PlaylistAction.equalizer,
+            child: Text(l10n.equalizerTitle),
+          ),
+        PopupMenuItem(
+          value: _PlaylistAction.settings,
+          child: Text(l10n.settingsTitle),
+        ),
+        if (playlist != null)
+          PopupMenuItem(
+            value: _PlaylistAction.delete,
+            child: Text(
+              l10n.deletePlaylist,
+              style: TextStyle(color: context.colors.danger),
+            ),
+          ),
+      ],
     );
   }
 }
 
-class _EmptyView extends StatelessWidget {
-  const _EmptyView({required this.kind, required this.isCustom});
+class _EmptyPlaylist extends StatelessWidget {
+  const _EmptyPlaylist({required this.kind, this.onAdd});
 
   final SmartPlaylistKind? kind;
-  final bool isCustom;
+  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    if (isCustom) {
-      return AppEmptyState(
-        icon: Icons.queue_music_rounded,
-        title: l10n.playlistEmptySongsTitle,
-        message: l10n.playlistEmptySongsMessage,
-      );
-    }
-    return switch (kind!) {
-      SmartPlaylistKind.liked => AppEmptyState(
-        icon: Icons.favorite_border_rounded,
-        title: l10n.likedEmptyTitle,
-        message: l10n.likedEmptyMessage,
+    final (title, message) = switch (kind) {
+      SmartPlaylistKind.liked => (l10n.likedEmptyTitle, l10n.likedEmptyMessage),
+      SmartPlaylistKind.mostPlayed => (
+        l10n.mostPlayedEmptyTitle,
+        l10n.mostPlayedEmptyMessage,
       ),
-      SmartPlaylistKind.mostPlayed => AppEmptyState(
-        icon: Icons.local_fire_department_rounded,
-        title: l10n.mostPlayedEmptyTitle,
-        message: l10n.mostPlayedEmptyMessage,
+      SmartPlaylistKind.recentlyAdded => (
+        l10n.emptyLibraryTitle,
+        l10n.emptyLibraryMessage,
       ),
-      SmartPlaylistKind.recentlyAdded => AppEmptyState(
-        icon: Icons.library_music_rounded,
-        title: l10n.emptyLibraryTitle,
-        message: l10n.emptyLibraryMessage,
+      SmartPlaylistKind.recentlyPlayed => (
+        l10n.smartRecentlyPlayedTitle,
+        l10n.smartRecentlyPlayedEmpty,
       ),
+      null => (l10n.playlistEmptySongsTitle, null),
     };
+    return Column(
+      children: [
+        AppEmptyState(
+          icon: kind?.icon ?? Icons.queue_music_rounded,
+          title: title,
+          message: message,
+        ),
+        if (onAdd != null)
+          PrimaryActionButton(
+            label: l10n.playlistAddTracks,
+            icon: Icons.add_rounded,
+            onPressed: onAdd!,
+          ),
+      ],
+    );
   }
 }
-
-Playlist? _playlistById(List<Playlist> playlists, String id) {
-  for (final playlist in playlists) {
-    if (playlist.id == id) return playlist;
-  }
-  return null;
-}
-
-String _smartTitle(AppLocalizations l10n, SmartPlaylistKind kind) =>
-    switch (kind) {
-      SmartPlaylistKind.liked => l10n.smartLikedTitle,
-      SmartPlaylistKind.recentlyAdded => l10n.smartRecentTitle,
-      SmartPlaylistKind.mostPlayed => l10n.smartMostPlayedTitle,
-    };

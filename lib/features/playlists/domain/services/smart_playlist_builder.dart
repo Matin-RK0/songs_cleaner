@@ -9,6 +9,7 @@ abstract final class SmartPlaylistBuilder {
     required SmartPlaylistKind kind,
     required List<Song> songs,
     required LibraryStats stats,
+    Iterable<int> recentSongIds = const [],
   }) {
     switch (kind) {
       case SmartPlaylistKind.liked:
@@ -32,6 +33,13 @@ abstract final class SmartPlaylistBuilder {
                 return a.title.toLowerCase().compareTo(b.title.toLowerCase());
               });
         return played;
+      case SmartPlaylistKind.recentlyPlayed:
+        final byId = {for (final song in songs) song.id: song};
+        final seen = <int>{};
+        return List.unmodifiable([
+          for (final id in recentSongIds)
+            if (seen.add(id)) ?byId[id],
+        ]);
     }
   }
 }

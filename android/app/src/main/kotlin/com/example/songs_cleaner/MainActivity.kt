@@ -19,6 +19,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : AudioServiceActivity() {
     private var pendingWidgetAction: String? = null
     private var widgetEngine: FlutterEngine? = null
+    private val playlistCoverPicker by lazy { PlaylistCoverPicker(this) }
 
     override fun onUserInteraction() {
         super.onUserInteraction()
@@ -61,15 +62,13 @@ class MainActivity : AudioServiceActivity() {
         if (!flutterEngine.plugins.has(TelegramMusicPlugin::class.java)) {
             flutterEngine.plugins.add(TelegramMusicPlugin())
         }
-        LockScreenController.attach(
-            this,
-            MethodChannel(
-                flutterEngine.dartExecutor.binaryMessenger,
-                LOCK_SCREEN_CHANNEL,
-            ).apply {
-                setMethodCallHandler(LockScreenController::handleMethodCall)
-            },
-        )
+        LockScreenController.attach(this, flutterEngine)
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.example.songs_cleaner/playlist_cover",
+        ).setMethodCallHandler { call, result ->
+            if (call.method == "pick") playlistCoverPicker.pick(result) else result.notImplemented()
+        }
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             TAG_EDITOR_CHANNEL,
@@ -198,6 +197,8 @@ class MainActivity : AudioServiceActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (playlistCoverPicker.handleResult(requestCode, resultCode, data?.data)) return
+        if (requestCode != SAVE_FILE_REQUEST && requestCode != OPEN_FILE_REQUEST) return
         val result = pendingFileResult ?: return
         pendingFileResult = null
         if (resultCode != RESULT_OK || data?.data == null) {
@@ -225,13 +226,12 @@ class MainActivity : AudioServiceActivity() {
     }
 
     override fun onDestroy() {
+        playlistCoverPicker.dispose()
         LockScreenController.detach(this)
         super.onDestroy()
     }
 
     private companion object {
-        const val LOCK_SCREEN_CHANNEL =
-            "com.example.songs_cleaner/lock_screen"
         const val TAG_EDITOR_CHANNEL =
             "com.example.songs_cleaner/tag_editor"
         const val FILE_TRANSFER_CHANNEL =

@@ -53,6 +53,7 @@ class OnAudioQueryPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     // Dart <-> Kotlin communication
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         Log.i(TAG, "Attached to engine")
+        PluginProvider.setContext(flutterPluginBinding.applicationContext)
 
         // Setup the method channel communication.
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, CHANNEL_NAME)
@@ -138,6 +139,7 @@ class OnAudioQueryPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         "Application doesn't have access to the library",
                         "Call the [permissionsRequest] method or install a external plugin to handle the app permission."
                     )
+                    return
                 }
 
                 methodController.find()
@@ -155,8 +157,8 @@ class OnAudioQueryPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         Log.i(TAG, "Attached to activity")
 
-        // Init plugin provider with 'activity' and 'context'.
-        PluginProvider.set(binding.activity)
+        // Only permission prompts need an Activity.
+        PluginProvider.setActivity(binding.activity)
 
         // Add to controller the permission to listen to the request result.
         this.binding = binding

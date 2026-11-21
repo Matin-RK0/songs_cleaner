@@ -20,6 +20,7 @@ import '../../features/file_manager/presentation/screens/folder_picker_screen.da
 import '../../features/trash/presentation/screens/trash_screen.dart';
 import '../../features/library/domain/entities/song.dart';
 import '../../features/playlists/presentation/screens/playlist_detail_screen.dart';
+import '../../features/playlists/presentation/screens/playlist_track_picker_screen.dart';
 import '../../features/telegram/presentation/screens/telegram_auth_screen.dart';
 import '../../features/telegram/presentation/screens/telegram_chat_screen.dart';
 import 'route_names.dart';
@@ -137,6 +138,14 @@ abstract final class AppRouter {
           return _slideRoute(settings, PlaylistDetailScreen(args: args));
         }
         return _fadeRoute(settings, const HomeShell());
+      case RouteNames.playlistTrackPicker:
+        final id = settings.arguments;
+        return id is String
+            ? _slideRoute<bool>(
+                settings,
+                PlaylistTrackPickerScreen(playlistId: id),
+              )
+            : _fadeRoute(settings, const HomeShell());
       default:
         return _fadeRoute(settings, const HomeShell());
     }

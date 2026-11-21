@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/playlist.dart';
+import '../../domain/playlist_order.dart';
+import '../../infrastructure/playlist_cover_store.dart';
 import '../../../library/domain/entities/song.dart';
 import '../playlist_transfer_service.dart';
 import 'playlist_providers.dart';
@@ -49,7 +51,45 @@ class PlaylistsController extends Notifier<List<Playlist>> {
   }
 
   Future<void> remove(String id) async {
+    final cover = playlistById(id)?.coverPath;
+    final store = ref.read(playlistCoverStoreProvider);
     _commit(state.where((playlist) => playlist.id != id).toList());
+    if (cover == null) return;
+    await _pendingSave;
+    await store.remove(cover);
+  }
+
+  void toggleFavorite(String id) => _update(
+    id,
+    (playlist) => playlist.copyWith(isFavorite: !playlist.isFavorite),
+  );
+
+  void setTrackOrder(String id, PlaylistTrackOrder order) =>
+      _update(id, (playlist) => playlist.copyWith(trackOrder: order));
+
+  Future<void> pickCover(String id) async {
+    final store = ref.read(playlistCoverStoreProvider);
+    final path = await store.pick();
+    if (path == null) return;
+    if (!ref.mounted || playlistById(id) == null) {
+      await store.remove(path);
+      return;
+    }
+    await _setCover(id, path);
+  }
+
+  Future<void> resetCover(String id) => _setCover(id, null);
+
+  Future<void> _setCover(String id, String? path) async {
+    final previous = playlistById(id)?.coverPath;
+    final store = ref.read(playlistCoverStoreProvider);
+    _update(
+      id,
+      (playlist) =>
+          playlist.copyWith(coverPath: path, resetCover: path == null),
+    );
+    await _pendingSave;
+    if (previous != path) await store.remove(previous);
   }
 
   Future<int> importPlaylists(
@@ -143,6 +183,28 @@ class PlaylistsController extends Notifier<List<Playlist>> {
         updatedAt: DateTime.now(),
       );
     });
+  }
+
+  /// Visible indices omit files that are no longer in the library. Move by
+  /// identity so dragging cannot accidentally move one of those missing IDs.
+  Future<void> reorderVisible(
+    String id,
+    List<Song> visible,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    if (oldIndex == newIndex ||
+        oldIndex < 0 ||
+        newIndex < 0 ||
+        oldIndex >= visible.length ||
+        newIndex >= visible.length) {
+      return;
+    }
+    final playlist = playlistById(id);
+    if (playlist == null) return;
+    final from = playlist.songIds.indexOf(visible[oldIndex].id);
+    final to = playlist.songIds.indexOf(visible[newIndex].id);
+    if (from >= 0 && to >= 0) await reorder(id, from, to);
   }
 
   void _update(String id, Playlist Function(Playlist) transform) {

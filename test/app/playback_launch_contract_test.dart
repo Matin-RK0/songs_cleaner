@@ -19,6 +19,44 @@ void main() {
     );
   });
 
+  test(
+    'a cold Routine does not mark playback active or present the player',
+    () {
+      final nativeSource = File('$native/LockScreenController.kt')
+          .readAsStringSync();
+      final routine = nativeSource
+          .split('fun showFromMediaButton(')
+          .last
+          .split('fun onNewIntent')
+          .first;
+      expect(routine, contains('AudioServicePlugin.getFlutterEngine'));
+      expect(routine, isNot(contains('playbackActive = true')));
+      expect(
+        routine.split('pendingPlay.request()').last,
+        isNot(contains('showOverLockScreen(')),
+      );
+      final appSource = File('lib/app/app.dart').readAsStringSync();
+      expect(appSource, isNot(contains('setPlaybackActive(true)')));
+    },
+  );
+
+  test(
+    'native playback stop dismisses the player regardless of screen state',
+    () {
+      final source = File('$native/LockScreenController.kt').readAsStringSync();
+      final handler = source
+          .split('"setPlaybackActive" ->')
+          .last
+          .split('"consumePendingShow"')
+          .first;
+      expect(
+        handler,
+        contains('if (!playbackActive) {\n                    onUserPresent()'),
+      );
+      expect(handler, isNot(contains('isScreenInteractive')));
+    },
+  );
+
   test('widget intents are consumed and ignored on Activity restoration', () {
     final source = File('$native/MainActivity.kt').readAsStringSync();
     expect(

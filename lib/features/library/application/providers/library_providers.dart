@@ -2,9 +2,11 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/alphabet_index.dart';
 import '../../domain/entities/song.dart';
 import '../../domain/entities/song_collection.dart';
 import '../../domain/services/library_query.dart';
+import '../../domain/value_objects/song_sort.dart';
 import 'library_controller.dart';
 
 /// Small thumbnails for list tiles; autoDispose keeps memory bounded while
@@ -20,6 +22,18 @@ final songArtworkProvider = FutureProvider.autoDispose
 final visibleSongsProvider = Provider<List<Song>>(
   (ref) => ref.watch(libraryProvider).value?.visibleSongs ?? const [],
 );
+
+final songsAlphabetIndexProvider = Provider<Map<String, int>>((ref) {
+  final (sort, songs) = ref.watch(
+    libraryProvider.select((library) {
+      final value = library.value;
+      return (value?.sort, value?.visibleSongs);
+    }),
+  );
+  final label = sort?.alphabeticalField;
+  if (label == null || songs == null) return const {};
+  return buildAlphabetIndex(songs.map(label));
+});
 
 final allSongsProvider = Provider<List<Song>>(
   (ref) => ref.watch(libraryProvider).value?.songs ?? const [],

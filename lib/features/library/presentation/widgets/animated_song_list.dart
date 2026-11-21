@@ -15,6 +15,7 @@ class AnimatedSongList extends StatefulWidget {
     required this.physics,
     this.controller,
     this.emptyState,
+    this.bottomInset = 0,
   });
 
   final List<Song> songs;
@@ -23,6 +24,7 @@ class AnimatedSongList extends StatefulWidget {
   final ScrollPhysics physics;
   final ScrollController? controller;
   final Widget? emptyState;
+  final double bottomInset;
 
   @override
   State<AnimatedSongList> createState() => _AnimatedSongListState();
@@ -170,8 +172,8 @@ class _AnimatedSongListState extends State<AnimatedSongList>
       controller: widget.controller,
       physics: widget.physics,
       itemExtent: widget.itemExtent,
-      padding: const EdgeInsetsDirectional.only(
-        bottom: AppSpacing.xl,
+      padding: EdgeInsetsDirectional.only(
+        bottom: AppSpacing.xl + widget.bottomInset,
         start: AppSpacing.xs,
         end: AppSpacing.sm,
       ),

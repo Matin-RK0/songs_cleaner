@@ -147,6 +147,7 @@ class AppSettingsRepository {
   AppSettingsRepository(this._prefs);
 
   static const String _librarySortKey = 'library.sortIndex';
+  static const String _playlistListOrderKey = 'playlists.listOrder';
   static const String _homeTabIndexKey = 'home.tabIndex';
   static const String _homeTabSettingsKey = 'home.tabSettings';
   static const String _homeTabLayoutVersionKey = 'home.tabLayoutVersion';
@@ -183,6 +184,12 @@ class AppSettingsRepository {
 
   Future<void> saveLibrarySortIndex(int index) =>
       _prefs.setInt(_librarySortKey, index);
+
+  String loadPlaylistListOrder(String fallback) =>
+      _prefs.getString(_playlistListOrderKey) ?? fallback;
+
+  Future<void> savePlaylistListOrder(String order) =>
+      _prefs.setString(_playlistListOrderKey, order);
 
   // -- Home tab ---------------------------------------------------------------
 

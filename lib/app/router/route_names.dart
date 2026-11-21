@@ -7,6 +7,7 @@ abstract final class RouteNames {
   static const String search = '/search';
   static const String groupSongs = '/group-songs';
   static const String playlistDetail = '/playlist-detail';
+  static const String playlistTrackPicker = '/playlist-track-picker';
   static const String settings = '/settings';
   static const String lockScreen = '/lock-screen';
   static const String history = '/history';

@@ -1014,6 +1014,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String get smartMostPlayedTitle => 'Most played';
 
   @override
+  String get smartRecentlyPlayedTitle => 'Recently played';
+
+  @override
+  String get smartRecentlyPlayedEmpty => 'Tracks you play will appear here.';
+
+  @override
+  String get playlistOrderName => 'Name';
+
+  @override
+  String get playlistOrderUpdated => 'Last updated';
+
+  @override
+  String get playlistOrderTrackCount => 'Track count';
+
+  @override
+  String get playlistOrderFavorites => 'Favorites first';
+
+  @override
+  String get playlistOrderCustom => 'Custom order';
+
+  @override
+  String get playlistOrderAutomatic => 'Automatic order';
+
+  @override
+  String get playlistSelectTracks => 'Select tracks';
+
+  @override
+  String get playlistAddTracks => 'Add tracks';
+
+  @override
+  String get playlistPickerEmpty => 'No tracks to add';
+
+  @override
+  String get playlistEditTracks => 'Edit tracks';
+
+  @override
+  String get playlistFinishEditing => 'Finish editing';
+
+  @override
+  String get playlistChangeCover => 'Change cover image';
+
+  @override
+  String get playlistResetCover => 'Use automatic cover';
+
+  @override
+  String get playlistCoverFailed => 'Could not update the playlist cover.';
+
+  @override
+  String get playlistGoToAlbum => 'View album';
+
+  @override
+  String get playlistGoToArtist => 'View artist';
+
+  @override
+  String alphabetJumpTo(String letter) {
+    return 'Jump to $letter';
+  }
+
+  @override
   String get playlistsEmptyTitle => 'No playlists yet';
 
   @override

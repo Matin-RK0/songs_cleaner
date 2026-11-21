@@ -1,179 +1,251 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/router/route_names.dart';
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_feedback.dart';
+import '../../../../core/widgets/alphabet_index_rail.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../library/application/providers/library_providers.dart';
-import '../../../library/application/providers/library_stats_controller.dart';
 import '../../../library/domain/entities/song.dart';
+import '../../application/providers/playlist_providers.dart';
 import '../../application/providers/playlists_controller.dart';
 import '../../application/playlist_transfer_service.dart';
 import '../../domain/entities/smart_playlist.dart';
 import '../../domain/entities/playlist.dart';
+import '../../domain/playlist_order.dart';
 import '../widgets/playlist_artwork.dart';
 import '../widgets/playlist_card.dart';
 import '../widgets/playlist_name_sheet.dart';
+import '../widgets/playlist_sort_button.dart';
+import '../widgets/smart_playlist_presentation.dart';
 
 /// Playlists tab: smart playlists (derived) plus the user's custom playlists.
-class PlaylistsTab extends ConsumerWidget {
-  const PlaylistsTab({super.key});
+class PlaylistsTab extends ConsumerStatefulWidget {
+  const PlaylistsTab({super.key, this.bottomOverlayInset = 0});
+
+  final double bottomOverlayInset;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PlaylistsTab> createState() => _PlaylistsTabState();
+}
+
+enum _TransferAction { import, export, share }
+
+class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
+  final _scroll = ScrollController();
+  final _headerKey = GlobalKey();
+  final _search = TextEditingController();
+  Timer? _debounce;
+  var _query = '';
+  var _searching = false;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _search.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final custom = ref.watch(playlistsProvider);
-    final songs = ref.watch(allSongsProvider);
-    final stats = ref.watch(libraryStatsProvider);
-
-    final likedCount = songs.where((song) => stats.isFavorite(song.id)).length;
-    final mostPlayedCount = songs
-        .where((song) => stats.playCount(song.id) > 0)
-        .length;
-
-    return CustomScrollView(
-      physics: const ClampingScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: _SectionHeader(title: l10n.smartPlaylistsSection),
-        ),
-        SliverToBoxAdapter(
-          child: SizedBox(
-            height: 196,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
+    final order = ref.watch(playlistListOrderProvider);
+    final view = ref.watch(playlistBrowseProvider((order, _query)));
+    return Material(
+      color: context.colors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: CustomScrollView(
+              controller: _scroll,
               physics: const ClampingScrollPhysics(),
-              padding: const EdgeInsetsDirectional.only(
-                start: AppSpacing.md,
-                end: AppSpacing.md,
-              ),
-              children: [
-                _SmartPlaylistCard(
-                  title: l10n.smartLikedTitle,
-                  count: likedCount,
-                  icon: Icons.favorite_rounded,
-                  accent: context.colors.danger,
-                  onTap: () => _openSmart(context, SmartPlaylistKind.liked),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Column(
+                    key: _headerKey,
+                    children: [
+                      _SectionHeader(title: l10n.smartPlaylistsSection),
+                      _SmartPlaylists(
+                        onOpen: (kind) => _openSmart(context, kind),
+                      ),
+                      _SectionHeader(
+                        title: l10n.myPlaylistsSection,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (view.hasPlaylists)
+                              IconButton(
+                                tooltip: _searching
+                                    ? l10n.closeTooltip
+                                    : l10n.searchHint,
+                                icon: Icon(
+                                  _searching
+                                      ? Icons.close_rounded
+                                      : Icons.search_rounded,
+                                ),
+                                onPressed: _toggleSearch,
+                              ),
+                            IconButton(
+                              tooltip: l10n.newPlaylist,
+                              icon: const Icon(Icons.add_rounded),
+                              onPressed: () => _createPlaylist(context, ref),
+                            ),
+                            PopupMenuButton<_TransferAction>(
+                              tooltip: l10n.moreActions,
+                              itemBuilder: (_) => [
+                                PopupMenuItem(
+                                  value: _TransferAction.import,
+                                  child: Text(l10n.importPlaylists),
+                                ),
+                                PopupMenuItem(
+                                  value: _TransferAction.export,
+                                  enabled: view.hasPlaylists,
+                                  child: Text(l10n.exportPlaylists),
+                                ),
+                                PopupMenuItem(
+                                  value: _TransferAction.share,
+                                  enabled: view.hasPlaylists,
+                                  child: Text(l10n.sharePlaylists),
+                                ),
+                              ],
+                              onSelected: (action) {
+                                final songs = ref.read(allSongsProvider);
+                                final playlists = ref.read(playlistsProvider);
+                                switch (action) {
+                                  case _TransferAction.import:
+                                    _importPlaylists(context, ref, songs);
+                                  case _TransferAction.export:
+                                    _exportPlaylists(context, playlists, songs);
+                                  case _TransferAction.share:
+                                    _sharePlaylists(context, playlists, songs);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_searching)
+                        Padding(
+                          padding: AppSpacing.hMdVSm,
+                          child: TextField(
+                            controller: _search,
+                            autofocus: true,
+                            textInputAction: TextInputAction.search,
+                            decoration: InputDecoration(
+                              hintText: l10n.searchHint,
+                              prefixIcon: const Icon(Icons.search_rounded),
+                            ),
+                            onChanged: (value) {
+                              _debounce?.cancel();
+                              _debounce = Timer(
+                                AppMotion.normal,
+                                () => _applyQuery(value),
+                              );
+                            },
+                            onSubmitted: _applyQuery,
+                          ),
+                        ),
+                      if (view.hasPlaylists)
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Padding(
+                            padding: AppSpacing.screenPadding,
+                            child: PlaylistSortButton(
+                              current: order,
+                              options: PlaylistListOrder.values,
+                              labelOf: (order) =>
+                                  playlistListOrderLabel(l10n, order),
+                              onSelected: ref
+                                  .read(playlistListOrderProvider.notifier)
+                                  .setOrder,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                _SmartPlaylistCard(
-                  title: l10n.smartRecentTitle,
-                  count: songs.length,
-                  icon: Icons.fiber_new_rounded,
-                  accent: context.colors.primary,
-                  onTap: () =>
-                      _openSmart(context, SmartPlaylistKind.recentlyAdded),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                _SmartPlaylistCard(
-                  title: l10n.smartMostPlayedTitle,
-                  count: mostPlayedCount,
-                  icon: Icons.local_fire_department_rounded,
-                  accent: context.colors.accent,
-                  onTap: () =>
-                      _openSmart(context, SmartPlaylistKind.mostPlayed),
+                if (!view.hasPlaylists)
+                  SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        AppEmptyState(
+                          icon: Icons.queue_music_rounded,
+                          title: l10n.playlistsEmptyTitle,
+                          message: l10n.playlistsEmptyMessage,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        PrimaryActionButton(
+                          label: l10n.newPlaylist,
+                          icon: Icons.add_rounded,
+                          onPressed: () => _createPlaylist(context, ref),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (view.rows.isEmpty)
+                  SliverToBoxAdapter(
+                    child: AppEmptyState(
+                      icon: Icons.search_off_rounded,
+                      title: l10n.noResultsTitle,
+                    ),
+                  )
+                else
+                  SliverFixedExtentList.builder(
+                    itemExtent: AppSpacing.trackRowHeight,
+                    itemCount: view.rows.length,
+                    itemBuilder: (context, index) => _CustomPlaylistRow(
+                      playlist: view.rows[index],
+                      onTap: () => _openCustom(context, view.rows[index].id),
+                    ),
+                  ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: widget.bottomOverlayInset + AppSpacing.xl,
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: _SectionHeader(
-            title: l10n.myPlaylistsSection,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  tooltip: l10n.importPlaylists,
-                  icon: const Icon(Icons.file_upload_outlined),
-                  onPressed: () => _importPlaylists(context, ref, songs),
-                ),
-                IconButton(
-                  tooltip: l10n.exportPlaylists,
-                  icon: const Icon(Icons.file_download_outlined),
-                  onPressed: custom.isEmpty
-                      ? null
-                      : () => _exportPlaylists(context, custom, songs),
-                ),
-                IconButton(
-                  tooltip: l10n.sharePlaylists,
-                  icon: const Icon(Icons.share_outlined),
-                  onPressed: custom.isEmpty
-                      ? null
-                      : () => _sharePlaylists(context, custom, songs),
-                ),
-                IconButton(
-                  tooltip: l10n.newPlaylist,
-                  icon: const Icon(Icons.add_rounded),
-                  onPressed: () => _createPlaylist(context, ref),
-                ),
-              ],
-            ),
+          AlphabetIndexRail(
+            index: view.alphabet,
+            bottomInset: widget.bottomOverlayInset,
+            onJump: (row) {
+              final height = _headerKey.currentContext?.size?.height ?? 0;
+              jumpToListRow(_scroll, height + row * AppSpacing.trackRowHeight);
+            },
           ),
-        ),
-        if (custom.isEmpty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(
-                top: AppSpacing.lg,
-                bottom: AppSpacing.xl,
-              ),
-              child: Column(
-                children: [
-                  AppEmptyState(
-                    icon: Icons.queue_music_rounded,
-                    title: l10n.playlistsEmptyTitle,
-                    message: l10n.playlistsEmptyMessage,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  PrimaryActionButton(
-                    label: l10n.newPlaylist,
-                    icon: Icons.add_rounded,
-                    onPressed: () => _createPlaylist(context, ref),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsetsDirectional.fromSTEB(
-              AppSpacing.md,
-              AppSpacing.sm,
-              AppSpacing.md,
-              AppSpacing.xl + 72,
-            ),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: AppSpacing.md,
-                crossAxisSpacing: AppSpacing.md,
-                childAspectRatio: 0.74,
-              ),
-              delegate: SliverChildBuilderDelegate(childCount: custom.length, (
-                context,
-                index,
-              ) {
-                final playlist = custom[index];
-                return PlaylistCard(
-                  title: playlist.name,
-                  subtitle: l10n.songCountLabel(playlist.songCount),
-                  cover: PlaylistArtwork(
-                    songIds: playlist.songIds,
-                    expand: true,
-                    heroTag: 'playlist-art-${playlist.id}',
-                  ),
-                  onTap: () => _openCustom(context, playlist.id),
-                );
-              }),
-            ),
-          ),
-      ],
+        ],
+      ),
     );
+  }
+
+  void _applyQuery(String value) {
+    _debounce?.cancel();
+    final query = value.trim().toLowerCase();
+    if (query != _query) setState(() => _query = query);
+  }
+
+  void _toggleSearch() {
+    _debounce?.cancel();
+    setState(() {
+      _searching = !_searching;
+      if (!_searching) {
+        _search.clear();
+        _query = '';
+      }
+    });
   }
 
   void _openCustom(BuildContext context, String playlistId) {
@@ -197,10 +269,11 @@ class PlaylistsTab extends ConsumerWidget {
       title: l10n.newPlaylist,
       actionLabel: l10n.createAction,
     );
-    if (name == null) return;
+    if (name == null || !context.mounted) return;
     final playlist = await ref.read(playlistsProvider.notifier).create(name);
     if (!context.mounted) return;
     showAppSnackBar(context, l10n.playlistCreatedToast(playlist.name));
+    _openCustom(context, playlist.id);
   }
 
   Future<void> _exportPlaylists(
@@ -235,7 +308,7 @@ class PlaylistsTab extends ConsumerWidget {
     final importedPlaylistName = context.l10n.importedPlaylistName;
     try {
       final imported = await const PlaylistTransferService().importFromFile();
-      if (imported == null) return;
+      if (imported == null || !context.mounted) return;
       final count = await ref
           .read(playlistsProvider.notifier)
           .importPlaylists(imported, songs, importedPlaylistName);
@@ -315,35 +388,83 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _SmartPlaylistCard extends StatelessWidget {
-  const _SmartPlaylistCard({
-    required this.title,
-    required this.count,
-    required this.icon,
-    required this.accent,
-    required this.onTap,
-  });
+class _SmartPlaylists extends StatelessWidget {
+  const _SmartPlaylists({required this.onOpen});
 
-  final String title;
-  final int count;
-  final IconData icon;
-  final Color accent;
-  final VoidCallback onTap;
+  final ValueChanged<SmartPlaylistKind> onOpen;
+
+  static const _width = AppSpacing.avatarLarge * 2;
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     return SizedBox(
-      width: 148,
-      child: PlaylistCard(
-        title: title,
-        subtitle: context.l10n.songCountLabel(count),
-        cover: DecoratedBox(
-          decoration: BoxDecoration(color: colors.surfaceHigh),
-          child: Center(child: Icon(icon, size: 44, color: accent)),
-        ),
-        onTap: onTap,
+      height:
+          _width +
+          MediaQuery.textScalerOf(context)
+              .scale(AppSpacing.xl + AppSpacing.md) +
+          AppSpacing.md,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
+        padding: AppSpacing.screenPadding,
+        itemCount: SmartPlaylistKind.values.length,
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+        itemBuilder: (context, index) {
+          final kind = SmartPlaylistKind.values[index];
+          return SizedBox(
+            width: _width,
+            child: Consumer(
+              builder: (context, ref, _) {
+                final songs = ref.watch(smartPlaylistSongsProvider(kind));
+                return PlaylistCard(
+                  title: kind.title(context.l10n),
+                  subtitle: context.l10n.songCountLabel(songs.length),
+                  cover: PlaylistArtwork(
+                    songIds: [if (songs.isNotEmpty) songs.first.id],
+                    size: _width,
+                    expand: true,
+                    placeholderIcon: kind.icon,
+                  ),
+                  onTap: () => onOpen(kind),
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
+}
+
+class _CustomPlaylistRow extends StatelessWidget {
+  const _CustomPlaylistRow({required this.playlist, required this.onTap});
+
+  final Playlist playlist;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    onTap: onTap,
+    contentPadding: AppSpacing.screenPadding,
+    leading: PlaylistArtwork(
+      songIds: playlist.songIds,
+      coverPath: playlist.coverPath,
+      size: AppSpacing.avatarSize,
+      heroTag: 'playlist-art-${playlist.id}',
+    ),
+    title: Text(playlist.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+    subtitle: Text(
+      context.l10n.songCountLabel(playlist.songCount),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    ),
+    trailing: Icon(
+      playlist.isFavorite
+          ? Icons.favorite_rounded
+          : Icons.chevron_right_rounded,
+      color: playlist.isFavorite
+          ? context.colors.danger
+          : context.colors.textLow,
+    ),
+  );
 }

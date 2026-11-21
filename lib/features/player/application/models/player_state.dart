@@ -38,6 +38,14 @@ class PlayerState {
       (index >= 0 && index < songs.length) ? songs[index] : null;
 
   bool get hasCurrent => current != null;
+
+  // The decoder can still report playing at EOF until the queue handles it.
+  bool get hasActivePlayback =>
+      hasCurrent &&
+      playing &&
+      processingState != PlayerProcessingState.idle &&
+      processingState != PlayerProcessingState.completed;
+
   bool get canSkipTracks => songs.length > 1;
 
   bool get isBuffering =>

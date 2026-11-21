@@ -34,12 +34,13 @@ object PluginProvider {
     private lateinit var result: WeakReference<MethodChannel.Result>
 
     /**
-     * Used to define the current [Activity] and [Context].
-     *
-     * Should be defined once.
+     * MediaStore reads also run when playback starts without an Activity.
      */
-    fun set(activity: Activity) {
-        this.context = WeakReference(activity.applicationContext)
+    fun setContext(context: Context) {
+        this.context = WeakReference(context.applicationContext)
+    }
+
+    fun setActivity(activity: Activity) {
         this.activity = WeakReference(activity)
     }
 

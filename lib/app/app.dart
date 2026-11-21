@@ -26,8 +26,9 @@ class SongsCleanerApp extends ConsumerStatefulWidget {
 class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription<LockScreenEvent>? _eventsSub;
-  bool _lockScreenOpen = false;
+  Route<dynamic>? _lockScreenRoute;
   bool _lockScreenRequested = false;
+  bool _startingPendingPlayback = false;
   int _lockScreenEventGeneration = 0;
   final NowPlayingWidgetService _widgetService =
       const NowPlayingWidgetService();
@@ -40,25 +41,23 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
     _eventsSub = service.events.listen(_onLockScreenEvent);
 
     // Seed the native playback rule; the listener in build() keeps it current.
-    final player = ref.read(playerProvider);
-    service.setPlaybackActive(player.hasCurrent && player.playing);
-
-    // Announce that Dart can receive show/hide events, then honor a show that
-    // the lock screen requested while the app was still booting.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final generation = _lockScreenEventGeneration;
-      final pending = await service.register();
-      final pendingPlay = await service.consumePendingPlay();
-      if (!mounted) return;
-      // A call may have cancelled the presentation while register was in flight.
-      if (pending && generation == _lockScreenEventGeneration) {
-        _openLockScreen();
-      }
-      if (pendingPlay) {
-        unawaited(_startPendingPlayback());
-      }
-      unawaited(_handlePendingWidgetAction());
+    unawaited(
+      service.setPlaybackActive(ref.read(playerProvider).hasActivePlayback),
+    );
+    // A cold media command can boot the engine without an attached Activity.
+    unawaited(_registerLockScreen(service));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_handlePendingWidgetAction());
     });
+  }
+
+  Future<void> _registerLockScreen(LockScreenService service) async {
+    final generation = _lockScreenEventGeneration;
+    final pending = await service.register();
+    final pendingPlay = await service.consumePendingPlay();
+    if (!mounted) return;
+    if (pending && generation == _lockScreenEventGeneration) _openLockScreen();
+    if (pendingPlay) unawaited(_startPendingPlayback());
   }
 
   Future<void> _handlePendingWidgetAction() async {
@@ -111,15 +110,23 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   }
 
   Future<void> _startPendingPlayback() async {
+    if (_startingPendingPlayback) return;
+    _startingPendingPlayback = true;
     final service = ref.read(lockScreenServiceProvider);
-    await service.setPlaybackActive(true);
-    await ref.read(musicPlayerHandlerProvider).play();
-    await service.setPlaybackActive(true);
+    try {
+      await ref.read(musicPlayerHandlerProvider).play();
+    } on Exception {
+      // An unavailable library/source must leave the system lock screen alone.
+    } finally {
+      _startingPendingPlayback = false;
+      await service.finishPlayRequest();
+    }
   }
 
   void _openLockScreen() {
+    if (!ref.read(playerProvider).hasActivePlayback) return;
     _lockScreenRequested = true;
-    if (_lockScreenOpen) return;
+    if (_lockScreenRoute != null) return;
     final navigator = _navigatorKey.currentState;
     if (navigator == null) {
       // Cold audio-service startup can deliver the native request before the
@@ -129,16 +136,23 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
       });
       return;
     }
-    _lockScreenOpen = true;
-    navigator.pushNamed(RouteNames.lockScreen).whenComplete(() {
-      _lockScreenOpen = false;
-    });
+    final route = AppRouter.onGenerateRoute(
+      const RouteSettings(name: RouteNames.lockScreen),
+    );
+    _lockScreenRoute = route;
+    unawaited(
+      navigator.push(route).whenComplete(() {
+        if (identical(_lockScreenRoute, route)) _lockScreenRoute = null;
+      }),
+    );
   }
 
   void _closeLockScreen() {
     _lockScreenRequested = false;
-    if (!_lockScreenOpen) return;
-    _navigatorKey.currentState?.pop();
+    final route = _lockScreenRoute;
+    _lockScreenRoute = null;
+    // A sheet or another route may be above the player when playback stops.
+    if (route != null && route.isActive) route.navigator?.removeRoute(route);
   }
 
   @override
@@ -148,7 +162,7 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
 
     // Drives the native side: the lock screen only reacts while a song plays.
     ref.listen(
-      playerProvider.select((state) => state.hasCurrent && state.playing),
+      playerProvider.select((state) => state.hasActivePlayback),
       (_, active) =>
           ref.read(lockScreenServiceProvider).setPlaybackActive(active),
     );

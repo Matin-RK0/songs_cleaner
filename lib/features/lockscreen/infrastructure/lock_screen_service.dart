@@ -17,7 +17,7 @@ enum LockScreenEvent {
   /// The keyguard turned on while a song was playing: show the player route.
   showPlayer,
 
-  /// The device was unlocked or a call needs priority: leave the player route.
+  /// Playback stopped, the device was unlocked, or a call needs priority.
   hidePlayer,
 
   /// A Routine requested playback after the Flutter UI was already running.
@@ -92,8 +92,7 @@ class LockScreenService {
   Future<void> setTimeoutSeconds(int seconds) =>
       _invoke<void>('setTimeoutSeconds', seconds);
 
-  /// Mirrors the live playback rule (`hasCurrent && playing`) so the native
-  /// side only reacts to the lock screen while music is actually playing.
+  /// Mirrors live playback, not the presence of a saved or paused track.
   Future<void> setPlaybackActive(bool active) =>
       _invoke<void>('setPlaybackActive', active);
 
@@ -106,6 +105,8 @@ class LockScreenService {
     final pending = await _invoke<bool>('consumePendingPlay');
     return pending ?? false;
   }
+
+  Future<void> finishPlayRequest() => _invoke<void>('finishPlayRequest');
 
   /// Requests exit via keyguard dismissal. A phone call can also hide the player;
   /// cancelling system authentication otherwise keeps the player route visible.

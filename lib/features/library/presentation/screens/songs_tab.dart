@@ -11,11 +11,13 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/app_feedback.dart';
+import '../../../../core/widgets/alphabet_index_rail.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../cleanup/application/cleanup_service.dart';
 import '../../../player/application/providers/player_controller.dart';
 import '../../../playlists/presentation/widgets/add_to_playlist_sheet.dart';
 import '../../application/providers/library_controller.dart';
+import '../../application/providers/library_providers.dart';
 import '../../application/providers/library_stats_controller.dart';
 import '../../domain/value_objects/song_sort.dart';
 import '../../domain/value_objects/song_filter.dart';
@@ -25,9 +27,14 @@ import '../widgets/song_list_view.dart';
 import '../widgets/song_tile.dart';
 
 class SongsTab extends ConsumerStatefulWidget {
-  const SongsTab({super.key, this.scrollController});
+  const SongsTab({
+    super.key,
+    this.scrollController,
+    this.bottomOverlayInset = 0,
+  });
 
   final ScrollController? scrollController;
+  final double bottomOverlayInset;
 
   @override
   ConsumerState<SongsTab> createState() => _SongsTabState();
@@ -35,6 +42,13 @@ class SongsTab extends ConsumerStatefulWidget {
 
 class _SongsTabState extends ConsumerState<SongsTab> {
   final Set<int> _selectedIds = <int>{};
+  final _localScroll = ScrollController();
+
+  @override
+  void dispose() {
+    _localScroll.dispose();
+    super.dispose();
+  }
 
   void _toggleSelection(int songId) {
     setState(() {
@@ -47,6 +61,8 @@ class _SongsTabState extends ConsumerState<SongsTab> {
   @override
   Widget build(BuildContext context) {
     final library = ref.watch(libraryProvider);
+    final alphabet = ref.watch(songsAlphabetIndexProvider);
+    final scroll = widget.scrollController ?? _localScroll;
     final currentId = ref.watch(
       playerProvider.select((state) => state.current?.id),
     );
@@ -124,31 +140,45 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                     ),
             ),
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: () => ref.read(libraryProvider.notifier).refresh(),
-                child: SongListView(
-                  animateChanges: true,
-                  emptyState: AppEmptyState(
-                    icon: state.songs.isEmpty
-                        ? Icons.library_music_rounded
-                        : Icons.search_off_rounded,
-                    title: state.songs.isEmpty
-                        ? context.l10n.emptyLibraryTitle
-                        : context.l10n.noResultsTitle,
-                    message: state.songs.isEmpty
-                        ? context.l10n.emptyLibraryMessage
-                        : context.l10n.noResultsMessage,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () =>
+                          ref.read(libraryProvider.notifier).refresh(),
+                      child: SongListView(
+                        animateChanges: true,
+                        emptyState: AppEmptyState(
+                          icon: state.songs.isEmpty
+                              ? Icons.library_music_rounded
+                              : Icons.search_off_rounded,
+                          title: state.songs.isEmpty
+                              ? context.l10n.emptyLibraryTitle
+                              : context.l10n.noResultsTitle,
+                          message: state.songs.isEmpty
+                              ? context.l10n.emptyLibraryMessage
+                              : context.l10n.noResultsMessage,
+                        ),
+                        songs: state.visibleSongs,
+                        currentSongId: currentId,
+                        controller: scroll,
+                        bottomInset: widget.bottomOverlayInset,
+                        itemExtent: SongTile.itemExtent,
+                        selectedSongIds: _selectedIds,
+                        onSelectionChanged: _toggleSelection,
+                        onSongTap: (songs, index) => ref
+                            .read(playerProvider.notifier)
+                            .playFromList(songs, startIndex: index),
+                      ),
+                    ),
                   ),
-                  songs: state.visibleSongs,
-                  currentSongId: currentId,
-                  controller: widget.scrollController,
-                  itemExtent: SongTile.itemExtent,
-                  selectedSongIds: _selectedIds,
-                  onSelectionChanged: _toggleSelection,
-                  onSongTap: (songs, index) => ref
-                      .read(playerProvider.notifier)
-                      .playFromList(songs, startIndex: index),
-                ),
+                  AlphabetIndexRail(
+                    index: alphabet,
+                    bottomInset: widget.bottomOverlayInset,
+                    onJump: (index) =>
+                        jumpToListRow(scroll, index * SongTile.itemExtent),
+                  ),
+                ],
               ),
             ),
           ],

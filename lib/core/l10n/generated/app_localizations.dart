@@ -1899,6 +1899,120 @@ abstract class AppLocalizations {
   /// **'پربازدیدترین‌ها'**
   String get smartMostPlayedTitle;
 
+  /// No description provided for @smartRecentlyPlayedTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'اخیراً پخش‌شده'**
+  String get smartRecentlyPlayedTitle;
+
+  /// No description provided for @smartRecentlyPlayedEmpty.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگ‌هایی که پخش می‌کنید اینجا نمایش داده می‌شوند.'**
+  String get smartRecentlyPlayedEmpty;
+
+  /// No description provided for @playlistOrderName.
+  ///
+  /// In fa, this message translates to:
+  /// **'نام'**
+  String get playlistOrderName;
+
+  /// No description provided for @playlistOrderUpdated.
+  ///
+  /// In fa, this message translates to:
+  /// **'آخرین تغییر'**
+  String get playlistOrderUpdated;
+
+  /// No description provided for @playlistOrderTrackCount.
+  ///
+  /// In fa, this message translates to:
+  /// **'تعداد آهنگ‌ها'**
+  String get playlistOrderTrackCount;
+
+  /// No description provided for @playlistOrderFavorites.
+  ///
+  /// In fa, this message translates to:
+  /// **'علاقه‌مندی‌ها اول'**
+  String get playlistOrderFavorites;
+
+  /// No description provided for @playlistOrderCustom.
+  ///
+  /// In fa, this message translates to:
+  /// **'ترتیب دلخواه'**
+  String get playlistOrderCustom;
+
+  /// No description provided for @playlistOrderAutomatic.
+  ///
+  /// In fa, this message translates to:
+  /// **'ترتیب خودکار'**
+  String get playlistOrderAutomatic;
+
+  /// No description provided for @playlistSelectTracks.
+  ///
+  /// In fa, this message translates to:
+  /// **'انتخاب آهنگ‌ها'**
+  String get playlistSelectTracks;
+
+  /// No description provided for @playlistAddTracks.
+  ///
+  /// In fa, this message translates to:
+  /// **'افزودن آهنگ‌ها'**
+  String get playlistAddTracks;
+
+  /// No description provided for @playlistPickerEmpty.
+  ///
+  /// In fa, this message translates to:
+  /// **'آهنگی برای افزودن نیست'**
+  String get playlistPickerEmpty;
+
+  /// No description provided for @playlistEditTracks.
+  ///
+  /// In fa, this message translates to:
+  /// **'ویرایش آهنگ‌ها'**
+  String get playlistEditTracks;
+
+  /// No description provided for @playlistFinishEditing.
+  ///
+  /// In fa, this message translates to:
+  /// **'پایان ویرایش'**
+  String get playlistFinishEditing;
+
+  /// No description provided for @playlistChangeCover.
+  ///
+  /// In fa, this message translates to:
+  /// **'تغییر تصویر کاور'**
+  String get playlistChangeCover;
+
+  /// No description provided for @playlistResetCover.
+  ///
+  /// In fa, this message translates to:
+  /// **'استفاده از کاور خودکار'**
+  String get playlistResetCover;
+
+  /// No description provided for @playlistCoverFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'تصویر کاور پلی‌لیست تغییر نکرد.'**
+  String get playlistCoverFailed;
+
+  /// No description provided for @playlistGoToAlbum.
+  ///
+  /// In fa, this message translates to:
+  /// **'نمایش آلبوم'**
+  String get playlistGoToAlbum;
+
+  /// No description provided for @playlistGoToArtist.
+  ///
+  /// In fa, this message translates to:
+  /// **'نمایش هنرمند'**
+  String get playlistGoToArtist;
+
+  /// No description provided for @alphabetJumpTo.
+  ///
+  /// In fa, this message translates to:
+  /// **'رفتن به حرف {letter}'**
+  String alphabetJumpTo(String letter);
+
   /// No description provided for @playlistsEmptyTitle.
   ///
   /// In fa, this message translates to:

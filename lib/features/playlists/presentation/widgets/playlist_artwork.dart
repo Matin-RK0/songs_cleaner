@@ -1,5 +1,6 @@
+import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -8,7 +9,7 @@ import '../../../library/presentation/widgets/artwork_image.dart';
 /// Playlist cover: a 2x2 collage of the first songs, a single cover when only
 /// one exists, or a neutral placeholder when empty. Fills its parent when
 /// [expand] is true (grid cards), otherwise a fixed [size] square.
-class PlaylistArtwork extends ConsumerWidget {
+class PlaylistArtwork extends StatelessWidget {
   const PlaylistArtwork({
     super.key,
     required this.songIds,
@@ -16,6 +17,8 @@ class PlaylistArtwork extends ConsumerWidget {
     this.borderRadius,
     this.expand = false,
     this.heroTag,
+    this.coverPath,
+    this.placeholderIcon = Icons.queue_music_rounded,
   });
 
   final List<int> songIds;
@@ -23,18 +26,36 @@ class PlaylistArtwork extends ConsumerWidget {
   final BorderRadius? borderRadius;
   final bool expand;
   final String? heroTag;
+  final String? coverPath;
+  final IconData placeholderIcon;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = context.colors;
     final radius = borderRadius ?? AppRadius.md;
     final covers = songIds.take(4).toList(growable: false);
 
+    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context))
+        .ceil()
+        .clamp(1, 512);
+    final automatic = covers.isEmpty
+        ? _placeholder(colors)
+        : _collage(colors, covers, cacheSize);
+    final path = coverPath;
     final content = ClipRRect(
       borderRadius: radius,
       child: DecoratedBox(
         decoration: BoxDecoration(color: colors.surfaceHigh),
-        child: covers.isEmpty ? _placeholder(colors) : _collage(colors, covers),
+        child: path == null
+            ? automatic
+            : Image.file(
+                File(path),
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                cacheWidth: cacheSize,
+                errorBuilder: (_, _, _) => automatic,
+              ),
       ),
     );
 
@@ -47,37 +68,28 @@ class PlaylistArtwork extends ConsumerWidget {
     );
   }
 
-  Widget _collage(AppColorTokens colors, List<int> covers) {
+  Widget _collage(AppColorTokens colors, List<int> covers, int pixels) {
     if (covers.length == 1) {
-      return _cover(covers.first);
+      return _cover(covers.first, size, pixels);
     }
+    Widget cell(int index) => index < covers.length
+        ? _cover(covers[index], size / 2, (pixels / 2).ceil())
+        : ColoredBox(color: colors.surfaceHigh);
     return Column(
       children: [
         Expanded(
           child: Row(
             children: [
-              Expanded(child: _cover(covers[0])),
-              Expanded(
-                child: covers.length > 1
-                    ? _cover(covers[1])
-                    : _emptyCell(colors),
-              ),
+              Expanded(child: cell(0)),
+              Expanded(child: cell(1)),
             ],
           ),
         ),
         Expanded(
           child: Row(
             children: [
-              Expanded(
-                child: covers.length > 2
-                    ? _cover(covers[2])
-                    : _emptyCell(colors),
-              ),
-              Expanded(
-                child: covers.length > 3
-                    ? _cover(covers[3])
-                    : _emptyCell(colors),
-              ),
+              Expanded(child: cell(2)),
+              Expanded(child: cell(3)),
             ],
           ),
         ),
@@ -85,16 +97,17 @@ class PlaylistArtwork extends ConsumerWidget {
     );
   }
 
-  Widget _cover(int songId) => ArtworkImage(
+  Widget _cover(int songId, double cellSize, int pixels) => ArtworkImage(
     songId: songId,
-    size: size,
+    size: cellSize,
     borderRadius: BorderRadius.zero,
     expand: true,
-    resolution: 260,
+    resolution: pixels <= 128
+        ? 128
+        : pixels <= 256
+        ? 256
+        : 512,
   );
-
-  Widget _emptyCell(AppColorTokens colors) =>
-      ColoredBox(color: colors.surfaceHigh);
 
   Widget _placeholder(AppColorTokens colors) {
     return DecoratedBox(
@@ -106,11 +119,7 @@ class PlaylistArtwork extends ConsumerWidget {
         ),
       ),
       child: Center(
-        child: Icon(
-          Icons.queue_music_rounded,
-          size: size * 0.34,
-          color: colors.textLow,
-        ),
+        child: Icon(placeholderIcon, size: size * 0.34, color: colors.textLow),
       ),
     );
   }

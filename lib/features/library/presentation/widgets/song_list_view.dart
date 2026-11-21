@@ -23,6 +23,7 @@ class SongListView extends ConsumerWidget {
     this.onSelectionChanged,
     this.animateChanges = false,
     this.emptyState,
+    this.bottomInset = 0,
   });
 
   final List<Song> songs;
@@ -35,6 +36,7 @@ class SongListView extends ConsumerWidget {
   final ValueChanged<int>? onSelectionChanged;
   final bool animateChanges;
   final Widget? emptyState;
+  final double bottomInset;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,6 +47,7 @@ class SongListView extends ConsumerWidget {
         physics: physics,
         controller: controller,
         emptyState: emptyState,
+        bottomInset: bottomInset,
         itemBuilder: (context, song) => Consumer(
           builder: (context, ref, _) => _buildTile(context, ref, song, null),
         ),
@@ -53,8 +56,8 @@ class SongListView extends ConsumerWidget {
     return ListView.builder(
       controller: controller,
       itemExtent: itemExtent,
-      padding: const EdgeInsetsDirectional.only(
-        bottom: AppSpacing.xl,
+      padding: EdgeInsetsDirectional.only(
+        bottom: AppSpacing.xl + bottomInset,
         start: AppSpacing.xs,
         end: AppSpacing.sm,
       ),
@@ -98,9 +101,9 @@ class SongListView extends ConsumerWidget {
       onToggleFavorite: () =>
           ref.read(libraryStatsProvider.notifier).toggleFavorite(song.id),
       onDeleteDevice: (target) => deleteSongFlow(context, ref, target),
-      onShowInfo: () => Navigator.of(
-        context,
-      ).pushNamed(RouteNames.songDetails, arguments: song.id),
+      onShowInfo: () =>
+          Navigator.of(context)
+              .pushNamed(RouteNames.songDetails, arguments: song.id),
     );
   }
 }

@@ -5,8 +5,8 @@ import android.content.Intent
 import android.view.KeyEvent
 
 /**
- * Bootstraps the UI for a cold Routine command. Playback starts only after
- * Flutter has initialized the existing AudioService handler.
+ * Boots the shared playback engine for a cold Routine command. The player
+ * appears only after the AudioService handler reports active playback.
  */
 class LockScreenMediaButtonReceiver : android.content.BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

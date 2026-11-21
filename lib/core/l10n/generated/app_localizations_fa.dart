@@ -1014,6 +1014,66 @@ class AppLocalizationsFa extends AppLocalizations {
   String get smartMostPlayedTitle => 'پربازدیدترین‌ها';
 
   @override
+  String get smartRecentlyPlayedTitle => 'اخیراً پخش‌شده';
+
+  @override
+  String get smartRecentlyPlayedEmpty =>
+      'آهنگ‌هایی که پخش می‌کنید اینجا نمایش داده می‌شوند.';
+
+  @override
+  String get playlistOrderName => 'نام';
+
+  @override
+  String get playlistOrderUpdated => 'آخرین تغییر';
+
+  @override
+  String get playlistOrderTrackCount => 'تعداد آهنگ‌ها';
+
+  @override
+  String get playlistOrderFavorites => 'علاقه‌مندی‌ها اول';
+
+  @override
+  String get playlistOrderCustom => 'ترتیب دلخواه';
+
+  @override
+  String get playlistOrderAutomatic => 'ترتیب خودکار';
+
+  @override
+  String get playlistSelectTracks => 'انتخاب آهنگ‌ها';
+
+  @override
+  String get playlistAddTracks => 'افزودن آهنگ‌ها';
+
+  @override
+  String get playlistPickerEmpty => 'آهنگی برای افزودن نیست';
+
+  @override
+  String get playlistEditTracks => 'ویرایش آهنگ‌ها';
+
+  @override
+  String get playlistFinishEditing => 'پایان ویرایش';
+
+  @override
+  String get playlistChangeCover => 'تغییر تصویر کاور';
+
+  @override
+  String get playlistResetCover => 'استفاده از کاور خودکار';
+
+  @override
+  String get playlistCoverFailed => 'تصویر کاور پلی‌لیست تغییر نکرد.';
+
+  @override
+  String get playlistGoToAlbum => 'نمایش آلبوم';
+
+  @override
+  String get playlistGoToArtist => 'نمایش هنرمند';
+
+  @override
+  String alphabetJumpTo(String letter) {
+    return 'رفتن به حرف $letter';
+  }
+
+  @override
   String get playlistsEmptyTitle => 'هنوز پلی‌لیستی نیست';
 
   @override

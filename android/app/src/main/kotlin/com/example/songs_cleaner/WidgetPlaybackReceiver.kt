@@ -6,7 +6,6 @@ import android.view.KeyEvent
 import com.ryanheise.audioservice.AudioServicePlugin
 import com.ryanheise.audioservice.MediaButtonReceiver
 import com.ryanheise.audioservice.PlaybackNotificationPlugin
-import io.flutter.plugin.common.MethodChannel
 
 /** Explicitly targets our MediaBrowserService, including after process death. */
 class WidgetPlaybackReceiver : MediaButtonReceiver() {
@@ -25,13 +24,8 @@ class WidgetPlaybackReceiver : MediaButtonReceiver() {
         }
         if (!engine.plugins.has(NowPlayingWidgetPlugin::class.java)) {
             NowPlayingWidgetPlugin.register(engine)
-            LockScreenController.attachEngine(
-                context,
-                MethodChannel(engine.dartExecutor.binaryMessenger, "com.example.songs_cleaner/lock_screen").apply {
-                    setMethodCallHandler(LockScreenController::handleMethodCall)
-                },
-            )
         }
+        LockScreenController.attachEngine(context, engine)
         // AndroidX binds the app's MediaBrowserService and sends this event
         // only once connected; unlike AudioManager it can bootstrap a cold app.
         super.onReceive(context, Intent(Intent.ACTION_MEDIA_BUTTON).apply {

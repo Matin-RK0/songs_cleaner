@@ -1,3 +1,5 @@
+import '../playlist_track_order.dart';
+
 /// A user-created playlist: an ordered list of song ids with a name.
 /// Metadata is persisted; songs are resolved against the live library so
 /// removed/renamed files never leave stale entries in the UI.
@@ -8,6 +10,9 @@ class Playlist {
     required this.songIds,
     required this.createdAt,
     required this.updatedAt,
+    this.isFavorite = false,
+    this.coverPath,
+    this.trackOrder = PlaylistTrackOrder.custom,
   });
 
   final String id;
@@ -15,6 +20,9 @@ class Playlist {
   final List<int> songIds;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isFavorite;
+  final String? coverPath;
+  final PlaylistTrackOrder trackOrder;
 
   int get songCount => songIds.length;
 
@@ -22,13 +30,24 @@ class Playlist {
 
   bool contains(int songId) => songIds.contains(songId);
 
-  Playlist copyWith({String? name, List<int>? songIds, DateTime? updatedAt}) {
+  Playlist copyWith({
+    String? name,
+    List<int>? songIds,
+    DateTime? updatedAt,
+    bool? isFavorite,
+    String? coverPath,
+    bool resetCover = false,
+    PlaylistTrackOrder? trackOrder,
+  }) {
     return Playlist(
       id: id,
       name: name ?? this.name,
       songIds: songIds ?? this.songIds,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isFavorite: isFavorite ?? this.isFavorite,
+      coverPath: resetCover ? null : coverPath ?? this.coverPath,
+      trackOrder: trackOrder ?? this.trackOrder,
     );
   }
 
@@ -38,6 +57,9 @@ class Playlist {
     'songIds': songIds,
     'createdAt': createdAt.millisecondsSinceEpoch,
     'updatedAt': updatedAt.millisecondsSinceEpoch,
+    if (isFavorite) 'favorite': true,
+    'coverPath': ?coverPath,
+    if (trackOrder != PlaylistTrackOrder.custom) 'trackOrder': trackOrder.name,
   };
 
   static Playlist? fromJson(Object? value) {
@@ -66,6 +88,11 @@ class Playlist {
       songIds: List.unmodifiable(ids),
       createdAt: created,
       updatedAt: updated,
+      isFavorite: value['favorite'] == true,
+      coverPath: value['coverPath'] is String
+          ? value['coverPath'] as String
+          : null,
+      trackOrder: PlaylistTrackOrder.restore(value['trackOrder']),
     );
   }
 

@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
 
 import '../../../../core/extensions/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -19,8 +18,7 @@ import '../../../player/application/providers/player_controller.dart';
 import '../../application/providers/library_controller.dart';
 import '../../domain/entities/song.dart';
 import '../../application/providers/library_providers.dart';
-import '../../application/song_share_service.dart';
-import '../../application/ringtone_service.dart';
+import '../song_platform_actions.dart';
 import '../widgets/artwork_image.dart';
 
 class SongDetailsScreen extends ConsumerWidget {
@@ -55,9 +53,9 @@ class SongDetailsScreen extends ConsumerWidget {
           IconButton(
             tooltip: context.l10n.editTagsTitle,
             icon: const Icon(Icons.edit_rounded),
-            onPressed: () => Navigator.of(
-              context,
-            ).pushNamed(RouteNames.tagEditor, arguments: song.id),
+            onPressed: () =>
+                Navigator.of(context)
+                    .pushNamed(RouteNames.tagEditor, arguments: song.id),
           ),
           IconButton(
             tooltip: context.l10n.renameFileTitle,
@@ -67,12 +65,12 @@ class SongDetailsScreen extends ConsumerWidget {
           IconButton(
             tooltip: context.l10n.shareSongAction,
             icon: const Icon(Icons.share_outlined),
-            onPressed: () => _share(context, song),
+            onPressed: () => shareSong(context, song),
           ),
           IconButton(
             tooltip: context.l10n.setAsRingtoneAction,
             icon: const Icon(Icons.notifications_active_outlined),
-            onPressed: () => _setAsRingtone(context, song),
+            onPressed: () => setSongAsRingtone(context, song),
           ),
           PopupMenuButton<_FileAction>(
             tooltip: context.l10n.fileActionsTitle,
@@ -175,37 +173,6 @@ class SongDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _share(BuildContext context, Song song) async {
-    try {
-      final shared = await const SongShareService().share(song);
-      if (shared && context.mounted) {
-        showAppSnackBar(context, context.l10n.songShareOpened);
-      }
-    } on PlatformException {
-      if (context.mounted) {
-        showAppSnackBar(context, context.l10n.songShareFailed, error: true);
-      }
-    }
-  }
-
-  Future<void> _setAsRingtone(BuildContext context, Song song) async {
-    try {
-      await const RingtoneService().setAsRingtone(song);
-      if (context.mounted) {
-        showAppSnackBar(context, context.l10n.ringtoneSetToast);
-      }
-    } on PlatformException catch (error) {
-      if (!context.mounted) return;
-      showAppSnackBar(
-        context,
-        error.code == 'WRITE_SETTINGS_REQUIRED'
-            ? context.l10n.ringtonePermissionRequired
-            : context.l10n.ringtoneSetFailed,
-        error: true,
-      );
-    }
-  }
-
   String _fallback(BuildContext context, String value) =>
       value.isEmpty ? context.l10n.unknownValue : value;
 
@@ -270,9 +237,8 @@ class SongDetailsScreen extends ConsumerWidget {
     required bool move,
   }) async {
     final parent = File(song.path).parent.path;
-    final destination = await Navigator.of(
-      context,
-    ).pushNamed(RouteNames.folderPicker, arguments: parent);
+    final destination = await Navigator.of(context)
+        .pushNamed(RouteNames.folderPicker, arguments: parent);
     if (destination is! String || !context.mounted) return;
     try {
       final service = ref.read(fileManagerServiceProvider);

@@ -11,6 +11,13 @@ enum SongSort {
 }
 
 extension SongSortX on SongSort {
+  String Function(Song)? get alphabeticalField => switch (this) {
+    SongSort.titleAsc => (song) => song.title,
+    SongSort.artistAsc => (song) => song.artist,
+    SongSort.albumAsc => (song) => song.album,
+    _ => null,
+  };
+
   int compare(Song a, Song b) => switch (this) {
     SongSort.titleAsc => _compareText(a.title, b.title),
     SongSort.artistAsc => _compareText(a.artist, b.artist),
