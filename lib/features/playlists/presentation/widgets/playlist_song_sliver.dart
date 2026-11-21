@@ -110,14 +110,17 @@ class _PlaylistTrackRow extends StatelessWidget {
     final colors = context.colors;
     final l10n = context.l10n;
     final drag = dragIndex;
-    return Material(
+    final tile = Material(
       borderRadius: AppRadius.md,
       color: selected ? colors.surfaceHigh : Colors.transparent,
       child: ListTile(
         onTap: onTap,
         onLongPress: onLongPress,
         selected: selected,
-        contentPadding: AppSpacing.hSmVXs,
+        contentPadding: selected
+            ? const EdgeInsets.symmetric(horizontal: AppSpacing.sm)
+            : AppSpacing.hSmVXs,
+        minVerticalPadding: selected ? 0 : null,
         leading: ArtworkImage(
           songId: song.id,
           size: AppSpacing.avatarSize,
@@ -161,5 +164,12 @@ class _PlaylistTrackRow extends StatelessWidget {
             : trailing,
       ),
     );
+    // Leave space below the highlight without pushing the selected row down.
+    return selected
+        ? Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+            child: tile,
+          )
+        : tile;
   }
 }

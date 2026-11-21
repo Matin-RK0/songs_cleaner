@@ -174,6 +174,7 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                   ),
                   AlphabetIndexRail(
                     index: alphabet,
+                    showPreview: true,
                     bottomInset: widget.bottomOverlayInset,
                     onJump: (index) =>
                         jumpToListRow(scroll, index * SongTile.itemExtent),

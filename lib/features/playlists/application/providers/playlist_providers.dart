@@ -66,11 +66,7 @@ class PlaylistListOrderController extends Notifier<PlaylistListOrder> {
   }
 }
 
-typedef PlaylistBrowseView = ({
-  List<Playlist> rows,
-  Map<String, int> alphabet,
-  bool hasPlaylists,
-});
+typedef PlaylistBrowseView = ({List<Playlist> rows, bool hasPlaylists});
 
 final playlistBrowseProvider = Provider.autoDispose
     .family<PlaylistBrowseView, (PlaylistListOrder, String)>((ref, input) {
@@ -83,13 +79,7 @@ final playlistBrowseProvider = Provider.autoDispose
                   (playlist) => playlist.name.toLowerCase().contains(query),
                 )
                 .toList(growable: false);
-      return (
-        rows: rows,
-        hasPlaylists: all.isNotEmpty,
-        alphabet: order == PlaylistListOrder.name
-            ? buildAlphabetIndex(rows.map((playlist) => playlist.name))
-            : const {},
-      );
+      return (rows: rows, hasPlaylists: all.isNotEmpty);
     });
 
 typedef PlaylistTrackView = ({

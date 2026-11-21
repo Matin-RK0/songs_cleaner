@@ -11,7 +11,6 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_feedback.dart';
-import '../../../../core/widgets/alphabet_index_rail.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../library/application/providers/library_providers.dart';
 import '../../../library/domain/entities/song.dart';
@@ -41,7 +40,6 @@ enum _TransferAction { import, export, share }
 
 class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
   final _scroll = ScrollController();
-  final _headerKey = GlobalKey();
   final _search = TextEditingController();
   Timer? _debounce;
   var _query = '';
@@ -65,166 +63,146 @@ class _PlaylistsTabState extends ConsumerState<PlaylistsTab> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: AppRadius.radiusXlTopOnly),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: CustomScrollView(
-              controller: _scroll,
-              physics: const ClampingScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Column(
-                    key: _headerKey,
+      child: CustomScrollView(
+        controller: _scroll,
+        physics: const ClampingScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                _SectionHeader(title: l10n.smartPlaylistsSection),
+                _SmartPlaylists(onOpen: (kind) => _openSmart(context, kind)),
+                _SectionHeader(
+                  title: l10n.myPlaylistsSection,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _SectionHeader(title: l10n.smartPlaylistsSection),
-                      _SmartPlaylists(
-                        onOpen: (kind) => _openSmart(context, kind),
-                      ),
-                      _SectionHeader(
-                        title: l10n.myPlaylistsSection,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (view.hasPlaylists)
-                              IconButton(
-                                tooltip: _searching
-                                    ? l10n.closeTooltip
-                                    : l10n.searchHint,
-                                icon: Icon(
-                                  _searching
-                                      ? Icons.close_rounded
-                                      : Icons.search_rounded,
-                                ),
-                                onPressed: _toggleSearch,
-                              ),
-                            IconButton(
-                              tooltip: l10n.newPlaylist,
-                              icon: const Icon(Icons.add_rounded),
-                              onPressed: () => _createPlaylist(context, ref),
-                            ),
-                            PopupMenuButton<_TransferAction>(
-                              tooltip: l10n.moreActions,
-                              itemBuilder: (_) => [
-                                PopupMenuItem(
-                                  value: _TransferAction.import,
-                                  child: Text(l10n.importPlaylists),
-                                ),
-                                PopupMenuItem(
-                                  value: _TransferAction.export,
-                                  enabled: view.hasPlaylists,
-                                  child: Text(l10n.exportPlaylists),
-                                ),
-                                PopupMenuItem(
-                                  value: _TransferAction.share,
-                                  enabled: view.hasPlaylists,
-                                  child: Text(l10n.sharePlaylists),
-                                ),
-                              ],
-                              onSelected: (action) {
-                                final songs = ref.read(allSongsProvider);
-                                final playlists = ref.read(playlistsProvider);
-                                switch (action) {
-                                  case _TransferAction.import:
-                                    _importPlaylists(context, ref, songs);
-                                  case _TransferAction.export:
-                                    _exportPlaylists(context, playlists, songs);
-                                  case _TransferAction.share:
-                                    _sharePlaylists(context, playlists, songs);
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_searching)
-                        Padding(
-                          padding: AppSpacing.hMdVSm,
-                          child: TextField(
-                            controller: _search,
-                            autofocus: true,
-                            textInputAction: TextInputAction.search,
-                            decoration: InputDecoration(
-                              hintText: l10n.searchHint,
-                              prefixIcon: const Icon(Icons.search_rounded),
-                            ),
-                            onChanged: (value) {
-                              _debounce?.cancel();
-                              _debounce = Timer(
-                                AppMotion.normal,
-                                () => _applyQuery(value),
-                              );
-                            },
-                            onSubmitted: _applyQuery,
-                          ),
-                        ),
                       if (view.hasPlaylists)
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: Padding(
-                            padding: AppSpacing.screenPadding,
-                            child: PlaylistSortButton(
-                              current: order,
-                              options: PlaylistListOrder.values,
-                              labelOf: (order) =>
-                                  playlistListOrderLabel(l10n, order),
-                              onSelected: ref
-                                  .read(playlistListOrderProvider.notifier)
-                                  .setOrder,
-                            ),
+                        IconButton(
+                          tooltip: _searching
+                              ? l10n.closeTooltip
+                              : l10n.searchHint,
+                          icon: Icon(
+                            _searching
+                                ? Icons.close_rounded
+                                : Icons.search_rounded,
                           ),
+                          onPressed: _toggleSearch,
                         ),
+                      IconButton(
+                        tooltip: l10n.newPlaylist,
+                        icon: const Icon(Icons.add_rounded),
+                        onPressed: () => _createPlaylist(context, ref),
+                      ),
+                      PopupMenuButton<_TransferAction>(
+                        tooltip: l10n.moreActions,
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: _TransferAction.import,
+                            child: Text(l10n.importPlaylists),
+                          ),
+                          PopupMenuItem(
+                            value: _TransferAction.export,
+                            enabled: view.hasPlaylists,
+                            child: Text(l10n.exportPlaylists),
+                          ),
+                          PopupMenuItem(
+                            value: _TransferAction.share,
+                            enabled: view.hasPlaylists,
+                            child: Text(l10n.sharePlaylists),
+                          ),
+                        ],
+                        onSelected: (action) {
+                          final songs = ref.read(allSongsProvider);
+                          final playlists = ref.read(playlistsProvider);
+                          switch (action) {
+                            case _TransferAction.import:
+                              _importPlaylists(context, ref, songs);
+                            case _TransferAction.export:
+                              _exportPlaylists(context, playlists, songs);
+                            case _TransferAction.share:
+                              _sharePlaylists(context, playlists, songs);
+                          }
+                        },
+                      ),
                     ],
                   ),
                 ),
-                if (!view.hasPlaylists)
-                  SliverToBoxAdapter(
-                    child: Column(
-                      children: [
-                        AppEmptyState(
-                          icon: Icons.queue_music_rounded,
-                          title: l10n.playlistsEmptyTitle,
-                          message: l10n.playlistsEmptyMessage,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        PrimaryActionButton(
-                          label: l10n.newPlaylist,
-                          icon: Icons.add_rounded,
-                          onPressed: () => _createPlaylist(context, ref),
-                        ),
-                      ],
-                    ),
-                  )
-                else if (view.rows.isEmpty)
-                  SliverToBoxAdapter(
-                    child: AppEmptyState(
-                      icon: Icons.search_off_rounded,
-                      title: l10n.noResultsTitle,
-                    ),
-                  )
-                else
-                  SliverFixedExtentList.builder(
-                    itemExtent: AppSpacing.trackRowHeight,
-                    itemCount: view.rows.length,
-                    itemBuilder: (context, index) => _CustomPlaylistRow(
-                      playlist: view.rows[index],
-                      onTap: () => _openCustom(context, view.rows[index].id),
+                if (_searching)
+                  Padding(
+                    padding: AppSpacing.hMdVSm,
+                    child: TextField(
+                      controller: _search,
+                      autofocus: true,
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        hintText: l10n.searchHint,
+                        prefixIcon: const Icon(Icons.search_rounded),
+                      ),
+                      onChanged: (value) {
+                        _debounce?.cancel();
+                        _debounce = Timer(
+                          AppMotion.normal,
+                          () => _applyQuery(value),
+                        );
+                      },
+                      onSubmitted: _applyQuery,
                     ),
                   ),
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: widget.bottomOverlayInset + AppSpacing.xl,
+                if (view.hasPlaylists)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Padding(
+                      padding: AppSpacing.screenPadding,
+                      child: PlaylistSortButton(
+                        current: order,
+                        options: PlaylistListOrder.values,
+                        labelOf: (order) => playlistListOrderLabel(l10n, order),
+                        onSelected: ref
+                            .read(playlistListOrderProvider.notifier)
+                            .setOrder,
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-          AlphabetIndexRail(
-            index: view.alphabet,
-            bottomInset: widget.bottomOverlayInset,
-            onJump: (row) {
-              final height = _headerKey.currentContext?.size?.height ?? 0;
-              jumpToListRow(_scroll, height + row * AppSpacing.trackRowHeight);
-            },
+          if (!view.hasPlaylists)
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  AppEmptyState(
+                    icon: Icons.queue_music_rounded,
+                    title: l10n.playlistsEmptyTitle,
+                    message: l10n.playlistsEmptyMessage,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  PrimaryActionButton(
+                    label: l10n.newPlaylist,
+                    icon: Icons.add_rounded,
+                    onPressed: () => _createPlaylist(context, ref),
+                  ),
+                ],
+              ),
+            )
+          else if (view.rows.isEmpty)
+            SliverToBoxAdapter(
+              child: AppEmptyState(
+                icon: Icons.search_off_rounded,
+                title: l10n.noResultsTitle,
+              ),
+            )
+          else
+            SliverFixedExtentList.builder(
+              itemExtent: AppSpacing.trackRowHeight,
+              itemCount: view.rows.length,
+              itemBuilder: (context, index) => _CustomPlaylistRow(
+                playlist: view.rows[index],
+                onTap: () => _openCustom(context, view.rows[index].id),
+              ),
+            ),
+          SliverToBoxAdapter(
+            child: SizedBox(height: widget.bottomOverlayInset + AppSpacing.xl),
           ),
         ],
       ),

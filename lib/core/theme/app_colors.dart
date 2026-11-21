@@ -86,6 +86,7 @@ class AppColorTokens extends ThemeExtension<AppColorTokens> {
   /// Neutral dark scrim for full-screen overlays and route barriers, where no
   /// [BuildContext] is available to read the active theme.
   static const Color scrimOverlay = Color(0x8A000000);
+  static const Color miniPlayerScrim = Color(0xAD000000);
 
   static const AppColorTokens dark = AppColorTokens(
     background: Color(0xFF080808),

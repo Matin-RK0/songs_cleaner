@@ -108,6 +108,15 @@ void main() {
       await tester.tap(find.text('Remove from playlist'));
       await tester.pumpAndSettle();
       expect(controller.playlistById(playlist.id)!.songIds, [2, 1]);
+
+      final title = find.text('Blue Winter');
+      final row = find.byKey(const ValueKey(1));
+      double upperGap() =>
+          tester.getTopLeft(title).dy - tester.getTopLeft(row).dy;
+      final normalGap = upperGap();
+      await tester.longPress(title);
+      await tester.pumpAndSettle();
+      expect(upperGap(), lessThan(normalGap));
       expect(tester.takeException(), isNull);
     },
   );

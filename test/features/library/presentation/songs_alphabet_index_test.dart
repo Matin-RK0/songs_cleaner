@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songs_cleaner/core/l10n/generated/app_localizations.dart';
 import 'package:songs_cleaner/core/settings/app_settings_repository.dart';
+import 'package:songs_cleaner/core/theme/app_motion.dart';
 import 'package:songs_cleaner/core/widgets/alphabet_index_rail.dart';
 import 'package:songs_cleaner/features/library/application/providers/library_controller.dart';
 import 'package:songs_cleaner/features/library/domain/entities/song.dart';
@@ -43,6 +44,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.text('ک'));
+    await tester.pump();
+    expect(find.text('ک'), findsNWidgets(2));
+    await tester.pump(AppMotion.slow);
+    expect(find.text('ک'), findsOneWidget);
     await tester.pumpAndSettle();
     expect(scroll.offset, greaterThan(0));
     final controller = container.read(libraryProvider.notifier);

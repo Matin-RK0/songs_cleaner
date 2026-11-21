@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songs_cleaner/core/l10n/generated/app_localizations.dart';
 import 'package:songs_cleaner/core/settings/app_settings_repository.dart';
 import 'package:songs_cleaner/core/theme/app_motion.dart';
+import 'package:songs_cleaner/core/widgets/alphabet_index_rail.dart';
 import 'package:songs_cleaner/features/library/application/providers/library_providers.dart';
 import 'package:songs_cleaner/features/library/domain/entities/song.dart';
 import 'package:songs_cleaner/features/playlists/application/providers/playlist_providers.dart';
@@ -45,7 +46,7 @@ void main() {
   });
 
   testWidgets(
-    'custom lists support search, alphabetical jump, and saved ordering',
+    'custom lists keep search and saved ordering without an alphabet rail',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(320, 660));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -91,15 +92,13 @@ void main() {
       expect(find.text('Echo 0'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Z'));
-      await tester.pumpAndSettle();
-      expect(find.text('Zenith'), findsOneWidget);
+      expect(find.byType(AlphabetIndexRail), findsNothing);
       await container
           .read(playlistListOrderProvider.notifier)
           .setOrder(PlaylistListOrder.favorites);
       await tester.pumpAndSettle();
       expect(prefs.getString('playlists.listOrder'), 'favorites');
-      expect(find.text('Z'), findsNothing);
+      expect(find.byType(AlphabetIndexRail), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
