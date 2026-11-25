@@ -1038,7 +1038,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get audioDuckingVolumeHint =>
-      'Percentage of the previous volume. Applied at the next interruption.';
+      'Percentage of your normal volume during a temporary interruption. Music pauses if another app takes over audio.';
 
   @override
   String audioDuckingPercent(int percent) {

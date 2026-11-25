@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
@@ -14,6 +15,7 @@ import '../domain/audio_focus_mode.dart';
 import '../domain/playback_queue.dart';
 import '../domain/playback_selection.dart';
 import 'playback_notification_service.dart';
+import 'audio_ducking_volume.dart';
 
 /// Glue between [AudioService] (notification, background, headset buttons)
 /// and [AudioPlayer]. Owns the play queue and repeat/shuffle rules so both
@@ -26,6 +28,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     this.mediaCatalog,
     Future<List<Song>> Function()? loadFallbackSongs,
     Future<void> Function()? dismissNotification,
+    this._interruptionEvents,
   }) : _loadFallbackSongs =
            loadFallbackSongs ??
            DeviceMusicDataSource(OnAudioQuery()).fetchExistingSongsNewestFirst,
@@ -41,7 +44,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     _initialization = _restorePersistedQueue();
     final savedSpeed = settings?.loadPlaybackSpeed(1) ?? 1;
     _player.setSpeed(savedSpeed);
-    _audioFocusInitialization = _listenToAudioFocus();
+    _audioFocusInitialization = _runFocusAction(_listenToAudioFocus);
     _player.currentIndexStream.listen(_onPlaylistIndexChanged);
   }
 
@@ -72,8 +75,13 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   bool _loadingGaplessSources = false;
   Duration? _pendingPosition;
   int _sourceRevision = 0;
-  bool _wasPlayingBeforeInterruption = false;
-  double? _volumeBeforeDucking;
+  final Stream<AudioInterruptionEvent>? _interruptionEvents;
+  late final _ducking = AudioDuckingVolume(
+    read: () => _player.volume,
+    write: _player.setVolume,
+  );
+  ({int revision, Future<void> paused})? _focusPause;
+  int _focusEpoch = 0;
   StreamSubscription<AudioInterruptionEvent>? _interruptionSubscription;
   StreamSubscription<void>? _noisySubscription;
   Timer? _sleepTimer;
@@ -107,12 +115,22 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> _listenToAudioFocus() async {
+    void onInterruption(AudioInterruptionEvent event) =>
+        unawaited(_runFocusAction(() => _handleInterruption(event)));
+    final interruptionEvents = _interruptionEvents;
+    if (interruptionEvents != null) {
+      _interruptionSubscription = interruptionEvents.listen(onInterruption);
+    }
     final session = await AudioSession.instance;
-    _interruptionSubscription = session.interruptionEventStream.listen(
-      _handleInterruption,
-    );
+    if (interruptionEvents == null) {
+      _interruptionSubscription = session.interruptionEventStream.listen(
+        onInterruption,
+      );
+    }
     _noisySubscription = session.becomingNoisyEventStream.listen((_) {
-      if (_focusMode != AudioFocusMode.ignore) pause();
+      if (_focusMode != AudioFocusMode.ignore) {
+        unawaited(_runFocusAction(pause));
+      }
     });
   }
 
@@ -123,31 +141,103 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     return AudioFocusMode.values[index ?? AudioFocusMode.pause.index];
   }
 
-  void _handleInterruption(AudioInterruptionEvent event) {
+  int get _duckingPercent =>
+      settings?.loadAudioDuckingPercent() ??
+      AppSettingsRepository.defaultAudioDuckingPercent;
+
+  Future<void> _handleInterruption(AudioInterruptionEvent event) async {
+    if (_closing) return;
+    final epoch = ++_focusEpoch;
     final mode = _focusMode;
-    if (mode == AudioFocusMode.ignore) return;
-    if (event.begin) {
-      if (mode == AudioFocusMode.duck) {
-        if (_player.playing) {
-          _volumeBeforeDucking = _player.volume;
-          final percent =
-              settings?.loadAudioDuckingPercent() ??
-              AppSettingsRepository.defaultAudioDuckingPercent;
-          _player.setVolume(_player.volume * percent / 100);
-        }
+    if (!event.begin) {
+      final interruption = _focusPause;
+      await _restoreVolume();
+      if (interruption == null) return;
+      await interruption.paused;
+      if (_closing ||
+          epoch != _focusEpoch ||
+          !identical(interruption, _focusPause)) {
         return;
       }
-      _wasPlayingBeforeInterruption = _player.playing;
-      if (_wasPlayingBeforeInterruption) pause();
+      _focusPause = null;
+      if (event.type != AudioInterruptionType.unknown &&
+          interruption.revision == _playbackRequestRevision &&
+          (_focusMode == AudioFocusMode.pause ||
+              Platform.isIOS && _focusMode == AudioFocusMode.duck)) {
+        await play();
+      }
       return;
     }
-    if (mode == AudioFocusMode.duck) {
-      final volume = _volumeBeforeDucking;
-      _volumeBeforeDucking = null;
-      if (volume != null) _player.setVolume(volume);
-    } else if (_wasPlayingBeforeInterruption) {
-      _wasPlayingBeforeInterruption = false;
-      play();
+    if (mode == AudioFocusMode.ignore) {
+      _focusPause = null;
+      await _restoreVolume();
+    } else if (event.type == AudioInterruptionType.unknown && !Platform.isIOS) {
+      // A full loss does not promise a matching gain. Pause and clear any
+      // attenuation so the next explicit Play starts at the original volume.
+      await pause();
+    } else if (mode == AudioFocusMode.duck &&
+        event.type != AudioInterruptionType.unknown) {
+      _focusPause = null;
+      if (_player.playing) await _ducking.duck(_duckingPercent);
+    } else {
+      await _pauseForTransientFocusLoss();
+    }
+  }
+
+  Future<void> _pauseForTransientFocusLoss() async {
+    if (_focusPause?.revision == _playbackRequestRevision || !_player.playing) {
+      return;
+    }
+    final revision = ++_playbackRequestRevision;
+    final paused = _pauseForRequest(revision);
+    _focusPause = (revision: revision, paused: paused);
+    await paused;
+  }
+
+  Future<void> onAudioFocusSettingsChanged() => _runFocusAction(() async {
+    if (_closing) return;
+    switch (_focusMode) {
+      case AudioFocusMode.pause:
+        if (_ducking.isRequested && _player.playing) {
+          await _pauseForTransientFocusLoss();
+        } else {
+          await _restoreVolume();
+        }
+      case AudioFocusMode.duck:
+        _focusPause = null;
+        if (_ducking.isRequested && _player.playing) {
+          await _ducking.duck(_duckingPercent);
+        }
+      case AudioFocusMode.ignore:
+        _focusPause = null;
+        await _restoreVolume();
+    }
+  });
+
+  Future<void> _restoreVolume() => _runFocusAction(_ducking.restore);
+
+  bool get _volumeNeedsPlaybackCleanup =>
+      (!_player.playing || !_ducking.isRequested) &&
+      (_ducking.needsRestore || _ducking.hasPendingChange);
+
+  Future<void> _pauseAndRestoreVolume() async {
+    try {
+      await _player.pause();
+    } finally {
+      await _restoreVolume();
+    }
+  }
+
+  Future<void> _runFocusAction(Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (error, stack) {
+      developer.log(
+        'Audio focus operation failed',
+        name: 'MusicPlayerHandler',
+        error: error,
+        stackTrace: stack,
+      );
     }
   }
 
@@ -508,6 +598,8 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       await _loadCurrent(playImmediately: true);
       return;
     }
+    if (_volumeNeedsPlaybackCleanup) await _restoreVolume();
+    if (request != _playbackRequestRevision) return;
     final playback = _player.play();
     // just_audio's play future completes when playback ends, not when it
     // starts. Publish immediately so all media clients see the resumed state.
@@ -519,10 +611,13 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     // A headset command may arrive while shutdown is still saving the session.
     // Finish that teardown before reactivating the same handler.
     await _closeFuture;
-    if (!_closing) return;
+    if (!_closing) {
+      await _audioFocusInitialization;
+      return;
+    }
     _closing = false;
     _closeFuture = null;
-    _audioFocusInitialization = _listenToAudioFocus();
+    _audioFocusInitialization = _runFocusAction(_listenToAudioFocus);
     _publishQueueMediaItems();
     final song = _queue.current;
     if (song != null) mediaItem.add(_mediaItemFor(song));
@@ -532,11 +627,15 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   @override
-  Future<void> pause() async {
-    final request = ++_playbackRequestRevision;
+  Future<void> pause() {
+    _focusPause = null;
+    return _pauseForRequest(++_playbackRequestRevision);
+  }
+
+  Future<void> _pauseForRequest(int request) async {
     await _initialization;
     if (request != _playbackRequestRevision) return;
-    await _player.pause();
+    await _pauseAndRestoreVolume();
   }
 
   @override
@@ -762,7 +861,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
         position: _player.position,
         playImmediately: _player.playing,
       );
-      if (wasEmpty) await _player.pause();
+      if (wasEmpty) await _pauseAndRestoreVolume();
       return true;
     }
     _publishQueueMediaItems();
@@ -791,6 +890,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> stopAndClearQueue() async {
+    _focusPause = null;
     final request = ++_playbackRequestRevision;
     await _initialization;
     if (request != _playbackRequestRevision) return;
@@ -802,6 +902,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     try {
       await _player.stop();
     } finally {
+      await _restoreVolume();
       mediaItem.add(null);
       queue.add(const []);
       playbackState.add(
@@ -871,6 +972,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   /// resume exactly where the user left off, then the media notification and
   /// foreground playback service are stopped without discarding the queue.
   Future<void> closeApp() {
+    _focusPause = null;
     _playbackRequestRevision++;
     return _closeFuture ??= _closeApp();
   }
@@ -881,7 +983,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     await _audioFocusInitialization;
     await _interruptionSubscription?.cancel();
     await _noisySubscription?.cancel();
-    await _player.pause();
+    await _pauseAndRestoreVolume();
     await _persistSession();
     // Clearing the media item and publishing an idle state removes the media
     // notification and releases the audio service, while leaving the persisted
@@ -985,8 +1087,17 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> _startLoadedPlayback() async {
     final source = _sourceRevision;
     final request = _playbackRequestRevision;
+    if (_focusPause?.revision == request) return;
     final song = _queue.current;
     try {
+      if (_volumeNeedsPlaybackCleanup) {
+        await _restoreVolume();
+        if (_closing ||
+            source != _sourceRevision ||
+            request != _playbackRequestRevision) {
+          return;
+        }
+      }
       final playback = _player.play();
       _broadcastState(_player.playbackEvent);
       await playback;
@@ -1004,6 +1115,9 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   Future<void> _onPlayerStateChanged(PlayerState state) async {
     if (_closing) return;
+    if (!state.playing && !_player.playing && _ducking.needsRestore) {
+      unawaited(_restoreVolume());
+    }
     if (isChangingSource) {
       _broadcastState(_player.playbackEvent);
       return;
@@ -1036,7 +1150,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       final request = _playbackRequestRevision;
       // Seeking away from EOF can report ready while just_audio still has its
       // play flag set. Pause first so an exhausted queue cannot look active.
-      await _player.pause();
+      await _pauseAndRestoreVolume();
       if (_closing || request != _playbackRequestRevision) return;
       await _player.seek(Duration.zero);
       _broadcastState(_player.playbackEvent);
@@ -1085,7 +1199,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
       if (canSkip) {
         await next(wrap: false);
       } else {
-        await _player.pause();
+        await _pauseAndRestoreVolume();
         _broadcastState(_player.playbackEvent);
       }
     }

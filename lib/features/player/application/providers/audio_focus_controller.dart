@@ -36,9 +36,9 @@ class AudioFocusModeController extends Notifier<AudioFocusMode> {
   }
 
   Future<void> setMode(AudioFocusMode mode) async {
-    state = mode;
     await ref
         .read(appSettingsRepositoryProvider)
         .saveAudioFocusMode(mode.index);
+    if (ref.mounted) state = mode;
   }
 }

@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songs_cleaner/core/settings/app_settings_repository.dart';
 import 'package:songs_cleaner/features/library/domain/entities/song.dart';
 import 'package:songs_cleaner/features/player/infrastructure/music_player_handler.dart';
+import 'package:songs_cleaner/features/player/domain/audio_focus_mode.dart';
 
 Song _song(int id, int seconds) => Song(
   id: id,
@@ -29,6 +31,24 @@ class _Player extends Fake implements AudioPlayer {
   Completer<void>? pausing;
   Completer<void>? playbackCompletion;
   int playCalls = 0;
+  final playedVolumes = <double>[];
+  final volumeChanges = <double>[];
+  Completer<void>? writingVolume;
+  bool failNextVolumeWrite = false;
+  @override
+  double volume = 0.8;
+
+  @override
+  Future<void> setVolume(double value) async {
+    volumeChanges.add(value);
+    if (failNextVolumeWrite) {
+      failNextVolumeWrite = false;
+      throw StateError('Native volume write failed');
+    }
+    await writingVolume?.future;
+    volume = value;
+  }
+
   @override
   int? currentIndex = 0;
   @override
@@ -81,6 +101,7 @@ class _Player extends Fake implements AudioPlayer {
   @override
   Future<void> play() async {
     playCalls++;
+    playedVolumes.add(volume);
     playing = true;
     await playbackCompletion?.future;
   }
@@ -131,6 +152,208 @@ class _Player extends Fake implements AudioPlayer {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('audio focus', () {
+    late _Player player;
+    late MusicPlayerHandler handler;
+    late StreamController<AudioInterruptionEvent> focus;
+    late AppSettingsRepository settings;
+
+    Future<void> flush() => Future<void>.delayed(Duration.zero);
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      settings = AppSettingsRepository(await SharedPreferences.getInstance());
+      await settings.saveAudioFocusMode(AudioFocusMode.duck.index);
+      await settings.saveAudioDuckingPercent(25);
+      player = _Player();
+      focus = StreamController<AudioInterruptionEvent>.broadcast();
+      handler = MusicPlayerHandler(
+        player,
+        settings: settings,
+        interruptionEvents: focus.stream,
+      );
+      await handler.loadAndPlay([_song(1, 60), _song(2, 60)]);
+      await flush();
+    });
+    tearDown(() async {
+      await handler.closeApp();
+      await focus.close();
+      await player.close();
+    });
+
+    void interrupt(AudioInterruptionType type) =>
+        focus.add(AudioInterruptionEvent(true, type));
+    void gain() =>
+        focus.add(AudioInterruptionEvent(false, AudioInterruptionType.pause));
+
+    test(
+      'duplicate and mixed transient starts never replace the original volume',
+      () async {
+        interrupt(AudioInterruptionType.duck);
+        await flush();
+        expect(player.volume, 0.2);
+        interrupt(AudioInterruptionType.pause);
+        interrupt(AudioInterruptionType.duck);
+        await flush();
+        expect(player.volumeChanges, [0.2]);
+        gain();
+        gain();
+        await flush();
+        expect(player.volumeChanges, [0.2, 0.8]);
+        expect(player.playing, isTrue);
+      },
+    );
+
+    test(
+      'gain during an in-flight volume write still restores volume last',
+      () async {
+        final write = Completer<void>();
+        player.writingVolume = write;
+        interrupt(AudioInterruptionType.duck);
+        await flush();
+        gain();
+        await flush();
+        expect(player.volumeChanges, [0.2]);
+        write.complete();
+        await flush();
+        expect(player.volumeChanges, [0.2, 0.8]);
+        expect(player.volume, 0.8);
+      },
+    );
+
+    test(
+      'permanent loss restores volume, pauses, and never auto-resumes',
+      () async {
+        interrupt(AudioInterruptionType.duck);
+        await flush();
+        interrupt(AudioInterruptionType.unknown);
+        await flush();
+        expect(player.volume, 0.8);
+        expect(player.playing, isFalse);
+        gain();
+        await flush();
+        expect(player.playCalls, 1);
+        await handler.play();
+        expect(player.playedVolumes.last, 0.8);
+      },
+    );
+
+    test('changing the percentage uses the same baseline; Ignore restores immediately', () async {
+      interrupt(AudioInterruptionType.pause);
+      await flush();
+      await settings.saveAudioDuckingPercent(50);
+      await handler.onAudioFocusSettingsChanged();
+      expect(player.volume, 0.4);
+      await settings.saveAudioFocusMode(AudioFocusMode.ignore.index);
+      await handler.onAudioFocusSettingsChanged();
+      expect(player.volume, 0.8);
+      gain();
+      await flush();
+      expect(player.volumeChanges, [0.2, 0.4, 0.8]);
+    });
+
+    test('the next play retries a failed volume restoration', () async {
+      interrupt(AudioInterruptionType.duck);
+      await flush();
+      player.failNextVolumeWrite = true;
+      await handler.pause();
+      expect(player.volume, 0.2);
+      await handler.play();
+      expect(player.playedVolumes.last, 0.8);
+      expect(player.volumeChanges, [0.2, 0.8, 0.8]);
+    });
+
+    test(
+      'switching to pause during ducking restores volume and waits for gain',
+      () async {
+        interrupt(AudioInterruptionType.duck);
+        await flush();
+        await settings.saveAudioFocusMode(AudioFocusMode.pause.index);
+        await handler.onAudioFocusSettingsChanged();
+        expect(player.playing, isFalse);
+        expect(player.volume, 0.8);
+        gain();
+        await flush();
+        expect(player.playedVolumes, [0.8, 0.8]);
+      },
+    );
+
+    test(
+      'a track change during a transient loss keeps the temporary attenuation',
+      () async {
+        interrupt(AudioInterruptionType.duck);
+        await flush();
+        await handler.next();
+        expect(handler.currentSong?.id, 2);
+        expect(player.playedVolumes.last, 0.2);
+        gain();
+        await flush();
+        expect(player.volume, 0.8);
+      },
+    );
+
+    test('focus gain waits for the in-flight pause before resuming', () async {
+      await settings.saveAudioFocusMode(AudioFocusMode.pause.index);
+      final pause = Completer<void>();
+      player.pausing = pause;
+      interrupt(AudioInterruptionType.pause);
+      gain();
+      await flush();
+      expect(player.playCalls, 1);
+      pause.complete();
+      await flush();
+      expect(player.playCalls, 2);
+      expect(player.playing, isTrue);
+    });
+
+    for (final action in ['pause', 'stop', 'close', 'end of queue']) {
+      test(
+        '$action clears attenuation even without an audio-focus gain',
+        () async {
+          if (action == 'end of queue') await handler.next();
+          interrupt(AudioInterruptionType.duck);
+          await flush();
+          expect(player.volume, 0.2);
+          switch (action) {
+            case 'pause':
+              await handler.pause();
+            case 'stop':
+              await handler.stop();
+            case 'close':
+              await handler.closeApp();
+            case 'end of queue':
+              player.processingState = ProcessingState.completed;
+              player.states.add(PlayerState(true, ProcessingState.completed));
+              await flush();
+          }
+          expect(player.volume, 0.8);
+          expect(player.playing, isFalse);
+        },
+      );
+    }
+
+    test(
+      'pause mode resumes once; a manual pause cancels the pending resume',
+      () async {
+        await settings.saveAudioFocusMode(AudioFocusMode.pause.index);
+        interrupt(AudioInterruptionType.pause);
+        interrupt(AudioInterruptionType.pause);
+        await flush();
+        expect(player.playing, isFalse);
+        gain();
+        await flush();
+        expect(player.playCalls, 2);
+        interrupt(AudioInterruptionType.pause);
+        await flush();
+        await handler.pause();
+        gain();
+        await flush();
+        expect(player.playCalls, 2);
+        expect(player.playing, isFalse);
+      },
+    );
+  });
 
   test('explicit cold Play builds a complete fallback queue', () async {
     final player = _Player();

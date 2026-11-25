@@ -38,7 +38,13 @@ Future<MusicPlayerHandler> initializeMusicPlayerHandler({
 }) async {
   try {
     final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration.music());
+    // Receive transient focus events instead of letting Android apply its own
+    // fixed attenuation. The handler decides whether to duck, pause or ignore.
+    await session.configure(
+      const AudioSessionConfiguration.music().copyWith(
+        androidWillPauseWhenDucked: true,
+      ),
+    );
   } catch (_) {
     // Continue with platform defaults when audio focus configuration fails.
   }

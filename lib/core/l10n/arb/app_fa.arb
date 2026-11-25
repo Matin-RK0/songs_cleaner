@@ -361,7 +361,7 @@
   "audioFocusPause": "توقف و ادامه خودکار",
   "audioFocusDuck": "کاهش موقت صدا",
   "audioDuckingVolumeTitle": "صدای موسیقی هنگام وقفه",
-  "audioDuckingVolumeHint": "درصدی از صدای قبلی؛ از وقفهٔ بعدی اعمال می‌شود.",
+  "audioDuckingVolumeHint": "درصدی از صدای عادی در وقفهٔ موقت. اگر برنامهٔ دیگری کنترل صدا را کامل بگیرد، موسیقی مکث می‌کند.",
   "audioDuckingPercent": "{percent}٪",
   "@audioDuckingPercent": {
     "placeholders": {

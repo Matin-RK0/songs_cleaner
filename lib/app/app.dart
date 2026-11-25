@@ -14,6 +14,7 @@ import '../core/theme/system_palette_controller.dart';
 import '../features/lockscreen/application/providers/lock_screen_controller.dart';
 import '../features/lockscreen/infrastructure/lock_screen_service.dart';
 import '../features/player/application/providers/player_controller.dart';
+import '../features/player/application/providers/audio_focus_controller.dart';
 import '../features/player/application/providers/playback_stats_recorder.dart';
 import '../features/player/infrastructure/now_playing_widget_service.dart';
 import 'router/app_router.dart';
@@ -162,6 +163,11 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
   Widget build(BuildContext context) {
     // Records plays for the "most played" smart playlist; keep it alive.
     ref.watch(playbackStatsRecorderProvider);
+    void refreshAudioFocus() => unawaited(
+      ref.read(musicPlayerHandlerProvider).onAudioFocusSettingsChanged(),
+    );
+    ref.listen(audioFocusModeProvider, (_, _) => refreshAudioFocus());
+    ref.listen(audioDuckingPercentProvider, (_, _) => refreshAudioFocus());
 
     // Drives the native side: the lock screen only reacts while a song plays.
     ref.listen(

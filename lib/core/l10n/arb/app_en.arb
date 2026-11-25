@@ -326,7 +326,7 @@
   "audioFocusPause": "Pause and resume",
   "audioFocusDuck": "Lower volume temporarily",
   "audioDuckingVolumeTitle": "Music volume during interruptions",
-  "audioDuckingVolumeHint": "Percentage of the previous volume. Applied at the next interruption.",
+  "audioDuckingVolumeHint": "Percentage of your normal volume during a temporary interruption. Music pauses if another app takes over audio.",
   "audioDuckingPercent": "{percent}%",
   "@audioDuckingPercent": {
     "placeholders": {

@@ -1944,7 +1944,7 @@ abstract class AppLocalizations {
   /// No description provided for @audioDuckingVolumeHint.
   ///
   /// In fa, this message translates to:
-  /// **'درصدی از صدای قبلی؛ از وقفهٔ بعدی اعمال می‌شود.'**
+  /// **'درصدی از صدای عادی در وقفهٔ موقت. اگر برنامهٔ دیگری کنترل صدا را کامل بگیرد، موسیقی مکث می‌کند.'**
   String get audioDuckingVolumeHint;
 
   /// No description provided for @audioDuckingPercent.

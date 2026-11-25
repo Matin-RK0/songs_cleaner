@@ -1038,7 +1038,7 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get audioDuckingVolumeHint =>
-      'درصدی از صدای قبلی؛ از وقفهٔ بعدی اعمال می‌شود.';
+      'درصدی از صدای عادی در وقفهٔ موقت. اگر برنامهٔ دیگری کنترل صدا را کامل بگیرد، موسیقی مکث می‌کند.';
 
   @override
   String audioDuckingPercent(int percent) {
