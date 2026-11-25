@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'home_tab_settings.dart';
+import 'appearance_preferences.dart';
 
 /// Primitive snapshot of the last playback session. Lives in core so the
 /// storage layer stays independent of feature models; player code translates
@@ -173,6 +174,9 @@ class AppSettingsRepository {
   static const String _primaryColorIndexKey = 'appearance.primaryColorIndex';
   static const String _primaryColorArgbKey = 'appearance.primaryColorArgb';
   static const String _widgetBackgroundColorKey = 'widget.backgroundColor';
+  static const String _primarySystemPaletteKey = 'appearance.systemPalette';
+  static const String _appearanceKey = 'appearance.customization';
+  static const String _widgetSystemPaletteKey = 'widget.systemPalette';
   static const String _localeKey = 'appearance.locale';
 
   final SharedPreferences _prefs;
@@ -267,6 +271,46 @@ class AppSettingsRepository {
       _prefs.setInt(_primaryColorIndexKey, index);
 
   int? loadPrimaryColorArgb() => _prefs.getInt(_primaryColorArgbKey);
+
+  AppearancePreferences loadAppearance() {
+    try {
+      final stored = _prefs.getString(_appearanceKey);
+      if (stored == null) return const AppearancePreferences();
+      if (jsonDecode(stored) case final Map<String, Object?> json) {
+        return AppearancePreferences.fromJson(json);
+      }
+    } on FormatException {
+      // Keep the default theme when the stored settings cannot be decoded.
+    }
+    return const AppearancePreferences();
+  }
+
+  Future<void> saveAppearance(AppearancePreferences preferences) async {
+    if (!await _prefs.setString(
+      _appearanceKey,
+      jsonEncode(preferences.toJson()),
+    )) {
+      throw StateError('Could not save appearance preferences');
+    }
+  }
+
+  bool loadPrimarySystemPalette() =>
+      _prefs.getBool(_primarySystemPaletteKey) ?? false;
+
+  Future<void> savePrimarySystemPalette(bool enabled) =>
+      _saveSystemPalette(_primarySystemPaletteKey, enabled);
+
+  bool loadWidgetSystemPalette() =>
+      _prefs.getBool(_widgetSystemPaletteKey) ?? false;
+
+  Future<void> saveWidgetSystemPalette(bool enabled) =>
+      _saveSystemPalette(_widgetSystemPaletteKey, enabled);
+
+  Future<void> _saveSystemPalette(String key, bool enabled) async {
+    if (!await _prefs.setBool(key, enabled)) {
+      throw StateError('Could not save the palette preference');
+    }
+  }
 
   Future<void> savePrimaryColorArgb(int color) async {
     if (!await _prefs.setInt(_primaryColorArgbKey, color)) {

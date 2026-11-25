@@ -6,8 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/l10n/generated/app_localizations.dart';
 import '../core/l10n/locale_controller.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/appearance_controller.dart';
+import '../core/widgets/appearance_backdrop.dart';
 import '../core/theme/primary_color_controller.dart';
 import '../core/theme/theme_mode_controller.dart';
+import '../core/theme/system_palette_controller.dart';
 import '../features/lockscreen/application/providers/lock_screen_controller.dart';
 import '../features/lockscreen/infrastructure/lock_screen_service.dart';
 import '../features/player/application/providers/player_controller.dart';
@@ -168,13 +171,46 @@ class _SongsCleanerAppState extends ConsumerState<SongsCleanerApp> {
     );
 
     final primaryColor = ref.watch(appPrimaryColorProvider);
+    final appearance = ref.watch(appearanceProvider);
+    final useSystemPrimary = ref.watch(appPrimarySystemPaletteProvider);
+    final palette = (useSystemPrimary || appearance.systemTheme)
+        ? ref.watch(systemPaletteProvider).value
+        : null;
+    final fullTheme = appearance.systemTheme && palette != null;
+    final photo = fullTheme ? null : appearance.photoPath;
 
     return MaterialApp(
       title: 'Songs Cleaner',
       debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
-      theme: AppTheme.light(primary: primaryColor),
-      darkTheme: AppTheme.dark(primary: primaryColor),
+      theme: AppTheme.light(
+        primary: useSystemPrimary
+            ? palette?.light.primary ?? primaryColor
+            : primaryColor,
+        onPrimary: useSystemPrimary ? palette?.light.onPrimary : null,
+        systemScheme: fullTheme ? palette.light : null,
+        appearance: appearance,
+      ),
+      darkTheme: AppTheme.dark(
+        primary: useSystemPrimary
+            ? palette?.dark.primary ?? primaryColor
+            : primaryColor,
+        onPrimary: useSystemPrimary ? palette?.dark.onPrimary : null,
+        systemScheme: fullTheme ? palette.dark : null,
+        appearance: appearance,
+      ),
+      builder: (context, child) => Stack(
+        fit: StackFit.expand,
+        children: [
+          if (photo != null)
+            AppearanceBackdrop(
+              path: photo,
+              dimming: appearance.photoDimming,
+              framing: appearance.photoFraming,
+            ),
+          ?child,
+        ],
+      ),
       themeMode: ref.watch(appThemeModeProvider),
       locale: ref.watch(appLocaleProvider),
       supportedLocales: AppLocalizations.supportedLocales,

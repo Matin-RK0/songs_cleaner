@@ -3,6 +3,7 @@ package com.example.songs_cleaner
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.Settings
@@ -17,9 +18,18 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : AudioServiceActivity() {
+    private var systemPaletteChannel: SystemPaletteChannel? = null
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        systemPaletteChannel?.configurationChanged()
+    }
     private var pendingWidgetAction: String? = null
     private var widgetEngine: FlutterEngine? = null
-    private val playlistCoverPicker by lazy { PlaylistCoverPicker(this) }
+    private val playlistCoverPicker by lazy { LocalImagePicker(this, 4103, "playlist-covers", 512) }
+    private val appearancePicker by lazy {
+        LocalImagePicker(this, 4104, "appearance-images", 1600, preferPhotoPicker = true)
+    }
 
     override fun onUserInteraction() {
         super.onUserInteraction()
@@ -49,6 +59,7 @@ class MainActivity : AudioServiceActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        systemPaletteChannel = SystemPaletteChannel(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
         if (!flutterEngine.plugins.has(PlaybackNotificationPlugin::class.java)) {
             flutterEngine.plugins.add(PlaybackNotificationPlugin())
         }
@@ -68,6 +79,12 @@ class MainActivity : AudioServiceActivity() {
             "com.example.songs_cleaner/playlist_cover",
         ).setMethodCallHandler { call, result ->
             if (call.method == "pick") playlistCoverPicker.pick(result) else result.notImplemented()
+        }
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.example.songs_cleaner/appearance_image",
+        ).setMethodCallHandler { call, result ->
+            if (call.method == "pick") appearancePicker.pick(result) else result.notImplemented()
         }
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -198,6 +215,7 @@ class MainActivity : AudioServiceActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (playlistCoverPicker.handleResult(requestCode, resultCode, data?.data)) return
+        if (appearancePicker.handleResult(requestCode, resultCode, data?.data)) return
         if (requestCode != SAVE_FILE_REQUEST && requestCode != OPEN_FILE_REQUEST) return
         val result = pendingFileResult ?: return
         pendingFileResult = null
@@ -227,6 +245,7 @@ class MainActivity : AudioServiceActivity() {
 
     override fun onDestroy() {
         playlistCoverPicker.dispose()
+        appearancePicker.dispose()
         LockScreenController.detach(this)
         super.onDestroy()
     }

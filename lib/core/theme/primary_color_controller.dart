@@ -24,13 +24,34 @@ class AppPrimaryColorController extends Notifier<Color> {
 
   Future<void> setColor(Color color) async {
     final opaque = color.withAlpha(255);
-    if (state == opaque) return;
-    await ref
-        .read(appSettingsRepositoryProvider)
-        .savePrimaryColorArgb(opaque.toARGB32());
+    if (state != opaque) {
+      await ref
+          .read(appSettingsRepositoryProvider)
+          .savePrimaryColorArgb(opaque.toARGB32());
+    }
+    await ref.read(appPrimarySystemPaletteProvider.notifier).setEnabled(false);
     state = opaque;
   }
 
   int _validIndex(int index) =>
       index >= 0 && index < AppPrimaryPalette.colors.length ? index : 0;
+}
+
+final appPrimarySystemPaletteProvider =
+    NotifierProvider<AppPrimarySystemPaletteController, bool>(
+      AppPrimarySystemPaletteController.new,
+    );
+
+class AppPrimarySystemPaletteController extends Notifier<bool> {
+  @override
+  bool build() =>
+      ref.watch(appSettingsRepositoryProvider).loadPrimarySystemPalette();
+
+  Future<void> setEnabled(bool enabled) async {
+    if (state == enabled) return;
+    await ref
+        .read(appSettingsRepositoryProvider)
+        .savePrimarySystemPalette(enabled);
+    state = enabled;
+  }
 }

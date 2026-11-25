@@ -12,6 +12,9 @@ import 'package:songs_cleaner/features/player/presentation/widgets/widget_backgr
 
 void main() {
   const channel = MethodChannel('com.example.songs_cleaner/now_playing_widget');
+  const paletteChannel = MethodChannel(
+    'com.example.songs_cleaner/system_palette',
+  );
   const preferenceKey = 'widget.backgroundColor';
   const swatchColor = AppColorPickerTokens.darkNeutral;
   final swatch = find.byKey(const ValueKey('color-picker-swatch-ff30343b'));
@@ -37,6 +40,8 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(paletteChannel, null);
   });
 
   Future<AppLocalizations> pumpTile(WidgetTester tester) async {
@@ -85,6 +90,7 @@ void main() {
       final l10n = await pumpTile(tester);
       await tester.tap(find.byType(ListTile));
       await tester.pumpAndSettle();
+      expect(find.text(l10n.useSystemPalette), findsNothing);
 
       await tester.ensureVisible(swatch);
       await tester.tap(swatch);
@@ -125,6 +131,47 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     }
   });
+
+  testWidgets(
+    'selects system palette on supported devices and returns to artwork',
+    (tester) async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            paletteChannel,
+            (_) async => {
+              'light': {'primary': 0xff382d6f, 'onPrimary': 0xffffffff},
+              'dark': {'primary': 0xffc8bfff, 'onPrimary': 0xff242044},
+            },
+          );
+      final l10n = await pumpTile(tester);
+      await tester.tap(find.byType(ListTile));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.useSystemPalette));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.systemPaletteLabel), findsOneWidget);
+      expect(calls.single.method, 'useSystemPalette');
+      expect(
+        AppSettingsRepository(preferences).loadWidgetSystemPalette(),
+        isTrue,
+      );
+      expect(
+        AppSettingsRepository(preferences).loadPrimarySystemPalette(),
+        isFalse,
+      );
+
+      await tester.tap(find.byType(ListTile));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.widgetBackgroundUseDynamic));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.widgetBackgroundDynamic), findsOneWidget);
+      expect(calls.last.arguments, {'color': null});
+      expect(
+        AppSettingsRepository(preferences).loadWidgetSystemPalette(),
+        isFalse,
+      );
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
 
   testWidgets('cancel discards swatch changes', (tester) async {
     try {

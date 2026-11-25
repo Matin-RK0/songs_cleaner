@@ -16,6 +16,7 @@ class AppColorPickerSheet extends StatefulWidget {
     required this.onSave,
     this.resetLabel,
     this.onReset,
+    this.onUseSystemPalette,
   });
 
   final Color initialColor;
@@ -23,6 +24,7 @@ class AppColorPickerSheet extends StatefulWidget {
   final Future<void> Function(Color) onSave;
   final String? resetLabel;
   final Future<void> Function()? onReset;
+  final Future<void> Function()? onUseSystemPalette;
 
   @override
   State<AppColorPickerSheet> createState() => _AppColorPickerSheetState();
@@ -96,10 +98,25 @@ class _AppColorPickerSheetState extends State<AppColorPickerSheet> {
                   ),
                   Flexible(
                     child: SingleChildScrollView(
-                      child: AppColorPickerEditor(
-                        initialColor: _draft,
-                        enabled: !_saving,
-                        onChanged: (color) => _draft = color,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (widget.onUseSystemPalette != null) ...[
+                            OutlinedButton.icon(
+                              onPressed: _saving
+                                  ? null
+                                  : () => _submit(widget.onUseSystemPalette!),
+                              icon: const Icon(Icons.wallpaper_rounded),
+                              label: Text(l10n.useSystemPalette),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
+                          AppColorPickerEditor(
+                            initialColor: _draft,
+                            enabled: !_saving,
+                            onChanged: (color) => _draft = color,
+                          ),
+                        ],
                       ),
                     ),
                   ),

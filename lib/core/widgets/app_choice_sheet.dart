@@ -18,7 +18,7 @@ class AppChoice<T> {
 Future<T?> showAppChoiceSheet<T>({
   required BuildContext context,
   required String title,
-  required T current,
+  required T? current,
   required List<AppChoice<T>> choices,
 }) => showModalBottomSheet<T>(
   context: context,

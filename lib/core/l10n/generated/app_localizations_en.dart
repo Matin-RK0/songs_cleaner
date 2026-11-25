@@ -801,13 +801,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get widgetBackgroundTitle => 'Home widget background';
 
   @override
-  String get widgetBackgroundDynamic => 'Dynamic';
+  String get widgetBackgroundDynamic => 'From track artwork';
 
   @override
   String get widgetBackgroundCustom => 'Custom color';
 
   @override
-  String get widgetBackgroundUseDynamic => 'Use dynamic background';
+  String get widgetBackgroundUseDynamic => 'Use track artwork';
+
+  @override
+  String get systemPaletteLabel => 'System palette';
+
+  @override
+  String get fullSystemThemeTitle => 'Full system theme';
+
+  @override
+  String get fullSystemThemeSubtitle =>
+      'Use Android’s Material You colors. Your custom appearance is kept for later.';
+
+  @override
+  String get appBackgroundTitle => 'App background';
+
+  @override
+  String get appBackgroundSolid => 'Solid color';
+
+  @override
+  String get appBackgroundPhoto => 'Gallery photo';
+
+  @override
+  String get photoFramingTitle => 'Photo framing';
+
+  @override
+  String get photoFramingInstructions =>
+      'Drag or pinch to choose the part shown on screen.';
+
+  @override
+  String get photoFramingZoom => 'Zoom';
+
+  @override
+  String get photoFramingLoadFailed =>
+      'This photo couldn’t be opened. Choose another photo.';
+
+  @override
+  String get appBackgroundDimming => 'Photo dimming';
+
+  @override
+  String get appBackgroundDimmingSubtitle =>
+      'Adjust photo visibility. Dark mode darkens the photo; light mode uses a light tint to keep text readable.';
+
+  @override
+  String get appForegroundTitle => 'Text and icon color';
+
+  @override
+  String get appForegroundSubtitle =>
+      'Customize the main text and icons. Colors may adjust for readability.';
+
+  @override
+  String get appearanceDefault => 'Theme default';
+
+  @override
+  String get useSystemPalette => 'Use system palette';
 
   @override
   String get colorHue => 'Hue';

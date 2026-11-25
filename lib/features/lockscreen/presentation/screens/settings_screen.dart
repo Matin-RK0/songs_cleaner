@@ -10,6 +10,9 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/primary_color_controller.dart';
+import '../../../../core/theme/system_palette_controller.dart';
+import '../../../../core/theme/appearance_controller.dart';
+import '../widgets/appearance_customization_tiles.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/widgets/app_color_picker_sheet.dart';
 import '../../../../core/widgets/app_choice_sheet.dart';
@@ -249,6 +252,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final l10n = context.l10n;
     final current = ref.read(appPrimaryColorProvider);
     final primaryController = ref.read(appPrimaryColorProvider.notifier);
+    final supportsPalette = ref.read(systemPaletteProvider).value != null;
+    final systemController = ref.read(appPrimarySystemPaletteProvider.notifier);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -263,6 +268,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         initialColor: current,
         title: l10n.primaryColorTitle,
         onSave: primaryController.setColor,
+        onUseSystemPalette: supportsPalette
+            ? () => systemController.setEnabled(true)
+            : null,
       ),
     );
   }
@@ -343,6 +351,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final colors = context.colors;
+    final supportsPalette = ref.watch(systemPaletteProvider).value != null;
+    final fullSystemTheme =
+        supportsPalette &&
+        ref.watch(appearanceProvider.select((value) => value.systemTheme));
+    final usesSystemPrimary =
+        ref.watch(appPrimarySystemPaletteProvider) && supportsPalette;
     final lockScreenState = ref.watch(lockScreenControllerProvider);
     final previousGoesToPrevious = ref.watch(previousGoesToPreviousProvider);
     final hideQuickDelete = ref.watch(hideQuickDeleteProvider);
@@ -415,17 +429,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                           ),
                           subtitle: Text(
-                            l10n.primaryColorSubtitle,
+                            usesSystemPrimary
+                                ? l10n.systemPaletteLabel
+                                : l10n.primaryColorSubtitle,
                             style: AppTypography.songSubtitle.copyWith(
                               color: colors.textMedium,
                             ),
                           ),
                           trailing: CircleAvatar(
                             radius: AppSpacing.lg / 2,
-                            backgroundColor: ref.watch(appPrimaryColorProvider),
+                            backgroundColor: colors.primary,
                           ),
-                          onTap: _showPrimaryColorSheet,
+                          enabled: !fullSystemTheme,
+                          onTap: fullSystemTheme
+                              ? null
+                              : _showPrimaryColorSheet,
                         ),
+                        const AppearanceCustomizationTiles(),
                         const WidgetBackgroundSettingTile(),
                         const HomeTabsSettingTile(),
                       ],
@@ -543,9 +563,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                           ),
                           trailing: const SettingsChevron(),
-                          onTap: () => Navigator.of(
-                            context,
-                          ).pushNamed(RouteNames.history),
+                          onTap: () =>
+                              Navigator.of(context)
+                                  .pushNamed(RouteNames.history),
                         ),
                         ListTile(
                           leading: Icon(

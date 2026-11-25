@@ -1524,7 +1524,7 @@ abstract class AppLocalizations {
   /// No description provided for @widgetBackgroundDynamic.
   ///
   /// In fa, this message translates to:
-  /// **'پویا'**
+  /// **'از کاور آهنگ'**
   String get widgetBackgroundDynamic;
 
   /// No description provided for @widgetBackgroundCustom.
@@ -1536,8 +1536,104 @@ abstract class AppLocalizations {
   /// No description provided for @widgetBackgroundUseDynamic.
   ///
   /// In fa, this message translates to:
-  /// **'استفاده از پس‌زمینه پویا'**
+  /// **'استفاده از کاور آهنگ'**
   String get widgetBackgroundUseDynamic;
+
+  /// No description provided for @systemPaletteLabel.
+  ///
+  /// In fa, this message translates to:
+  /// **'پالت سیستم'**
+  String get systemPaletteLabel;
+
+  /// No description provided for @fullSystemThemeTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'تم کامل سیستم'**
+  String get fullSystemThemeTitle;
+
+  /// No description provided for @fullSystemThemeSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'استفاده از رنگ‌های Material You اندروید. ظاهر سفارشی شما برای بعد حفظ می‌شود.'**
+  String get fullSystemThemeSubtitle;
+
+  /// No description provided for @appBackgroundTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'پس‌زمینهٔ برنامه'**
+  String get appBackgroundTitle;
+
+  /// No description provided for @appBackgroundSolid.
+  ///
+  /// In fa, this message translates to:
+  /// **'رنگ یکدست'**
+  String get appBackgroundSolid;
+
+  /// No description provided for @appBackgroundPhoto.
+  ///
+  /// In fa, this message translates to:
+  /// **'عکس گالری'**
+  String get appBackgroundPhoto;
+
+  /// No description provided for @photoFramingTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'کادر عکس'**
+  String get photoFramingTitle;
+
+  /// No description provided for @photoFramingInstructions.
+  ///
+  /// In fa, this message translates to:
+  /// **'عکس را بکشید یا با دو انگشت زوم کنید تا بخش دلخواه روی صفحه قرار بگیرد.'**
+  String get photoFramingInstructions;
+
+  /// No description provided for @photoFramingZoom.
+  ///
+  /// In fa, this message translates to:
+  /// **'زوم'**
+  String get photoFramingZoom;
+
+  /// No description provided for @photoFramingLoadFailed.
+  ///
+  /// In fa, this message translates to:
+  /// **'این عکس باز نشد. عکس دیگری انتخاب کنید.'**
+  String get photoFramingLoadFailed;
+
+  /// No description provided for @appBackgroundDimming.
+  ///
+  /// In fa, this message translates to:
+  /// **'شدت پوشش عکس'**
+  String get appBackgroundDimming;
+
+  /// No description provided for @appBackgroundDimmingSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'میزان دیده شدن عکس را تنظیم کنید. برای خوانایی متن، پوشش در حالت تاریک تیره و در حالت روشن، روشن است.'**
+  String get appBackgroundDimmingSubtitle;
+
+  /// No description provided for @appForegroundTitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'رنگ متن و آیکن'**
+  String get appForegroundTitle;
+
+  /// No description provided for @appForegroundSubtitle.
+  ///
+  /// In fa, this message translates to:
+  /// **'رنگ متن و آیکن‌های اصلی را عوض کنید. رنگ‌ها ممکن است برای خوانایی تنظیم شوند.'**
+  String get appForegroundSubtitle;
+
+  /// No description provided for @appearanceDefault.
+  ///
+  /// In fa, this message translates to:
+  /// **'پیش‌فرض تم'**
+  String get appearanceDefault;
+
+  /// No description provided for @useSystemPalette.
+  ///
+  /// In fa, this message translates to:
+  /// **'استفاده از پالت سیستم'**
+  String get useSystemPalette;
 
   /// No description provided for @colorHue.
   ///

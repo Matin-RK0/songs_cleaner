@@ -4,28 +4,71 @@ import 'package:songs_cleaner/core/theme/app_spacing.dart';
 import 'app_colors.dart';
 import 'app_radius.dart';
 import 'app_typography.dart';
+import '../settings/appearance_preferences.dart';
+import 'appearance_theme.dart';
 
 abstract final class AppTheme {
-  static ThemeData dark({Color? primary}) =>
-      _build(_withPrimary(AppColorTokens.dark, primary), Brightness.dark);
+  static ThemeData dark({
+    Color? primary,
+    Color? onPrimary,
+    ColorScheme? systemScheme,
+    AppearancePreferences appearance = const AppearancePreferences(),
+  }) => _build(
+    AppColorTokens.dark,
+    Brightness.dark,
+    primary,
+    onPrimary,
+    systemScheme,
+    appearance,
+  );
 
-  static ThemeData light({Color? primary}) =>
-      _build(_withPrimary(AppColorTokens.light, primary), Brightness.light);
+  static ThemeData light({
+    Color? primary,
+    Color? onPrimary,
+    ColorScheme? systemScheme,
+    AppearancePreferences appearance = const AppearancePreferences(),
+  }) => _build(
+    AppColorTokens.light,
+    Brightness.light,
+    primary,
+    onPrimary,
+    systemScheme,
+    appearance,
+  );
 
-  static AppColorTokens _withPrimary(AppColorTokens tokens, Color? primary) {
+  static AppColorTokens _withPrimary(
+    AppColorTokens tokens,
+    Color? primary,
+    Color? foreground,
+  ) {
     if (primary == null) return tokens;
     final onPrimary = primary.computeLuminance() > 0.5
         ? Colors.black
         : Colors.white;
     return tokens.copyWith(
       primary: primary,
-      onPrimary: onPrimary,
+      onPrimary: foreground ?? onPrimary,
       accent: primary,
     );
   }
 
-  static ThemeData _build(AppColorTokens tokens, Brightness brightness) {
+  static ThemeData _build(
+    AppColorTokens defaults,
+    Brightness brightness,
+    Color? primary,
+    Color? onPrimary,
+    ColorScheme? systemScheme,
+    AppearancePreferences appearance,
+  ) {
+    final tokens = systemScheme == null
+        ? AppearanceTheme.customTokens(
+            _withPrimary(defaults, primary, onPrimary),
+            appearance,
+            brightness,
+          )
+        : AppearanceTheme.systemTokens(defaults, systemScheme);
     final colorScheme =
+        systemScheme ??
         ColorScheme.fromSeed(
           seedColor: tokens.primary,
           brightness: brightness,
@@ -41,13 +84,16 @@ abstract final class AppTheme {
           outline: tokens.outline,
         );
 
-    return ThemeData(
+    final theme = ThemeData(
       useMaterial3: true,
       brightness: brightness,
       fontFamily: AppTypography.fontFamily,
       fontFamilyFallback: AppTypography.fontFamilyFallback,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: tokens.background,
+      scaffoldBackgroundColor:
+          systemScheme == null && appearance.photoPath != null
+          ? Colors.transparent
+          : tokens.background,
       splashFactory: InkRipple.splashFactory,
       extensions: <ThemeExtension<dynamic>>[tokens],
       appBarTheme: AppBarTheme(
@@ -190,6 +236,18 @@ abstract final class AppTheme {
         selectionHandleColor: tokens.primary,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: tokens.primary),
+    );
+    if (systemScheme == null &&
+        appearance.foregroundColor == null &&
+        appearance.backgroundKind == AppBackgroundKind.standard) {
+      return theme;
+    }
+    return theme.copyWith(
+      textTheme: theme.textTheme.apply(
+        bodyColor: tokens.textHigh,
+        displayColor: tokens.textHigh,
+      ),
+      iconTheme: theme.iconTheme.copyWith(color: tokens.textHigh),
     );
   }
 }

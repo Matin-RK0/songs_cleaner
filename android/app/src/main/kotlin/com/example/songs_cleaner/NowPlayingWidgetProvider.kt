@@ -39,6 +39,8 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
         const val PLAYING = "playing"
         const val CAN_SKIP = "can_skip"
         const val BACKGROUND_COLOR = "background_color"
+        const val SYSTEM_PALETTE = "system_palette"
+        private val transportButtons = intArrayOf(R.id.widget_previous, R.id.widget_play_pause, R.id.widget_next)
 
         fun updateAll(context: Context, manager: AppWidgetManager = AppWidgetManager.getInstance(context)) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -52,21 +54,30 @@ class NowPlayingWidgetProvider : AppWidgetProvider() {
                 } else {
                     setImageViewResource(R.id.widget_artwork, R.drawable.ic_notif_applogo)
                 }
-                val customBackground = prefs.contains(BACKGROUND_COLOR)
-                val background = if (customBackground) {
-                    prefs.getInt(BACKGROUND_COLOR, Color.rgb(32, 37, 43))
-                } else if (artwork != null) {
-                    artworkBackground(artwork)
+                val useSystem = prefs.getBoolean(SYSTEM_PALETTE, false)
+                if (useSystem && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    // Resolve system roles on the launcher side, not a cached ARGB
+                    // value, so night mode and palette overlays can be reapplied.
+                    setColorStateList(R.id.widget_root, "setBackgroundTintList", R.color.widget_system_container)
+                    setColor(R.id.widget_title, "setTextColor", R.color.widget_system_on_container)
+                    setColor(R.id.widget_artist, "setTextColor", R.color.widget_system_on_container)
+                    for (id in transportButtons) {
+                        setColor(id, "setColorFilter", R.color.widget_system_on_container)
+                    }
                 } else {
-                    Color.rgb(32, 37, 43)
-                }
-                setWidgetBackground(this, background)
-                val darkForeground = customBackground && ColorUtils.calculateLuminance(background) > 0.179
-                val foreground = if (darkForeground) Color.BLACK else Color.WHITE
-                setTextColor(R.id.widget_title, foreground)
-                setTextColor(R.id.widget_artist, if (darkForeground) 0xB3000000.toInt() else 0xFFD0D5DB.toInt())
-                for (id in intArrayOf(R.id.widget_previous, R.id.widget_play_pause, R.id.widget_next)) {
-                    setInt(id, "setColorFilter", foreground)
+                    val customBackground = !useSystem && prefs.contains(BACKGROUND_COLOR)
+                    val fallback = Color.rgb(32, 37, 43)
+                    val background = when {
+                        customBackground -> prefs.getInt(BACKGROUND_COLOR, fallback)
+                        artwork != null -> artworkBackground(artwork)
+                        else -> fallback
+                    }
+                    setWidgetBackground(this, background)
+                    val darkForeground = customBackground && ColorUtils.calculateLuminance(background) > 0.179
+                    val foreground = if (darkForeground) Color.BLACK else Color.WHITE
+                    setTextColor(R.id.widget_title, foreground)
+                    setTextColor(R.id.widget_artist, if (darkForeground) 0xB3000000.toInt() else 0xFFD0D5DB.toInt())
+                    for (id in transportButtons) setInt(id, "setColorFilter", foreground)
                 }
                 val canSkip = prefs.getBoolean(CAN_SKIP, false)
                 for (id in intArrayOf(R.id.widget_previous, R.id.widget_next)) {

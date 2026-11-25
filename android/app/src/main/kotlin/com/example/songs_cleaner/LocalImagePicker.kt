@@ -7,13 +7,21 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
+import android.provider.MediaStore
+import android.content.ActivityNotFoundException
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.IOException
 import kotlin.math.roundToInt
 
-/** Copies a bounded thumbnail into app storage; the original URI is not retained. */
-internal class PlaylistCoverPicker(private val activity: Activity) {
+/** Copies a bounded image into app storage; the original URI is not retained. */
+internal class LocalImagePicker(
+    private val activity: Activity,
+    private val requestCode: Int,
+    private val folder: String,
+    private val maxEdge: Int,
+    private val preferPhotoPicker: Boolean = false,
+) {
     private var pending: MethodChannel.Result? = null
 
     fun pick(result: MethodChannel.Result) {
@@ -23,18 +31,30 @@ internal class PlaylistCoverPicker(private val activity: Activity) {
         }
         pending = result
         try {
-            activity.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                addCategory(Intent.CATEGORY_OPENABLE)
-                type = "image/*"
-            }, REQUEST_CODE)
+            openPicker()
         } catch (_: Exception) {
             pending = null
             result.error("COVER_PICK_FAILED", null, null)
         }
     }
 
+    private fun openPicker() {
+        if (preferPhotoPicker && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            try {
+                activity.startActivityForResult(Intent(MediaStore.ACTION_PICK_IMAGES).setType("image/*"), requestCode)
+                return
+            } catch (_: ActivityNotFoundException) {
+                // Some devices do not supply the system Photo Picker.
+            }
+        }
+        activity.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "image/*"
+        }, requestCode)
+    }
+
     fun handleResult(requestCode: Int, resultCode: Int, uri: Uri?): Boolean {
-        if (requestCode != REQUEST_CODE) return false
+        if (requestCode != this.requestCode) return false
         val result = pending ?: return true
         if (resultCode != Activity.RESULT_OK || uri == null) {
             pending = null
@@ -49,7 +69,7 @@ internal class PlaylistCoverPicker(private val activity: Activity) {
                     val source = ImageDecoder.createSource(context.contentResolver, uri)
                     ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
                         val size = info.size
-                        val scale = minOf(1.0, MAX_EDGE.toDouble() / maxOf(size.width, size.height))
+                        val scale = minOf(1.0, maxEdge.toDouble() / maxOf(size.width, size.height))
                         decoder.setTargetSize(
                             (size.width * scale).roundToInt().coerceAtLeast(1),
                             (size.height * scale).roundToInt().coerceAtLeast(1),
@@ -63,7 +83,7 @@ internal class PlaylistCoverPicker(private val activity: Activity) {
                     }
                     if (options.outWidth <= 0 || options.outHeight <= 0) throw IOException()
                     var sample = 1
-                    while (maxOf(options.outWidth, options.outHeight) / sample > MAX_EDGE) sample *= 2
+                    while (maxOf(options.outWidth, options.outHeight) / sample > maxEdge) sample *= 2
                     options.inJustDecodeBounds = false
                     options.inSampleSize = sample
                     context.contentResolver.openInputStream(uri)?.use {
@@ -71,9 +91,9 @@ internal class PlaylistCoverPicker(private val activity: Activity) {
                     } ?: throw IOException()
                 }
                 try {
-                    val dir = File(context.filesDir, "playlist-covers")
+                    val dir = File(context.filesDir, folder)
                     if (!dir.isDirectory && !dir.mkdirs()) throw IOException()
-                    target = File.createTempFile("cover-", ".jpg", dir)
+                    target = File.createTempFile("image-", ".jpg", dir)
                     target.outputStream().use {
                         if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 86, it)) throw IOException()
                     }
@@ -107,8 +127,4 @@ internal class PlaylistCoverPicker(private val activity: Activity) {
         pending = null
     }
 
-    private companion object {
-        const val REQUEST_CODE = 4103
-        const val MAX_EDGE = 512
-    }
 }

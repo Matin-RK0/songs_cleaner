@@ -10,6 +10,9 @@ class NowPlayingWidgetService {
   Future<void> setBackgroundColor(int? color) =>
       _channel.invokeMethod<void>('setBackgroundColor', {'color': color});
 
+  Future<void> useSystemPalette() =>
+      _channel.invokeMethod<void>('useSystemPalette');
+
   Future<void> update({
     String? title,
     String? artist,

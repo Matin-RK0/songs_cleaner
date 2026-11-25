@@ -31,9 +31,15 @@ class NowPlayingWidgetPlugin : FlutterPlugin {
                     "setBackgroundColor" -> {
                         val color = call.argument<Number>("color")?.toInt()
                         prefs.edit().apply {
+                            remove(NowPlayingWidgetProvider.SYSTEM_PALETTE)
                             if (color == null) remove(NowPlayingWidgetProvider.BACKGROUND_COLOR)
                             else putInt(NowPlayingWidgetProvider.BACKGROUND_COLOR, color)
                         }.apply()
+                        NowPlayingWidgetProvider.updateAll(context)
+                        result.success(null)
+                    }
+                    "useSystemPalette" -> {
+                        prefs.edit().putBoolean(NowPlayingWidgetProvider.SYSTEM_PALETTE, true).apply()
                         NowPlayingWidgetProvider.updateAll(context)
                         result.success(null)
                     }

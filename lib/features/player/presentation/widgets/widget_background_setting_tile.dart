@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/system_palette_controller.dart';
 import '../../../../core/widgets/app_color_picker_sheet.dart';
 import '../../application/providers/widget_background_controller.dart';
 
@@ -20,6 +21,8 @@ class WidgetBackgroundSettingTile extends ConsumerWidget {
     }
 
     final value = ref.watch(widgetBackgroundColorProvider);
+    final supportsPalette = ref.watch(systemPaletteProvider).value != null;
+    final systemSelected = ref.watch(widgetSystemPaletteProvider);
     final colors = context.colors;
     final l10n = context.l10n;
     return ListTile(
@@ -29,12 +32,16 @@ class WidgetBackgroundSettingTile extends ConsumerWidget {
         style: AppTypography.emphasisTitle.copyWith(color: colors.textHigh),
       ),
       subtitle: Text(
-        value == null
+        systemSelected && supportsPalette
+            ? l10n.systemPaletteLabel
+            : value == null || systemSelected
             ? l10n.widgetBackgroundDynamic
             : l10n.widgetBackgroundCustom,
         style: AppTypography.songSubtitle.copyWith(color: colors.textMedium),
       ),
-      trailing: value == null
+      trailing: systemSelected && supportsPalette
+          ? Icon(Icons.wallpaper_rounded, color: colors.textLow)
+          : value == null || systemSelected
           ? Icon(Icons.auto_awesome_outlined, color: colors.textLow)
           : SizedBox.square(
               dimension: AppSpacing.lg,
@@ -64,6 +71,9 @@ class WidgetBackgroundSettingTile extends ConsumerWidget {
             onSave: (color) => controller.setColor(color.toARGB32()),
             resetLabel: l10n.widgetBackgroundUseDynamic,
             onReset: () => controller.setColor(null),
+            onUseSystemPalette: supportsPalette
+                ? controller.useSystemPalette
+                : null,
           ),
         );
       },

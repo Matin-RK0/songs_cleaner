@@ -800,13 +800,66 @@ class AppLocalizationsFa extends AppLocalizations {
   String get widgetBackgroundTitle => 'پس‌زمینه ویجت صفحه اصلی';
 
   @override
-  String get widgetBackgroundDynamic => 'پویا';
+  String get widgetBackgroundDynamic => 'از کاور آهنگ';
 
   @override
   String get widgetBackgroundCustom => 'رنگ دلخواه';
 
   @override
-  String get widgetBackgroundUseDynamic => 'استفاده از پس‌زمینه پویا';
+  String get widgetBackgroundUseDynamic => 'استفاده از کاور آهنگ';
+
+  @override
+  String get systemPaletteLabel => 'پالت سیستم';
+
+  @override
+  String get fullSystemThemeTitle => 'تم کامل سیستم';
+
+  @override
+  String get fullSystemThemeSubtitle =>
+      'استفاده از رنگ‌های Material You اندروید. ظاهر سفارشی شما برای بعد حفظ می‌شود.';
+
+  @override
+  String get appBackgroundTitle => 'پس‌زمینهٔ برنامه';
+
+  @override
+  String get appBackgroundSolid => 'رنگ یکدست';
+
+  @override
+  String get appBackgroundPhoto => 'عکس گالری';
+
+  @override
+  String get photoFramingTitle => 'کادر عکس';
+
+  @override
+  String get photoFramingInstructions =>
+      'عکس را بکشید یا با دو انگشت زوم کنید تا بخش دلخواه روی صفحه قرار بگیرد.';
+
+  @override
+  String get photoFramingZoom => 'زوم';
+
+  @override
+  String get photoFramingLoadFailed =>
+      'این عکس باز نشد. عکس دیگری انتخاب کنید.';
+
+  @override
+  String get appBackgroundDimming => 'شدت پوشش عکس';
+
+  @override
+  String get appBackgroundDimmingSubtitle =>
+      'میزان دیده شدن عکس را تنظیم کنید. برای خوانایی متن، پوشش در حالت تاریک تیره و در حالت روشن، روشن است.';
+
+  @override
+  String get appForegroundTitle => 'رنگ متن و آیکن';
+
+  @override
+  String get appForegroundSubtitle =>
+      'رنگ متن و آیکن‌های اصلی را عوض کنید. رنگ‌ها ممکن است برای خوانایی تنظیم شوند.';
+
+  @override
+  String get appearanceDefault => 'پیش‌فرض تم';
+
+  @override
+  String get useSystemPalette => 'استفاده از پالت سیستم';
 
   @override
   String get colorHue => 'فام';

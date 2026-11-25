@@ -1,0 +1,4 @@
+<resources>
+    <color name="widget_system_container">@android:color/system_primary_container_light</color>
+    <color name="widget_system_on_container">@android:color/system_on_primary_container_light</color>
+</resources>
