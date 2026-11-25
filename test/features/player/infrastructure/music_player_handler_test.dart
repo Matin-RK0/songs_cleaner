@@ -61,6 +61,8 @@ class _Player extends Fake implements AudioPlayer {
   @override
   Future<void> setSpeed(double speed) async {}
   @override
+  Future<void> setLoopMode(LoopMode mode) async {}
+  @override
   Future<Duration?> setAudioSource(
     AudioSource source, {
     bool preload = true,
@@ -70,6 +72,9 @@ class _Player extends Fake implements AudioPlayer {
     await loading?.future;
     position = initialPosition ?? Duration.zero;
     duration = const Duration(seconds: 60);
+    if (processingState == ProcessingState.completed) {
+      processingState = ProcessingState.ready;
+    }
     return duration;
   }
 
@@ -111,6 +116,10 @@ class _Player extends Fake implements AudioPlayer {
   Future<void> seek(Duration? position, {int? index}) async {
     this.position = position ?? Duration.zero;
     if (index != null) currentIndex = index;
+    if (processingState == ProcessingState.completed) {
+      processingState = ProcessingState.ready;
+      events.add(playbackEvent);
+    }
   }
 
   Future<void> close() async {
@@ -505,18 +514,75 @@ void main() {
     },
   );
 
-  test('active EOF still advances playback normally', () async {
+  for (final repeat in AudioServiceRepeatMode.values.where(
+    (mode) => mode != AudioServiceRepeatMode.group,
+  )) {
+    test('track handoff stays active with repeat ${repeat.name}', () async {
+      final player = _Player();
+      final handler = MusicPlayerHandler(player);
+      addTearDown(player.close);
+      await handler.loadAndPlay([
+        _song(1, 60),
+        _song(2, 60),
+      ], startIndex: repeat == AudioServiceRepeatMode.none ? 0 : 1);
+      await handler.setRepeatMode(repeat);
+      final states = <PlaybackState>[];
+      final subscription = handler.playbackState.listen(states.add);
+      addTearDown(subscription.cancel);
+
+      // The playback-event listener can see EOF before auto-advance runs.
+      player.processingState = ProcessingState.completed;
+      player.events.add(player.playbackEvent);
+      await Future<void>.delayed(Duration.zero);
+      expect(states.last.processingState, AudioProcessingState.buffering);
+      player.states.add(PlayerState(true, ProcessingState.completed));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        handler.currentSong?.id,
+        repeat == AudioServiceRepeatMode.all ? 1 : 2,
+      );
+      expect(player.playCalls, 2);
+      expect(
+        handler.playbackState.value.processingState,
+        AudioProcessingState.ready,
+      );
+      expect(
+        states.every(
+          (state) =>
+              state.playing &&
+              state.processingState != AudioProcessingState.completed &&
+              state.processingState != AudioProcessingState.idle,
+        ),
+        isTrue,
+      );
+      await handler.closeApp();
+    });
+  }
+
+  test('terminal EOF does not reactivate the session when rewinding', () async {
     final player = _Player();
     final handler = MusicPlayerHandler(player);
     addTearDown(player.close);
-    await handler.loadAndPlay([_song(1, 60), _song(2, 60)]);
+    await handler.loadAndPlay([_song(1, 60)]);
+    final states = <PlaybackState>[];
+    final subscription = handler.playbackState.listen(states.add);
+    addTearDown(subscription.cancel);
+    await Future<void>.delayed(Duration.zero);
+    states.clear();
+
+    player.position = const Duration(minutes: 1);
     player.processingState = ProcessingState.completed;
+    player.events.add(player.playbackEvent);
+    await Future<void>.delayed(Duration.zero);
+    expect(states.single.processingState, AudioProcessingState.completed);
     player.states.add(PlayerState(true, ProcessingState.completed));
     await Future<void>.delayed(Duration.zero);
 
-    expect(handler.currentSong?.id, 2);
-    expect(player.playing, isTrue);
-    expect(player.playCalls, 2);
+    expect(states.skip(1), isNotEmpty);
+    expect(states.skip(1).every((state) => !state.playing), isTrue);
+    expect(handler.position, Duration.zero);
+    expect(player.playCalls, 1);
     await handler.closeApp();
   });
 

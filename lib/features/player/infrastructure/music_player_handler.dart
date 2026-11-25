@@ -1033,8 +1033,12 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     }
     final moved = _queue.next(wrap: _repeatMode == RepeatMode.all);
     if (!moved) {
-      await _player.seek(Duration.zero);
+      final request = _playbackRequestRevision;
+      // Seeking away from EOF can report ready while just_audio still has its
+      // play flag set. Pause first so an exhausted queue cannot look active.
       await _player.pause();
+      if (_closing || request != _playbackRequestRevision) return;
+      await _player.seek(Duration.zero);
       _broadcastState(_player.playbackEvent);
       return;
     }
@@ -1113,6 +1117,26 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
     );
   }
 
+  AudioProcessingState _sessionProcessingState({required bool playing}) {
+    if (isChangingSource) return AudioProcessingState.loading;
+    // The decoder completes a source, not necessarily the playback session.
+    // Publish the handoff as buffering even if its event arrives before the
+    // completion listener starts loading or rewinding the next source.
+    final continuesAtEnd =
+        _queue.current != null &&
+        (_repeatMode != RepeatMode.off ||
+            _queue.currentIndex < _queue.length - 1);
+    return switch (_player.processingState) {
+      ProcessingState.idle => AudioProcessingState.idle,
+      ProcessingState.loading => AudioProcessingState.loading,
+      ProcessingState.buffering => AudioProcessingState.buffering,
+      ProcessingState.ready => AudioProcessingState.ready,
+      ProcessingState.completed when playing && continuesAtEnd =>
+        AudioProcessingState.buffering,
+      ProcessingState.completed => AudioProcessingState.completed,
+    };
+  }
+
   void _broadcastState(PlaybackEvent event) {
     // Once the user closes the app, keep the state idle so no listener revives
     // the notification during the shutdown sequence.
@@ -1158,15 +1182,7 @@ class MusicPlayerHandler extends BaseAudioHandler with SeekHandler {
         androidCompactActionIndices: hasActiveSong
             ? (canSkipTracks ? const [1, 2, 3] : const [1])
             : const [],
-        processingState: isChangingSource
-            ? AudioProcessingState.loading
-            : switch (_player.processingState) {
-                ProcessingState.idle => AudioProcessingState.idle,
-                ProcessingState.loading => AudioProcessingState.loading,
-                ProcessingState.buffering => AudioProcessingState.buffering,
-                ProcessingState.ready => AudioProcessingState.ready,
-                ProcessingState.completed => AudioProcessingState.completed,
-              },
+        processingState: _sessionProcessingState(playing: playing),
         playing: playing,
         updatePosition: position,
         bufferedPosition: bufferedPosition,
